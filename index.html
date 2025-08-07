@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изучение немецких слов - Морфемы и Предложения</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fafafa; min-height: 100vh; padding: 20px; color: #333; line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 8px; font-weight: 300; color: #333; }
+        .header p { color: #666; font-size: 1rem; font-weight: 400; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px; background: #e5e5e5; padding: 0; }
+        .stat { background: white; padding: 30px 20px; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: 600; color: #333; margin-bottom: 4px; }
+        .stat-label { color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+        .level-selector { background: #fff; padding: 25px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .level-buttons { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .level-btn { padding: 8px 16px; border: 1px solid #ddd; border-radius: 4px; background: white; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; color: #666; }
+        .level-btn:hover { border-color: #999; }
+        .level-btn.active { background: #333; color: white; border-color: #333; }
+        .block-selector { background: white; padding: 25px; border-bottom: 1px solid #e5e5e5; }
+        .block-buttons { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+        .block-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; background: white; font-weight: 400; cursor: pointer; transition: all 0.2s ease; font-size: 0.85rem; color: #666; }
+        .block-btn:hover { border-color: #999; }
+        .block-btn.active { background: #333; color: white; border-color: #333; }
+        .block-label { font-weight: 500; color: #333; margin-right: 15px; font-size: 0.9rem; display: flex; align-items: center; }
+        .block-label .icon { margin-right: 8px; }
+        .main-content { padding: 60px 40px; min-height: 450px; background: white; }
+        
+        .card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 50px 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            min-height: 350px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), min-height 0.6s ease-out;
+        }
+
+        .card.is-clickable { cursor: pointer; }
+        .word-container { position: relative; transition: all 3s cubic-bezier(0.23, 1, 0.32, 1); }
+        .word { font-size: 2.8rem; font-weight: 300; margin-bottom: 20px; transition: color 0.5s ease; color: #333; display: flex; align-items: baseline; justify-content: center; gap: 0.3em; }
+        .word .article { font-size: 0.5em; opacity: 0.6; font-weight: 400; transition: opacity 0.3s ease; }
+        .word .main-word { font-weight: 300; display: flex; align-items: center; transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .word .morpheme { transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .word .morpheme-separator { opacity: 0; transform: scaleX(0); transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); color: #999; font-weight: 400; margin: 0 0.1em; }
+        .word.show-morphemes .morpheme { margin: 0 0.15em; }
+        .word.show-morphemes .morpheme-separator { opacity: 1; transform: scaleX(1); }
+        .word.hide-articles .article { opacity: 0; }
+        .word .article.der { color: #0066cc; } .word .article.die { color: #cc0066; } .word .article.das { color: #666; }
+        .word.der .main-word { color: #0066cc; } .word.die .main-word { color: #cc0066; } .word.das .main-word { color: #333; }
+        
+        .morpheme-translations { margin-top: 15px; opacity: 0; transform: translateY(10px); transition: opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s; display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5em; min-height: 40px; }
+        .morpheme-translations.visible { opacity: 1; transform: translateY(0); }
+        .morpheme-translation-item { display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+        .morpheme-translation-item .morpheme-part { font-weight: 500; font-size: 1rem; color: #555; }
+        .morpheme-translation-item .translation-part { font-size: 0.85rem; color: #888; font-style: italic; }
+        .level-indicator { position: absolute; top: 15px; right: 15px; padding: 4px 8px; border-radius: 3px; font-size: 0.75rem; font-weight: 500; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+        .level-indicator.a1 { background: #666; } .level-indicator.a2 { background: #888; } .level-indicator.b1 { background: #333; } .level-indicator.b2 { background: #000; }
+        
+        /* Анимации */
+        .card.transform-phase .word-container { transform: translateY(40px) scale(1.1); }
+        .card.morpheme-phase, .card.sentence-phase, .card.zoom-phase { transform: scale(1.02); }
+        .card.morpheme-phase .word-container, .card.sentence-phase .word-container, .card.zoom-phase .word-container { transform: translateY(40px) scale(1.15); }
+        .card.final-phase { transform: scale(1.0); }
+        .card.final-phase .word-container { transform: translateY(0) scale(1.0); }
+        .word-crossfade { transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out; }
+        .word-fade-out { opacity: 0; transform: scale(0.98); }
+        @keyframes slideInFromBottom { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .card-appear { animation: slideInFromBottom 0.6s ease-out; }
+        .translation-appear, .sentence-appear { animation: slideInFromBottom 0.6s ease-out; }
+
+        .translation-container, .sentence-container { min-height: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .translation { font-size: 1.6rem; color: #666; margin-bottom: 12px; font-weight: 400; }
+        .pronunciation { font-size: 1.1rem; color: #999; font-style: italic; font-weight: 300; }
+
+        /* Стили для предложения */
+        .sentence {
+            font-size: 1.4rem; color: #4a90e2; margin: 20px 0 12px 0; font-weight: 400;
+            font-style: italic; padding: 15px; border-left: 3px solid #4a90e2; background: rgba(74, 144, 226, 0.05);
+            width: 100%; text-align: center;
+        }
+        .sentence-translation { font-size: 1.1rem; color: #888; margin-top: 8px; font-style: normal; }
+
+        .player-controls { background: white; padding: 25px; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .player-buttons { display: flex; align-items: center; gap: 15px; }
+        .player-btn { width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 50%; background: white; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; color: #666; }
+        .player-btn svg { transition: transform 0.2s ease; }
+        .player-btn:hover { border-color: #999; background: #f8f8f8; }
+        .player-btn:active svg { transform: scale(0.9); }
+        .player-btn:disabled { border-color: #ddd; background: #f5f5f5; color: #ccc; cursor: not-allowed; }
+        .play-pause { width: 60px; height: 60px; border-width: 3px; }
+        .play-pause.playing { background: #333; color: white; border-color: #333; }
+        .sound-btn.enabled, .translation-sound-btn.enabled, .sentence-sound-btn.enabled { background: #333; color: white; border-color: #333; }
+        
+        .player-options { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .sound-control, .repeat-control, .article-control, .morpheme-control, .morpheme-translation-control, .sentence-control { display: flex; align-items: center; gap: 10px; }
+        .control-label { font-size: 0.9rem; color: #666; font-weight: 500; }
+        .repeat-selector { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; background: white; font-weight: 500; cursor: pointer; transition: all 0.2s ease; color: #666; font-size: 0.85rem; }
+        .repeat-selector:hover { border-color: #999; }
+        .repeat-selector.active { background: #333; color: white; border-color: #333; }
+        .repeat-selector:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .vocabulary-manager { background: white; padding: 25px; border-top: 1px solid #e5e5e5; }
+        .vocabulary-buttons { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+        .vocab-btn { padding: 8px 16px; border: 1px solid #ddd; border-radius: 4px; background: white; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-size: 0.85rem; color: #666; }
+        .vocab-btn:hover { border-color: #999; }
+        .vocab-btn.load { background: #333; color: white; border-color: #333; }
+        
+        .hidden-input { display: none; }
+        .no-words { text-align: center; color: #999; font-size: 1.1rem; padding: 60px 20px; font-weight: 300; }
+        .status-message { background: #f8f8f8; color: #333; padding: 12px 16px; border-radius: 4px; margin: 12px 0; border: 1px solid #e5e5e5; font-size: 0.85rem; }
+        .icon { display: inline-block; width: 1em; height: 1em; stroke-width: 0; stroke: currentColor; fill: currentColor; }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; } .word { font-size: 2.2rem; } .stats { grid-template-columns: 1fr; }
+            .level-buttons, .vocabulary-buttons, .block-buttons { justify-content: center; }
+            .level-selector { flex-direction: column; align-items: center; gap: 20px; }
+            .main-content { padding: 40px 20px; } .card { padding: 40px 20px; }
+            .container { margin: 10px; border-radius: 4px; }
+            .player-options { flex-direction: column; gap: 15px; } .player-buttons { gap: 20px; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 10px; } .header h1 { font-size: 1.8rem; } .word { font-size: 1.8rem; }
+            .block-buttons { gap: 6px; } .block-btn { padding: 6px 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>🇩🇪 Deutsch Lernen</h1><p>Словарь с морфемами и предложениями</p></div>
+        <div class="stats">
+            <div class="stat"><div class="stat-number" id="totalWords">0</div><div class="stat-label">Всего слов</div></div>
+            <div class="stat"><div class="stat-number" id="studiedToday">0</div><div class="stat-label">Изучено сегодня</div></div>
+            <div class="stat"><div class="stat-number" id="accuracy">0%</div><div class="stat-label">Точность</div></div>
+        </div>
+        <div class="level-selector">
+            <div class="level-buttons">
+                <span class="block-label"><svg class="icon"><use xlink:href="#icon-levels"></use></svg>Уровни</span>
+                <button class="level-btn a1" data-level="A1">A1</button><button class="level-btn a2" data-level="A2">A2</button><button class="level-btn b1 active" data-level="B1">B1</button><button class="level-btn b2" data-level="B2">B2</button>
+            </div>
+            <div id="levelStatus" class="status-message" style="display: none;"></div>
+        </div>
+        <div class="block-selector">
+            <div class="block-buttons">
+                <span class="block-label"><svg class="icon"><use xlink:href="#icon-category"></use></svg>Темы</span>
+                <button class="block-btn active" data-theme="all">Все темы</button><button class="block-btn" data-theme="family">Семья</button><button class="block-btn" data-theme="work">Работа</button><button class="block-btn" data-theme="home">Дом</button><button class="block-btn" data-theme="food">Еда</button><button class="block-btn" data-theme="travel">Путешествия</button><button class="block-btn" data-theme="health">Здоровье</button><button class="block-btn" data-theme="education">Учеба</button><button class="block-btn" data-theme="hobbies">Хобби</button><button class="block-btn" data-theme="verbs">Глаголы</button><button class="block-btn" data-theme="emotions">Эмоции</button><button class="block-btn" data-theme="weather">Погода</button>
+            </div>
+        </div>
+        <div class="main-content" id="mainContent"><div id="studyArea"><div class="no-words"><p>Загружаю словарь...</p></div></div></div>
+        <div class="player-controls">
+            <div class="player-buttons">
+                <button class="player-btn" id="prevButton" title="Предыдущее слово"></button>
+                <button class="player-btn play-pause" id="toggleButton" title="Остановить/Запустить"></button>
+                <button class="player-btn" id="nextButton" title="Следующее слово"></button>
+            </div>
+            <div class="player-options">
+                <div class="sound-control">
+                    <button class="player-btn sound-btn enabled" id="soundToggle" title="Звук слова"></button>
+                    <button class="player-btn translation-sound-btn enabled" id="translationSoundToggle" title="Звук перевода"></button>
+                    <button class="player-btn sentence-sound-btn enabled" id="sentenceSoundToggle" title="Звук предложения"></button>
+                </div>
+                <div class="repeat-control">
+                    <span class="control-label">Повторений:</span>
+                    <button class="repeat-selector" data-mode="1">1</button><button class="repeat-selector active" data-mode="2">2</button><button class="repeat-selector" data-mode="3">3</button><button class="repeat-selector" data-mode="random">∞</button>
+                </div>
+                <div class="article-control"><span class="control-label">Артикли:</span><button class="repeat-selector active" id="toggleArticles" title="Показать/Скрыть артикли">Да/Нет</button></div>
+                <div class="morpheme-control"><span class="control-label">Морфемы:</span><button class="repeat-selector active" id="toggleMorphemes" title="Показать/Скрыть разделение">Да/Нет</button></div>
+                <div class="morpheme-translation-control"><span class="control-label">Пер. морфем:</span><button class="repeat-selector active" id="toggleMorphemeTranslations" title="Показать/Скрыть перевод морфем">Да/Нет</button></div>
+                <div class="sentence-control"><span class="control-label">Предложения:</span><button class="repeat-selector active" id="toggleSentences" title="Показать/Скрыть предложения">Да/Нет</button></div>
+            </div>
+        </div>
+        <div class="vocabulary-manager">
+            <div class="vocabulary-buttons">
+                <span class="block-label"><svg class="icon"><use xlink:href="#icon-book"></use></svg>Словари</span>
+                <button class="vocab-btn load" id="loadFromGithub">Загрузить с GitHub</button><button class="vocab-btn" id="reloadDefaultWords">🔄 Обновить словарь</button><button class="vocab-btn" id="exportWords">Экспорт</button><button class="vocab-btn" id="importWords">Импорт файла</button><input type="file" id="fileInput" class="hidden-input" accept=".json" />
+            </div>
+        </div>
+    </div>
+
+    <!-- SVG Icon Definitions -->
+    <svg width="0" height="0" style="position:absolute"><defs>
+        <symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+        <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></symbol>
+        <symbol id="icon-prev" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></symbol>
+        <symbol id="icon-next" viewBox="0 0 24 24"><path d="M16 6h2v12h-2zm-3.5 6-8.5 6V6z"/></symbol>
+        <symbol id="icon-sound-on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></symbol>
+        <symbol id="icon-sound-off" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></symbol>
+        <symbol id="icon-chat-on" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></symbol>
+        <symbol id="icon-chat-off" viewBox="0 0 24 24"><path d="m2.27 1.73 1.28-1.28L22 18.95l-1.27 1.28L18.95 20H4l-4 4V4c0-.28.06-.55.15-.8L2.27 1.73zM20 2H4.05L22 20.03V4c0-1.1-.9-2-2-2z"/></symbol>
+        <symbol id="icon-sentence-on" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM16 18H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></symbol>
+        <symbol id="icon-sentence-off" viewBox="0 0 24 24"><path d="M20.49 20.49L3.51 3.51 2.24 4.78l2.75 2.75H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c.28 0 .55-.07.8-.18l2.44 2.44 1.27-1.27zM8 18v-2h3.17l2 2H8zm4.83-4H8v-2h1.17l4 4H16v-1.17l-2-2-1.17-1.17zM14 2H6c-1.1 0-2 .9-2 2v.17l2 2V4h7v5h5v5.17l2 2V8l-6-6z"/></symbol>
+        <symbol id="icon-levels" viewBox="0 0 24 24"><path d="M3 13h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V7H3v2z"/></symbol>
+        <symbol id="icon-category" viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-0.75L9 9V4zm6 12H9v-2h6v2zm3-4H9v-2h9v2zm0-4H9V8h9v2z"/></symbol>
+    </defs></svg>
+
+    <script>
+        class VocabularyApp {
+            constructor() {
+                this.allWords = [];
+                this.currentWord = null;
+                this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
+                this.accuracy = JSON.parse(localStorage.getItem('accuracy')) || { correct: 0, total: 0 };
+                this.lastStudyDate = localStorage.getItem('lastStudyDate');
+                this.isAutoPlaying = true;
+                this.autoPlayTimeout = null;
+                
+                // --- State properties ---
+                this.soundEnabled = JSON.parse(localStorage.getItem('soundEnabled')) !== false;
+                this.translationSoundEnabled = JSON.parse(localStorage.getItem('translationSoundEnabled')) !== false;
+                this.sentenceSoundEnabled = JSON.parse(localStorage.getItem('sentenceSoundEnabled')) !== false;
+                this.repeatMode = JSON.parse(localStorage.getItem('repeatMode')) || '2';
+                this.selectedLevels = JSON.parse(localStorage.getItem('selectedLevels')) || ['B1'];
+                this.selectedTheme = localStorage.getItem('selectedTheme') || 'all';
+                this.showArticles = JSON.parse(localStorage.getItem('showArticles')) !== false;
+                this.showMorphemes = JSON.parse(localStorage.getItem('showMorphemes')) !== false;
+                this.showMorphemeTranslations = JSON.parse(localStorage.getItem('showMorphemeTranslations')) !== false;
+                this.showSentences = JSON.parse(localStorage.getItem('showSentences')) !== false;
+
+                this.speechInitialized = false;
+                this.wordHistory = [];
+                this.currentHistoryIndex = -1;
+                
+                const today = new Date().toDateString();
+                if (this.lastStudyDate !== today) { this.studiedToday = 0; localStorage.setItem('lastStudyDate', today); }
+                
+                this.init();
+            }
+
+            init() {
+                this.setupIcons(); 
+                this.loadVocabulary(); 
+                this.bindEvents(); 
+                this.updateUI(); 
+                this.startAutoPlay();
+            }
+            
+            setupIcons() {
+                document.getElementById('prevButton').innerHTML = `<svg class="icon" width="18px" height="18px"><use xlink:href="#icon-prev"></use></svg>`;
+                document.getElementById('nextButton').innerHTML = `<svg class="icon" width="18px" height="18px"><use xlink:href="#icon-next"></use></svg>`;
+                this.updateToggleButton(); 
+                this.updateSoundButton(); 
+                this.updateTranslationSoundButton();
+                this.updateSentenceSoundButton();
+            }
+            
+            updateUI() {
+                this.updateLevelButtons(); 
+                this.updateThemeButtons(); 
+                this.updateSoundButton(); 
+                this.updateTranslationSoundButton(); 
+                this.updateSentenceSoundButton();
+                this.updateRepeatControlsState(); 
+                this.updateArticleButton(); 
+                this.updateMorphemeButton(); 
+                this.updateMorphemeTranslationsButton(); 
+                this.updateSentenceButton();
+                this.updateNavigationButtons();
+            }
+
+            loadVocabulary() {
+                const savedWords = localStorage.getItem('germanWords');
+                try {
+                    if (savedWords) {
+                        const parsed = JSON.parse(savedWords);
+                        if (parsed.length > 200 && parsed.every(w => 'sentence' in w)) {
+                             this.allWords = parsed;
+                             this.updateStats(); 
+                             this.showMessage(`Загружен сохраненный словарь: ${this.allWords.length} слов`);
+                             return;
+                        }
+                    }
+                } catch (e) { console.error('Ошибка загрузки сохраненного словаря:', e); }
+                this.loadDefaultVocabulary();
+            }
+
+            loadDefaultVocabulary() {
+                this.allWords = [
+                    // A1 - Семья
+                    { german: "die Familie", russian: "семья", pronunciation: "[ди фами́лье]", level: "A1", theme: "family", sentence: "Meine Familie ist groß.", sentence_ru: "Моя семья большая." },
+                    { german: "der Vater", russian: "отец", pronunciation: "[дер фа́тер]", level: "A1", theme: "family", sentence: "Mein Vater liest ein Buch.", sentence_ru: "Мой отец читает книгу." },
+                    { german: "die Mutter", russian: "мать", pronunciation: "[ди му́тер]", level: "A1", theme: "family", sentence: "Die Mutter kocht das Abendessen.", sentence_ru: "Мама готовит ужин." },
+                    { german: "das Kind", russian: "ребенок", pronunciation: "[дас кинд]", level: "A1", theme: "family", sentence: "Das Kind spielt im Garten.", sentence_ru: "Ребенок играет в саду." },
+                    { german: "der Bruder", russian: "брат", pronunciation: "[дер бру́дер]", level: "A1", theme: "family", sentence: "Mein Bruder ist sehr lustig.", sentence_ru: "Мой брат очень веселый." },
+                    { german: "die Schwester", russian: "сестра", pronunciation: "[ди шве́стер]", level: "A1", theme: "family", sentence: "Die Schwester hilft im Haushalt.", sentence_ru: "Сестра помогает по дому." },
+                    { german: "die Großeltern", russian: "дедушка и бабушка", pronunciation: "[ди гро́сэльтерн]", level: "A1", theme: "family", morphemes: [{m:"Groß", t:"старшие"}, {m:"eltern",t:"родители"}], sentence: "Die Großeltern besuchen uns oft.", sentence_ru: "Дедушка и бабушка часто нас навещают." },
+                    { german: "der Großvater", russian: "дедушка", pronunciation: "[дер гро́сфатер]", level: "A1", theme: "family", morphemes: [{m:"Groß", t:"старший"}, {m:"vater",t:"отец"}], sentence: "Der Großvater erzählt Geschichten.", sentence_ru: "Дедушка рассказывает истории." },
+                    { german: "die Großmutter", russian: "бабушка", pronunciation: "[ди гро́смрutter]", level: "A1", theme: "family", morphemes: [{m:"Groß", t:"старшая"}, {m:"mutter",t:"мать"}], sentence: "Die Großmutter backt Kuchen.", sentence_ru: "Бабушка печет пирог." },
+                    { german: "das Enkelkind", russian: "внук/внучка", pronunciation: "[дас э́нкелькинд]", level: "A1", theme: "family", morphemes: [{m:"Enkel",t:"внук"}, {m:"kind",t:"ребенок"}], sentence: "Das Enkelkind bekommt ein Geschenk.", sentence_ru: "Внук получает подарок." },
+                    
+                    // A1 - Дом
+                    { german: "das Haus", russian: "дом", pronunciation: "[дас хаус]", level: "A1", theme: "home", sentence: "Das Haus hat einen schönen Garten.", sentence_ru: "У дома есть красивый сад." },
+                    { german: "die Wohnung", russian: "квартира", pronunciation: "[ди во́нунг]", level: "A1", theme: "home", sentence: "Unsere Wohnung ist im dritten Stock.", sentence_ru: "Наша квартира на третьем этаже." },
+                    { german: "das Zimmer", russian: "комната", pronunciation: "[дас ци́мер]", level: "A1", theme: "home", sentence: "Mein Zimmer ist nicht sehr groß.", sentence_ru: "Моя комната не очень большая." },
+                    { german: "die Küche", russian: "кухня", pronunciation: "[ди кю́хе]", level: "A1", theme: "home", sentence: "In der Küche riecht es gut.", sentence_ru: "На кухне хорошо пахнет." },
+                    { german: "das Badezimmer", russian: "ванная", pronunciation: "[дас ба́децимер]", level: "A1", theme: "home", morphemes: [{m:"Bade", t:"купание"}, {m:"zimmer",t:"комната"}], sentence: "Das Badezimmer ist sauber.", sentence_ru: "Ванная комната чистая." },
+                    { german: "das Schlafzimmer", russian: "спальня", pronunciation: "[дас шла́фцимер]", level: "A1", theme: "home", morphemes: [{m:"Schlaf", t:"сон"}, {m:"zimmer",t:"комната"}], sentence: "Im Schlafzimmer steht ein Bett.", sentence_ru: "В спальне стоит кровать." },
+                    { german: "das Wohnzimmer", russian: "гостиная", pronunciation: "[дас во́нцимер]", level: "A1", theme: "home", morphemes: [{m:"Wohn", t:"жилая"}, {m:"zimmer",t:"комната"}], sentence: "Wir sehen im Wohnzimmer fern.", sentence_ru: "Мы смотрим телевизор в гостиной." },
+                    { german: "der Balkon", russian: "балкон", pronunciation: "[дер балко́н]", level: "A1", theme: "home", sentence: "Auf dem Balkon stehen Blumen.", sentence_ru: "На балконе стоят цветы." },
+                    { german: "der Garten", russian: "сад", pronunciation: "[дер га́ртен]", level: "A1", theme: "home", sentence: "Die Kinder spielen im Garten.", sentence_ru: "Дети играют в саду." },
+                    { german: "die Tür", russian: "дверь", pronunciation: "[ди тюр]", level: "A1", theme: "home", sentence: "Bitte mach die Tür zu.", sentence_ru: "Пожалуйста, закрой дверь." },
+
+                    // A1 - Работа
+                    { german: "die Arbeit", russian: "работа", pronunciation: "[ди а́рбайт]", level: "A1", theme: "work", sentence: "Meine Arbeit beginnt um neun Uhr.", sentence_ru: "Моя работа начинается в девять." },
+                    { german: "der Chef", russian: "начальник", pronunciation: "[дер шеф]", level: "A1", theme: "work", sentence: "Der Chef ist heute nicht im Büro.", sentence_ru: "Начальника сегодня нет в офисе." },
+                    { german: "das Büro", russian: "офис", pronunciation: "[дас бюро́]", level: "A1", theme: "work", sentence: "Das Büro befindet sich im Stadtzentrum.", sentence_ru: "Офис находится в центре города." },
+                    { german: "der Lehrer", russian: "учитель", pronunciation: "[дер ле́рер]", level: "A1", theme: "work", sentence: "Der Lehrer erklärt die Grammatik.", sentence_ru: "Учитель объясняет грамматику." },
+                    { german: "der Arzt", russian: "врач", pronunciation: "[дер арцт]", level: "A1", theme: "work", sentence: "Der Arzt untersucht den Patienten.", sentence_ru: "Врач осматривает пациента." },
+                    { german: "der Verkäufer", russian: "продавец", pronunciation: "[дер ферко́йфер]", level: "A1", theme: "work", morphemes: [{m:"Ver",t:"префикс (про-)"}, {m:"käuf",t:"покупать"}, {m:"er",t:"суф. деятеля"}], sentence: "Der Verkäufer hilft mir bei der Auswahl.", sentence_ru: "Продавец помогает мне с выбором." },
+                    { german: "der Arbeiter", russian: "рабочий", pronunciation: "[дер арба́йтер]", level: "A1", theme: "work", morphemes: [{m:"Arbeit",t:"работа"}, {m:"er",t:"суф. деятеля"}], sentence: "Der Arbeiter trägt einen Helm.", sentence_ru: "Рабочий носит каску." },
+                    { german: "die Arbeiterin", russian: "работница", pronunciation: "[ди арба́йтерин]", level: "A1", theme: "work", morphemes: [{m:"Arbeit",t:"работа"}, {m:"er",t:"деятель"}, {m:"in",t:"суф. жен. рода"}], sentence: "Die Arbeiterin bedient die Maschine.", sentence_ru: "Работница управляет станком." },
+                    { german: "der Arbeitsplatz", russian: "рабочее место", pronunciation: "[дер а́рбайтсплац]", level: "A1", theme: "work", morphemes: [{m:"Arbeits",t:"рабочее"}, {m:"platz",t:"место"}], sentence: "Mein Arbeitsplatz ist sehr modern.", sentence_ru: "Мое рабочее место очень современное." },
+                    { german: "die Arbeitszeit", russian: "рабочее время", pronunciation: "[ди а́рбайтсцайт]", level: "A1", theme: "work", morphemes: [{m:"Arbeits",t:"рабочее"}, {m:"zeit",t:"время"}], sentence: "Die Arbeitszeit ist von 9 bis 17 Uhr.", sentence_ru: "Рабочее время с 9 до 17 часов." },
+
+                    // A1 - Еда
+                    { german: "das Essen", russian: "еда", pronunciation: "[дас э́сен]", level: "A1", theme: "food", sentence: "Das Essen in diesem Restaurant ist sehr gut.", sentence_ru: "Еда в этом ресторане очень хорошая." },
+                    { german: "das Brot", russian: "хлеб", pronunciation: "[дас брот]", level: "A1", theme: "food", sentence: "Ich kaufe frisches Brot beim Bäcker.", sentence_ru: "Я покупаю свежий хлеб в булочной." },
+                    { german: "die Milch", russian: "молоко", pronunciation: "[ди милх]", level: "A1", theme: "food", sentence: "Kinder sollten viel Milch trinken.", sentence_ru: "Детям следует пить много молока." },
+                    { german: "das Fleisch", russian: "мясо", pronunciation: "[дас фляйш]", level: "A1", theme: "food", sentence: "Zum Mittagessen gibt es Fleisch mit Gemüse.", sentence_ru: "На обед мясо с овощами." },
+                    { german: "das Gemüse", russian: "овощи", pronunciation: "[дас гемю́зе]", level: "A1", theme: "food", sentence: "Gemüse ist sehr gesund.", sentence_ru: "Овощи очень полезны." },
+                    { german: "das Obst", russian: "фрукты", pronunciation: "[дас опст]", level: "A1", theme: "food", sentence: "Ich esse jeden Tag Obst.", sentence_ru: "Я каждый день ем фрукты." },
+                    { german: "der Apfel", russian: "яблоко", pronunciation: "[дер а́пфель]", level: "A1", theme: "food", sentence: "Ein Apfel am Tag hält den Doktor fern.", sentence_ru: "Одно яблоко в день избавит от врачей." },
+                    { german: "die Banane", russian: "банан", pronunciation: "[ди бана́не]", level: "A1", theme: "food", sentence: "Affen essen gerne Bananen.", sentence_ru: "Обезьяны любят есть бананы." },
+                    { german: "die Kartoffel", russian: "картошка", pronunciation: "[ди карто́фель]", level: "A1", theme: "food", sentence: "Die Kartoffel ist eine wichtige Nutzpflanze.", sentence_ru: "Картофель - важная сельскохозяйственная культура." },
+                    { german: "der Käse", russian: "сыр", pronunciation: "[дер кезе]", level: "A1", theme: "food", sentence: "Dieser Käse kommt aus der Schweiz.", sentence_ru: "Этот сыр из Швейцарии." },
+
+                    // A1 - Путешествия
+                    { german: "die Reise", russian: "путешествие", pronunciation: "[ди ра́йзе]", level: "A1", theme: "travel", sentence: "Die Reise nach Italien war wunderschön.", sentence_ru: "Путешествие в Италию было прекрасным." },
+                    { german: "das Auto", russian: "машина", pronunciation: "[дас а́уто]", level: "A1", theme: "travel", sentence: "Wir fahren mit dem Auto in den Urlaub.", sentence_ru: "Мы едем в отпуск на машине." },
+                    { german: "der Zug", russian: "поезд", pronunciation: "[дер цуг]", level: "A1", theme: "travel", sentence: "Der Zug nach Berlin fährt um 10 Uhr ab.", sentence_ru: "Поезд в Берлин отправляется в 10 часов." },
+                    { german: "das Flugzeug", russian: "самолет", pronunciation: "[дас флу́кцойг]", level: "A1", theme: "travel", morphemes: [{m:"Flug",t:"полет"}, {m:"zeug",t:"аппарат"}], sentence: "Das Flugzeug startet in wenigen Minuten.", sentence_ru: "Самолет взлетает через несколько минут." },
+                    { german: "der Bahnhof", russian: "вокзал", pronunciation: "[дер ба́нхоф]", level: "A1", theme: "travel", morphemes: [{m:"Bahn",t:"ж/д"}, {m:"hof",t:"двор"}], sentence: "Ich warte auf dich am Bahnhof.", sentence_ru: "Я жду тебя на вокзале." },
+                    { german: "das Hotel", russian: "отель", pronunciation: "[дас хоте́ль]", level: "A1", theme: "travel", sentence: "Wir haben ein Zimmer im Hotel gebucht.", sentence_ru: "Мы забронировали номер в отеле." },
+                    { german: "der Koffer", russian: "чемодан", pronunciation: "[дер ко́фер]", level: "A1", theme: "travel", sentence: "Mein Koffer ist sehr schwer.", sentence_ru: "Мой чемодан очень тяжелый." },
+                    { german: "die Fahrkarte", russian: "билет", pronunciation: "[ди фа́ркарте]", level: "A1", theme: "travel", morphemes: [{m:"Fahr",t:"езда"}, {m:"karte",t:"карта"}], sentence: "Bitte zeigen Sie Ihre Fahrkarte.", sentence_ru: "Пожалуйста, покажите ваш билет." },
+                    { german: "der Urlaub", russian: "отпуск", pronunciation: "[дер у́рлауб]", level: "A1", theme: "travel", sentence: "Im Sommer mache ich Urlaub am Meer.", sentence_ru: "Летом я провожу отпуск на море." },
+                    { german: "das Gepäck", russian: "багаж", pronunciation: "[дас гепе́к]", level: "A1", theme: "travel", sentence: "Wir müssen das Gepäck aufgeben.", sentence_ru: "Мы должны сдать багаж." },
+
+                    // A1 - Здоровье
+                    { german: "die Gesundheit", russian: "здоровье", pronunciation: "[ди гезу́ндхайт]", level: "A1", theme: "health", morphemes: [{m:"Gesund",t:"здоровый"}, {m:"heit",t:"суффикс -ость"}], sentence: "Gesundheit ist das wichtigste Gut.", sentence_ru: "Здоровье - самое важное достояние." },
+                    { german: "die Krankheit", russian: "болезнь", pronunciation: "[ди кра́нкхайт]", level: "A1", theme: "health", morphemes: [{m:"Krank",t:"больной"}, {m:"heit",t:"суффикс -ость"}], sentence: "Er überwand eine schwere Krankheit.", sentence_ru: "Он преодолел тяжелую болезнь." },
+                    { german: "das Medikament", russian: "лекарство", pronunciation: "[дас медикаме́нт]", level: "A1", theme: "health", sentence: "Dieses Medikament hilft gegen Schmerzen.", sentence_ru: "Это лекарство помогает от боли." },
+                    { german: "die Apotheke", russian: "аптека", pronunciation: "[ди апоте́ке]", level: "A1", theme: "health", sentence: "Ich gehe zur Apotheke, um Medizin zu holen.", sentence_ru: "Я иду в аптеку за лекарством." },
+                    { german: "der Schmerz", russian: "боль", pronunciation: "[дер шмерц]", level: "A1", theme: "health", sentence: "Der Schmerz im Rücken ist unerträglich.", sentence_ru: "Боль в спине невыносима." },
+                    { german: "das Fieber", russian: "температура", pronunciation: "[дас фи́бер]", level: "A1", theme: "health", sentence: "Das Kind hat hohes Fieber.", sentence_ru: "У ребенка высокая температура." },
+                    { german: "die Erkältung", russian: "простуда", pronunciation: "[ди эрке́льтунг]", level: "A1", theme: "health", morphemes: [{m:"Er",t:"префикс"}, {m:"kält",t:"холод"}, {m:"ung",t:"суффикс"}], sentence: "Ich habe mir eine Erkältung geholt.", sentence_ru: "Я подхватил простуду." },
+                    { german: "das Krankenhaus", russian: "больница", pronunciation: "[дас кра́нкенхаус]", level: "A1", theme: "health", morphemes: [{m:"Kranken",t:"больные"}, {m:"haus",t:"дом"}] , sentence: "Er musste ins Krankenhaus gebracht werden.", sentence_ru: "Его пришлось доставить в больницу." },
+                    { german: "die Tablette", russian: "таблетка", pronunciation: "[ди табле́те]", level: "A1", theme: "health", sentence: "Nehmen Sie diese Tablette dreimal täglich.", sentence_ru: "Принимайте эту таблетку трижды в день." },
+
+                    // A1 - Образование
+                    { german: "die Schule", russian: "школа", pronunciation: "[ди шу́ле]", level: "A1", theme: "education", sentence: "Die Schule beginnt um acht Uhr.", sentence_ru: "Школа начинается в восемь часов." },
+                    { german: "der Student", russian: "студент", pronunciation: "[дер штуде́нт]", level: "A1", theme: "education", sentence: "Der Student lernt für die Prüfung.", sentence_ru: "Студент готовится к экзамену." },
+                    { german: "das Buch", russian: "книга", pronunciation: "[дас бух]", level: "A1", theme: "education", sentence: "Ich lese ein interessantes Buch.", sentence_ru: "Я читаю интересную книгу." },
+                    { german: "der Stift", russian: "ручка", pronunciation: "[дер штифт]", level: "A1", theme: "education", sentence: "Ich brauche einen Stift zum Schreiben.", sentence_ru: "Мне нужна ручка, чтобы писать." },
+                    { german: "das Heft", russian: "тетрадь", pronunciation: "[дас хефт]", level: "A1", theme: "education", sentence: "Schreib das in dein Heft.", sentence_ru: "Запиши это в свою тетрадь." },
+                    { german: "die Tafel", russian: "доска", pronunciation: "[ди та́фель]", level: "A1", theme: "education", sentence: "Der Lehrer schreibt an die Tafel.", sentence_ru: "Учитель пишет на доске." },
+                    { german: "das Klassenzimmer", russian: "класс", pronunciation: "[дас кла́сенцимер]", level: "A1", theme: "education", morphemes: [{m:"Klassen",t:"класс"}, {m:"zimmer",t:"комната"}], sentence: "Das Klassenzimmer ist hell und groß.", sentence_ru: "Класс светлый и большой." },
+                    { german: "die Hausaufgabe", russian: "домашнее задание", pronunciation: "[ди ха́узауфгабе]", level: "A1", theme: "education", morphemes: [{m:"Haus",t:"дом"}, {m:"auf",t:"на"}, {m:"gabe",t:"задание"}], sentence: "Die Hausaufgabe für heute ist nicht schwer.", sentence_ru: "Домашнее задание на сегодня несложное." },
+                    { german: "der Schulhof", russian: "школьный двор", pronunciation: "[дер шу́льхоф]", level: "A1", theme: "education", morphemes: [{m:"Schul",t:"школа"}, {m:"hof",t:"двор"}], sentence: "Die Kinder spielen auf dem Schulhof.", sentence_ru: "Дети играют на школьном дворе." },
+
+                    // A1 - Хобби
+                    { german: "die Freizeit", russian: "свободное время", pronunciation: "[ди фра́йцайт]", level: "A1", theme: "hobbies", morphemes: [{m:"Frei",t:"свободное"}, {m:"zeit",t:"время"}], sentence: "Was machst du in deiner Freizeit?", sentence_ru: "Что ты делаешь в свое свободное время?" },
+                    { german: "das Hobby", russian: "хобби", pronunciation: "[дас хо́би]", level: "A1", theme: "hobbies", sentence: "Mein Hobby ist Fotografieren.", sentence_ru: "Мое хобби — фотография." },
+                    { german: "der Sport", russian: "спорт", pronunciation: "[дер шпорт]", level: "A1", theme: "hobbies", sentence: "Sport ist gut für die Gesundheit.", sentence_ru: "Спорт полезен для здоровья." },
+                    { german: "das Kino", russian: "кинотеатр", pronunciation: "[дас ки́но]", level: "A1", theme: "hobbies", sentence: "Wir gehen am Samstag ins Kino.", sentence_ru: "Мы идем в кино в субботу." },
+                    { german: "die Musik", russian: "музыка", pronunciation: "[ди музи́к]", level: "A1", theme: "hobbies", sentence: "Ich höre gerne klassische Musik.", sentence_ru: "Я люблю слушать классическую музыку." },
+                    { german: "das Spiel", russian: "игра", pronunciation: "[дас шпиль]", level: "A1", theme: "hobbies", sentence: "Das Spiel beginnt in fünf Minuten.", sentence_ru: "Игра начнется через пять минут." },
+                    { german: "das Fernsehen", russian: "телевидение", pronunciation: "[дас фе́рнзеен]", level: "A1", theme: "hobbies", morphemes: [{m:"Fern",t:"далеко"}, {m:"sehen",t:"видеть"}], sentence: "Was gibt es heute Abend im Fernsehen?", sentence_ru: "Что сегодня вечером по телевизору?" },
+                    { german: "das Wochenende", russian: "выходные", pronunciation: "[дас во́хенэнде]", level: "A1", theme: "hobbies", morphemes: [{m:"Wochen",t:"неделя"}, {m:"ende",t:"конец"}], sentence: "Am Wochenende fahre ich zu meinen Eltern.", sentence_ru: "На выходных я еду к родителям." },
+                    { german: "der Spielplatz", russian: "игровая площадка", pronunciation: "[дер шпи́льплац]", level: "A1", theme: "hobbies", morphemes: [{m:"Spiel",t:"игра"}, {m:"platz",t:"площадка"}], sentence: "Der Spielplatz ist voller Kinder.", sentence_ru: "Детская площадка полна детей." },
+                    { german: "das Schwimmbad", russian: "бассейн", pronunciation: "[дас шви́мбад]", level: "A1", theme: "hobbies", morphemes: [{m:"Schwimm",t:"плавание"}, {m:"bad",t:"ванна/бассейн"}], sentence: "Im Sommer gehen wir oft ins Schwimmbad.", sentence_ru: "Летом мы часто ходим в бассейн." },
+
+                    // A1 - Глаголы
+                    { german: "gehen", russian: "идти", pronunciation: "[ге́ен]", level: "A1", theme: "verbs", sentence: "Ich gehe jeden Tag zur Arbeit.", sentence_ru: "Я хожу на работу каждый день." },
+                    { german: "kommen", russian: "приходить", pronunciation: "[ко́мен]", level: "A1", theme: "verbs", sentence: "Wann kommst du nach Hause?", sentence_ru: "Когда ты придешь домой?" },
+                    { german: "sehen", russian: "видеть", pronunciation: "[зе́ен]", level: "A1", theme: "verbs", sentence: "Ich kann den Turm von hier sehen.", sentence_ru: "Я вижу башню отсюда." },
+                    { german: "essen", russian: "есть", pronunciation: "[э́сен]", level: "A1", theme: "verbs", sentence: "Wir essen um 13 Uhr zu Mittag.", sentence_ru: "Мы обедаем в 13 часов." },
+                    { german: "trinken", russian: "пить", pronunciation: "[три́нкен]", level: "A1", theme: "verbs", sentence: "Ich trinke morgens immer Kaffee.", sentence_ru: "Я всегда пью кофе по утрам." },
+                    { german: "fahren", russian: "ехать", pronunciation: "[фа́рен]", level: "A1", theme: "verbs", sentence: "Er fährt mit dem Fahrrad zur Schule.", sentence_ru: "Он едет в школу на велосипеде." },
+                    { german: "schlafen", russian: "спать", pronunciation: "[шла́фен]", level: "A1", theme: "verbs", sentence: "Ich schlafe normalerweise acht Stunden.", sentence_ru: "Обычно я сплю восемь часов." },
+                    { german: "sprechen", russian: "говорить", pronunciation: "[шпре́хен]", level: "A1", theme: "verbs", sentence: "Sie spricht sehr gut Deutsch.", sentence_ru: "Она очень хорошо говорит по-немецки." },
+                    { german: "lernen", russian: "учить", pronunciation: "[ле́рнен]", level: "A1", theme: "verbs", sentence: "Wir lernen zusammen für den Test.", sentence_ru: "Мы вместе готовимся к тесту." },
+                    { german: "kaufen", russian: "покупать", pronunciation: "[ка́уфен]", level: "A1", theme: "verbs", sentence: "Ich muss noch Milch kaufen.", sentence_ru: "Мне нужно еще купить молоко." },
+
+                    // A1 - Эмоции
+                    { german: "die Freude", russian: "радость", pronunciation: "[ди фро́йде]", level: "A1", theme: "emotions", sentence: "Seine Freude war riesig.", sentence_ru: "Его радость была огромной." },
+                    { german: "die Liebe", russian: "любовь", pronunciation: "[ди ли́бе]", level: "A1", theme: "emotions", sentence: "Liebe ist ein starkes Gefühl.", sentence_ru: "Любовь — это сильное чувство." },
+                    { german: "die Angst", russian: "страх", pronunciation: "[ди ангст]", level: "A1", theme: "emotions", sentence: "Er hat Angst vor Spinnen.", sentence_ru: "Он боится пауков." },
+                    { german: "das Glück", russian: "счастье", pronunciation: "[дас глюк]", level: "A1", theme: "emotions", sentence: "Ich wünsche dir viel Glück!", sentence_ru: "Я желаю тебе большой удачи!" },
+                    { german: "der Stress", russian: "стресс", pronunciation: "[дер штрес]", level: "A1", theme: "emotions", sentence: "Ich habe zu viel Stress bei der Arbeit.", sentence_ru: "У меня слишком много стресса на работе." },
+                    { german: "die Trauer", russian: "печаль", pronunciation: "[ди тра́уер]", level: "A1", theme: "emotions", sentence: "Nach dem Abschied fühlte sie große Trauer.", sentence_ru: "После прощания она почувствовала большую печаль." },
+                    { german: "der Ärger", russian: "злость", pronunciation: "[дер е́ргер]", level: "A1", theme: "emotions", sentence: "Dieser Fehler hat mir viel Ärger gemacht.", sentence_ru: "Эта ошибка доставила мне много неприятностей." },
+                    { german: "die Hoffnung", russian: "надежда", pronunciation: "[ди хо́фнунг]", level: "A1", theme: "emotions", sentence: "Die Hoffnung stirbt zuletzt.", sentence_ru: "Надежда умирает последней." },
+                    { german: "der Schreck", russian: "испуг", pronunciation: "[дер шрек]", level: "A1", theme: "emotions", sentence: "Ich habe einen großen Schreck bekommen.", sentence_ru: "Я сильно испугался." },
+                    { german: "die Überraschung", russian: "удивление", pronunciation: "[ди ю́беррашунг]", level: "A1", theme: "emotions", morphemes: [{m:"Über",t:"пере-"}, {m:"rasch",t:"быстрый"}, {m:"ung",t:"суффикс"}], sentence: "Die Party war eine große Überraschung.", sentence_ru: "Вечеринка была большим сюрпризом." },
+
+                    // A1 - Погода
+                    { german: "das Wetter", russian: "погода", pronunciation: "[дас ве́тер]", level: "A1", theme: "weather", sentence: "Das Wetter ist heute sehr schön.", sentence_ru: "Погода сегодня очень хорошая." },
+                    { german: "die Sonne", russian: "солнце", pronunciation: "[ди зо́не]", level: "A1", theme: "weather", sentence: "Die Sonne scheint hell.", sentence_ru: "Солнце светит ярко." },
+                    { german: "der Regen", russian: "дождь", pronunciation: "[дер ре́ген]", level: "A1", theme: "weather", sentence: "Ich mag den Geruch von Regen.", sentence_ru: "Мне нравится запах дождя." },
+                    { german: "der Schnee", russian: "снег", pronunciation: "[дер шне]", level: "A1", theme: "weather", sentence: "Im Winter liegt hier viel Schnee.", sentence_ru: "Зимой здесь лежит много снега." },
+                    { german: "der Wind", russian: "ветер", pronunciation: "[дер винд]", level: "A1", theme: "weather", sentence: "Der Wind weht stark heute.", sentence_ru: "Ветер сегодня дует сильно." },
+                    { german: "die Wolke", russian: "облако", pronunciation: "[ди во́льке]", level: "A1", theme: "weather", sentence: "Keine einzige Wolke ist am Himmel.", sentence_ru: "На небе ни единого облака." },
+                    { german: "der Nebel", russian: "туман", pronunciation: "[дер не́бель]", level: "A1", theme: "weather", sentence: "Am Morgen war dichter Nebel.", sentence_ru: "Утром был густой туман." },
+                    { german: "die Temperatur", russian: "температура", pronunciation: "[ди температу́р]", level: "A1", theme: "weather", sentence: "Die Temperatur ist unter null Grad.", sentence_ru: "Температура ниже нуля градусов." },
+                    { german: "der Sturm", russian: "буря", pronunciation: "[дер штурм]", level: "A1", theme: "weather", sentence: "Ein Sturm zieht auf.", sentence_ru: "Надвигается буря." },
+                    { german: "das Gewitter", russian: "гроза", pronunciation: "[дас геви́тер]", level: "A1", theme: "weather", morphemes: [{m:"Ge",t:"префикс"}, {m:"witter",t:"погода"}], sentence: "Bei dem Gewitter gab es Blitz und Donner.", sentence_ru: "Во время грозы были молния и гром." },
+
+                    // A2 - Семья
+                    { german: "die Verwandten", russian: "родственники", pronunciation: "[ди ферва́ндтен]", level: "A2", theme: "family", morphemes: [{m:"Ver",t:"префикс"}, {m:"wandt",t:"родственный"}, {m:"en",t:"окончание"}], sentence: "Zu Weihnachten besuchen wir unsere Verwandten.", sentence_ru: "На Рождество мы навещаем наших родственников." },
+                    { german: "der Ehemann", russian: "муж", pronunciation: "[дер э́хеман]", level: "A2", theme: "family", morphemes: [{m:"Ehe",t:"брак"}, {m:"mann",t:"мужчина"}], sentence: "Ihr Ehemann ist ein sehr netter Mensch.", sentence_ru: "Ее муж очень приятный человек." },
+                    { german: "die Ehefrau", russian: "жена", pronunciation: "[ди э́хефрау]", level: "A2", theme: "family", morphemes: [{m:"Ehe",t:"брак"}, {m:"frau",t:"женщина"}], sentence: "Seine Ehefrau arbeitet als Ärztin.", sentence_ru: "Его жена работает врачом." },
+                    { german: "die Hochzeit", russian: "свадьба", pronunciation: "[ди хо́хцайт]", level: "A2", theme: "family", morphemes: [{m:"Hoch",t:"высокое"}, {m:"zeit",t:"время"}], sentence: "Die Hochzeit findet im Sommer statt.", sentence_ru: "Свадьба состоится летом." },
+                    { german: "der Freund", russian: "друг", pronunciation: "[дер фройнд]", level: "A2", theme: "family", sentence: "Ein guter Freund ist immer für dich da.", sentence_ru: "Хороший друг всегда рядом с тобой." },
+                    { german: "die Freundin", russian: "подруга", pronunciation: "[ди фройндин]", level: "A2", theme: "family", morphemes: [{m:"Freund",t:"друг"}, {m:"in",t:"суф. жен. рода"}], sentence: "Ich treffe mich heute mit meiner besten Freundin.", sentence_ru: "Я встречаюсь сегодня с моей лучшей подругой." },
+                    { german: "die Beziehung", russian: "отношения", pronunciation: "[ди бецы́хунг]", level: "A2", theme: "family", morphemes: [{m:"Be",t:"префикс"}, {m:"zieh",t:"тянуть"}, {m:"ung",t:"суффикс"}], sentence: "Sie haben eine sehr stabile Beziehung.", sentence_ru: "У них очень стабильные отношения." },
+                    { german: "die Familienmitglieder", russian: "члены семьи", pronunciation: "[ди фами́льенмитглидер]", level: "A2", theme: "family", morphemes: [{m:"Familien",t:"семья"}, {m:"mit",t:"с/со-"}, {m:"glied",t:"член"}, {m:"er",t:"окончание"}], sentence: "Alle Familienmitglieder waren anwesend.", sentence_ru: "Все члены семьи присутствовали." },
+                    { german: "die Schwiegermutter", russian: "свекровь/теща", pronunciation: "[ди шви́гермутер]", level: "A2", theme: "family", morphemes: [{m:"Schwieger",t:"свояк/деверь"}, {m:"mutter",t:"мать"}], sentence: "Meine Schwiegermutter kann gut kochen.", sentence_ru: "Моя теща/свекровь хорошо готовит." },
+                    { german: "der Schwiegervater", russian: "свекор/тесть", pronunciation: "[дер шви́герфатер]", level: "A2", theme: "family", morphemes: [{m:"Schwieger",t:"свояк/деверь"}, {m:"vater",t:"отец"}], sentence: "Mein Schwiegervater repariert alles im Haus.", sentence_ru: "Мой тесть/свекор чинит все в доме." },
+
+                    // A2 - Дом
+                    { german: "die Hausarbeit", russian: "домашняя работа", pronunciation: "[ди ха́узарбайт]", level: "A2", theme: "home", morphemes: [{m:"Haus",t:"дом"}, {m:"arbeit",t:"работа"}], sentence: "Die Hausarbeit muss gemacht werden.", sentence_ru: "Домашнюю работу нужно сделать." },
+                    { german: "die Waschmaschine", russian: "стиральная машина", pronunciation: "[ди ва́шмашине]", level: "A2", theme: "home", morphemes: [{m:"Wasch",t:"стирка"}, {m:"maschine",t:"машина"}], sentence: "Die neue Waschmaschine ist sehr leise.", sentence_ru: "Новая стиральная машина очень тихая." },
+                    { german: "der Kühlschrank", russian: "холодильник", pronunciation: "[дер кю́льшранк]", level: "A2", theme: "home", morphemes: [{m:"Kühl",t:"холодный"}, {m:"schrank",t:"шкаф"}], sentence: "Der Kühlschrank ist fast leer.", sentence_ru: "Холодильник почти пустой." },
+                    { german: "die Spülmaschine", russian: "посудомоечная машина", pronunciation: "[ди шпю́льмашине]", level: "A2", theme: "home", morphemes: [{m:"Spül",t:"мытье"}, {m:"maschine",t:"машина"}], sentence: "Stell das Geschirr bitte in die Spülmaschine.", sentence_ru: "Поставь посуду, пожалуйста, в посудомоечную машину." },
+                    { german: "der Staubsauger", russian: "пылесос", pronunciation: "[дер шта́упзаугер]", level: "A2", theme: "home", morphemes: [{m:"Staub",t:"пыль"}, {m:"sauger",t:"сосущий"}], sentence: "Ich muss mit dem Staubsauger das Zimmer reinigen.", sentence_ru: "Мне нужно убрать комнату пылесосом." },
+                    { german: "die Heizung", russian: "отопление", pronunciation: "[ди ха́йцунг]", level: "A2", theme: "home", morphemes: [{m:"Heiz",t:"греть"}, {m:"ung",t:"суффикс"}], sentence: "Im Winter stellen wir die Heizung an.", sentence_ru: "Зимой мы включаем отопление." },
+                    { german: "die Möbel", russian: "мебель", pronunciation: "[ди мё́бель]", level: "A2", theme: "home", sentence: "Wir kaufen neue Möbel für das Wohnzimmer.", sentence_ru: "Мы покупаем новую мебель для гостиной." },
+                    { german: "der Keller", russian: "подвал", pronunciation: "[дер ке́лер]", level: "A2", theme: "home", sentence: "Die alten Sachen sind im Keller.", sentence_ru: "Старые вещи находятся в подвале." },
+                    { german: "der Dachboden", russian: "чердак", pronunciation: "[дер да́хбоден]", level: "A2", theme: "home", morphemes: [{m:"Dach",t:"крыша"}, {m:"boden",t:"пол/земля"}], sentence: "Auf dem Dachboden finden sich viele Schätze.", sentence_ru: "На чердаке можно найти много сокровищ." },
+                    { german: "die Wohnungseinrichtung", russian: "обстановка квартиры", pronunciation: "[ди во́нунгсайнрихтунг]", level: "A2", theme: "home", morphemes: [{m:"Wohnungs",t:"квартира"}, {m:"ein",t:"в-"}, {m:"richt",t:"направлять"}, {m:"ung",t:"суффикс"}], sentence: "Die Wohnungseinrichtung ist modern und stilvoll.", sentence_ru: "Обстановка квартиры современная и стильная." },
+
+                    // A2 - Работа
+                    { german: "der Beruf", russian: "профессия", pronunciation: "[дер беру́ф]", level: "A2", theme: "work", sentence: "Was sind Sie von Beruf?", sentence_ru: "Кто вы по профессии?" },
+                    { german: "der Kollege", russian: "коллега", pronunciation: "[дер коле́ге]", level: "A2", theme: "work", sentence: "Mein Kollege hilft mir immer.", sentence_ru: "Мой коллега всегда мне помогает." },
+                    { german: "die Kollegin", russian: "коллега (жен.)", pronunciation: "[ди коле́гин]", level: "A2", theme: "work", morphemes: [{m:"Kolleg",t:"коллега"}, {m:"in",t:"суф. жен. рода"}], sentence: "Meine Kollegin ist heute krank.", sentence_ru: "Моя коллега сегодня больна." },
+                    { german: "das Gehalt", russian: "зарплата", pronunciation: "[дас геха́льт]", level: "A2", theme: "work", sentence: "Er ist mit seinem Gehalt zufrieden.", sentence_ru: "Он доволен своей зарплатой." },
+                    { german: "die Pause", russian: "перерыв", pronunciation: "[ди па́узе]", level: "A2", theme: "work", sentence: "Wir machen um 12 Uhr eine Pause.", sentence_ru: "Мы делаем перерыв в 12 часов." },
+                    { german: "die Besprechung", russian: "совещание", pronunciation: "[ди бешпре́хунг]", level: "A2", theme: "work", morphemes: [{m:"Be",t:"префикс"}, {m:"sprech",t:"говорить"}, {m:"ung",t:"суффикс"}], sentence: "Die Besprechung dauerte zwei Stunden.", sentence_ru: "Совещание длилось два часа." },
+                    { german: "der Arbeitsschutz", russian: "охрана труда", pronunciation: "[дер а́рбайтсшуц]", level: "A2", theme: "work", morphemes: [{m:"Arbeits",t:"работа"}, {m:"schutz",t:"защита"}], sentence: "Arbeitsschutz ist in unserer Firma sehr wichtig.", sentence_ru: "Охрана труда очень важна в нашей фирме." },
+                    { german: "die Arbeitslosigkeit", russian: "безработица", pronunciation: "[ди а́рбайтслозигкайт]", level: "A2", theme: "work", morphemes: [{m:"Arbeits",t:"работа"}, {m:"los",t:"без"}, {m:"ig",t:"суффикс"}, {m:"keit",t:"суффикс"}], sentence: "Die Arbeitslosigkeit ist in der Region gesunken.", sentence_ru: "Безработица в регионе снизилась." },
+                    { german: "der Feierabend", russian: "конец рабочего дня", pronunciation: "[дер фа́йерабенд]", level: "A2", theme: "work", morphemes: [{m:"Feier",t:"праздник"}, {m:"abend",t:"вечер"}], sentence: "Ich freue mich auf den Feierabend.", sentence_ru: "Я с нетерпением жду конца рабочего дня." },
+                    { german: "die Berufsausbildung", russian: "проф. образование", pronunciation: "[ди беру́фсаусбильдунг]", level: "A2", theme: "work", morphemes: [{m:"Berufs",t:"профессия"}, {m:"aus",t:"из"}, {m:"bild",t:"учить"}, {m:"ung",t:"суффикс"}], sentence: "Eine gute Berufsausbildung ist wichtig für die Zukunft.", sentence_ru: "Хорошее профессиональное образование важно для будущего." },
+
+                    // A2 - Еда
+                    { german: "das Lebensmittel", russian: "продукт питания", pronunciation: "[дас ле́бенсмитель]", level: "A2", theme: "food", morphemes: [{m:"Lebens",t:"жизнь"}, {m:"mittel",t:"средство"}], sentence: "Wir kaufen Lebensmittel für die ganze Woche.", sentence_ru: "Мы покупаем продукты на всю неделю." },
+                    { german: "der Supermarkt", russian: "супермаркет", pronunciation: "[дер зу́перма́ркт]", level: "A2", theme: "food", morphemes: [{m:"Super",t:"супер"}, {m:"markt",t:"рынок"}], sentence: "Der Supermarkt ist bis 22 Uhr geöffnet.", sentence_ru: "Супермаркет открыт до 10 вечера." },
+                    { german: "die Bäckerei", russian: "булочная", pronunciation: "[ди бекера́й]", level: "A2", theme: "food", morphemes: [{m:"Bäcker",t:"пекарь"}, {m:"ei",t:"суффикс"}], sentence: "In der Bäckerei duftet es nach frischem Brot.", sentence_ru: "В булочной пахнет свежим хлебом." },
+                    { german: "das Rezept", russian: "рецепт", pronunciation: "[дас реце́пт]", level: "A2", theme: "food", sentence: "Ich habe ein neues Rezept für Kuchen gefunden.", sentence_ru: "Я нашел новый рецепт пирога." },
+                    { german: "die Zutat", russian: "ингредиент", pronunciation: "[ди цута́т]", level: "A2", theme: "food", sentence: "Fehlt noch eine Zutat für die Suppe?", sentence_ru: "Не хватает еще какого-нибудь ингредиента для супа?" },
+                    { german: "der Einkaufswagen", russian: "тележка для покупок", pronunciation: "[дер а́йнкауфсваген]", level: "A2", theme: "food", morphemes: [{m:"Ein",t:"в"}, {m:"kaufs",t:"покупка"}, {m:"wagen",t:"телега"}], sentence: "Der Einkaufswagen ist schon voll.", sentence_ru: "Тележка для покупок уже полная." },
+                    { german: "die Kasse", russian: "касса", pronunciation: "[ди ка́се]", level: "A2", theme: "food", sentence: "Bitte bezahlen Sie an der Kasse.", sentence_ru: "Пожалуйста, оплатите на кассе." },
+                    { german: "der Rabatt", russian: "скидка", pronunciation: "[дер раба́т]", level: "A2", theme: "food", sentence: "Gibt es auf dieses Produkt einen Rabatt?", sentence_ru: "Есть ли на этот товар скидка?" },
+                    { german: "die Rechnung", russian: "счет", pronunciation: "[ди ре́хнунг]", level: "A2", theme: "food", morphemes: [{m:"Rechn",t:"считать"}, {m:"ung",t:"суффикс"}], sentence: "Der Kellner bringt die Rechnung.", sentence_ru: "Официант приносит счет." },
+                    { german: "das Sonderangebot", russian: "спец. предложение", pronunciation: "[дас зондеранге́бот]", level: "A2", theme: "food", morphemes: [{m:"Sonder",t:"особое"}, {m:"an",t:"предлог"}, {m:"gebot",t:"предложение"}], sentence: "Diese Woche gibt es ein Sonderangebot für Kaffee.", sentence_ru: "На этой неделе есть специальное предложение на кофе." },
+
+                    // A2 - Путешествия
+                    { german: "das Verkehrsmittel", russian: "транспортное средство", pronunciation: "[дас ферке́рсмитель]", level: "A2", theme: "travel", morphemes: [{m:"Verkehrs",t:"движение"}, {m:"mittel",t:"средство"}], sentence: "Das Fahrrad ist ein umweltfreundliches Verkehrsmittel.", sentence_ru: "Велосипед - это экологически чистое транспортное средство." },
+                    { german: "die Reiseversicherung", russian: "страховка", pronunciation: "[ди ра́йзеферзихерунг]", level: "A2", theme: "travel", morphemes: [{m:"Reise",t:"путешествие"}, {m:"ver",t:"префикс"}, {m:"sicher",t:"безопасный"}, {m:"ung",t:"суффикс"}], sentence: "Eine Reiseversicherung ist bei Auslandsreisen empfehlenswert.", sentence_ru: "Страховка рекомендуется при поездках за границу." },
+                    { german: "der Reiseführer", russian: "путеводитель", pronunciation: "[дер ра́йзефюрер]", level: "A2", theme: "travel", morphemes: [{m:"Reise",t:"путешествие"}, {m:"führer",t:"вождь/гид"}], sentence: "Der Reiseführer zeigt uns die Stadt.", sentence_ru: "Гид показывает нам город." },
+                    { german: "die Unterkunft", russian: "жилье", pronunciation: "[ди у́нтеркунфт]", level: "A2", theme: "travel", morphemes: [{m:"Unter",t:"под"}, {m:"kunft",t:"прибытие"}], sentence: "Wir suchen eine günstige Unterkunft für zwei Nächte.", sentence_ru: "Мы ищем недорогое жилье на две ночи." },
+                    { german: "der Stadtplan", russian: "план города", pronunciation: "[дер шта́тплан]", level: "A2", theme: "travel", morphemes: [{m:"Stadt",t:"город"}, {m:"plan",t:"план"}], sentence: "Ohne Stadtplan hätten wir uns verlaufen.", sentence_ru: "Без карты города мы бы заблудились." },
+                    { german: "die Landkarte", russian: "карта", pronunciation: "[ди ла́нткарте]", level: "A2", theme: "travel", morphemes: [{m:"Land",t:"страна"}, {m:"karte",t:"карта"}], sentence: "Auf der Landkarte sehen wir den Weg.", sentence_ru: "На карте мы видим дорогу." },
+                    { german: "die Rückfahrkarte", russian: "обратный билет", pronunciation: "[ди рю́кфаркарте]", level: "A2", theme: "travel", morphemes: [{m:"Rück",t:"назад"}, {m:"fahr",t:"езда"}, {m:"karte",t:"карта"}], sentence: "Ich habe eine Hin- und eine Rückfahrkarte gekauft.", sentence_ru: "Я купил билет туда и обратно." },
+                    { german: "das Reisebüro", russian: "турагентство", pronunciation: "[дас ра́йзебюро]", level: "A2", theme: "travel", morphemes: [{m:"Reise",t:"путешествие"}, {m:"büro",t:"бюро"}], sentence: "Wir haben die Reise im Reisebüro gebucht.", sentence_ru: "Мы забронировали поездку в турагентстве." },
+                    { german: "die Urlaubsplanung", russian: "планирование отпуска", pronunciation: "[ди у́рлаубспланунг]", level: "A2", theme: "travel", morphemes: [{m:"Urlaubs",t:"отпуск"}, {m:"plan",t:"план"}, {m:"ung",t:"суффикс"}], sentence: "Die Urlaubsplanung für den Sommer hat begonnen.", sentence_ru: "Планирование летнего отпуска началось." },
+                    { german: "die Abfahrtszeit", russian: "время отправления", pronunciation: "[ди а́пфартсцайт]", level: "A2", theme: "travel", morphemes: [{m:"Ab",t:"от-"}, {m:"fahrts",t:"езда"}, {m:"zeit",t:"время"}], sentence: "Was ist die Abfahrtszeit des Zuges?", sentence_ru: "Какое время отправления поезда?" },
+
+                    // A2 - Здоровье
+                    { german: "die Vorsorgeuntersuchung", russian: "профилактическое обследование", pronunciation: "[ди фо́рзоргеунтерзухунг]", level: "A2", theme: "health", morphemes: [{m:"Vor",t:"пред-"}, {m:"sorge",t:"забота"}, {m:"unter",t:"-"}, {m:"such",t:"искать"}, {m:"ung",t:"суффикс"}], sentence: "Die jährliche Vorsorgeuntersuchung ist sehr wichtig.", sentence_ru: "Ежегодный профилактический осмотр очень важен." },
+                    { german: "die Krankenversicherung", russian: "мед. страховка", pronunciation: "[ди кра́нкенферзихерунг]", level: "A2", theme: "health", morphemes: [{m:"Kranken",t:"больной"}, {m:"ver",t:"префикс"}, {m:"sicher",t:"безопасный"}, {m:"ung",t:"суффикс"}], sentence: "Jeder in Deutschland braucht eine Krankenversicherung.", sentence_ru: "Каждому в Германии нужна медицинская страховка." },
+                    { german: "der Zahnarzt", russian: "стоматолог", pronunciation: "[дер ца́нарцт]", level: "A2", theme: "health", morphemes: [{m:"Zahn",t:"зуб"}, {m:"arzt",t:"врач"}], sentence: "Ich habe morgen einen Termin beim Zahnarzt.", sentence_ru: "У меня завтра запись к стоматологу." },
+                    { german: "die Kopfschmerzen", russian: "головная боль", pronunciation: "[ди ко́пфшмерцен]", level: "A2", theme: "health", morphemes: [{m:"Kopf",t:"голова"}, {m:"schmerzen",t:"боли"}], sentence: "Ich habe starke Kopfschmerzen.", sentence_ru: "У меня сильная головная боль." },
+                    { german: "die Bauchschmerzen", russian: "боль в животе", pronunciation: "[ди ба́ухшмерцен]", level: "A2", theme: "health", morphemes: [{m:"Bauch",t:"живот"}, {m:"schmerzen",t:"боли"}], sentence: "Nach dem Essen hatte er Bauchschmerzen.", sentence_ru: "После еды у него болел живот." },
+                    { german: "die Allergie", russian: "аллергия", pronunciation: "[ди алерги́]", level: "A2", theme: "health", sentence: "Er hat eine Allergie gegen Nüsse.", sentence_ru: "У него аллергия на орехи." },
+                    { german: "der Notfall", russian: "чрезвычайная ситуация", pronunciation: "[дер но́тфаль]", level: "A2", theme: "health", morphemes: [{m:"Not",t:"нужда"}, {m:"fall",t:"случай"}], sentence: "Im Notfall rufen Sie die 112 an.", sentence_ru: "В экстренном случае звоните 112." },
+                    { german: "die Spritze", russian: "укол", pronunciation: "[ди шпри́це]", level: "A2", theme: "health", sentence: "Der Arzt gab ihm eine Spritze gegen die Schmerzen.", sentence_ru: "Врач сделал ему укол от боли." },
+                    { german: "der Verband", russian: "повязка", pronunciation: "[дер ферба́нд]", level: "A2", theme: "health", morphemes: [{m:"Ver",t:"префикс"}, {m:"band",t:"лента"}], sentence: "Die Wunde braucht einen neuen Verband.", sentence_ru: "Ране нужна новая повязка." },
+                    { german: "die Heilung", russian: "лечение", pronunciation: "[ди ха́йлунг]", level: "A2", theme: "health", morphemes: [{m:"Heil",t:"лечить"}, {m:"ung",t:"суффикс"}], sentence: "Der Prozess der Heilung kann lange dauern.", sentence_ru: "Процесс заживления может занять много времени." },
+
+                    // A2 - Образование
+                    { german: "die Universität", russian: "университет", pronunciation: "[ди универзите́т]", level: "A2", theme: "education", sentence: "Sie studiert an der Humboldt-Universität.", sentence_ru: "Она учится в университете имени Гумбольдта." },
+                    { german: "die Prüfung", russian: "экзамен", pronunciation: "[ди прю́фунг]", level: "A2", theme: "education", morphemes: [{m:"Prüf",t:"проверять"}, {m:"ung",t:"суффикс"}], sentence: "Nächste Woche habe ich eine wichtige Prüfung.", sentence_ru: "На следующей неделе у меня важный экзамен." },
+                    { german: "das Zeugnis", russian: "аттестат", pronunciation: "[дас цо́йгнис]", level: "A2", theme: "education", morphemes: [{m:"Zeug",t:"свидетельство"}, {m:"nis",t:"суффикс"}], sentence: "Am Ende des Schuljahres bekommen wir ein Zeugnis.", sentence_ru: "В конце учебного года мы получаем аттестат." },
+                    { german: "das Fach", russian: "предмет", pronunciation: "[дас фах]", level: "A2", theme: "education", sentence: "Mathematik ist mein Lieblingsfach.", sentence_ru: "Математика - мой любимый предмет." },
+                    { german: "die Note", russian: "оценка", pronunciation: "[ди но́те]", level: "A2", theme: "education", sentence: "Er hat eine gute Note in Deutsch bekommen.", sentence_ru: "Он получил хорошую оценку по немецкому." },
+                    { german: "der Kurs", russian: "курс", pronunciation: "[дер курс]", level: "A2", theme: "education", sentence: "Ich besuche einen Deutschkurs.", sentence_ru: "Я посещаю курс немецкого языка." },
+                    { german: "das Studium", russian: "учеба", pronunciation: "[дас шту́диум]", level: "A2", theme: "education", sentence: "Das Studium dauert drei Jahre.", sentence_ru: "Учеба длится три года." },
+                    { german: "die Vorlesung", russian: "лекция", pronunciation: "[ди форле́зунг]", level: "A2", theme: "education", morphemes: [{m:"Vor",t:"перед"}, {m:"les",t:"читать"}, {m:"ung",t:"суффикс"}], sentence: "Die Vorlesung beginnt pünktlich.", sentence_ru: "Лекция начинается вовремя." },
+                    { german: "das Seminar", russian: "семинар", pronunciation: "[дас земина́р]", level: "A2", theme: "education", sentence: "Im Seminar diskutieren wir über das Thema.", sentence_ru: "На семинаре мы обсуждаем эту тему." },
+                    { german: "die Bibliothek", russian: "библиотека", pronunciation: "[ди библиоте́к]", level: "A2", theme: "education", sentence: "In der Bibliothek kann man Bücher ausleihen.", sentence_ru: "В библиотеке можно брать книги." },
+
+                    // A2 - Хобби
+                    { german: "das Theater", russian: "театр", pronunciation: "[дас теа́тер]", level: "A2", theme: "hobbies", sentence: "Am Freitag gehen wir ins Theater.", sentence_ru: "В пятницу мы идем в театр." },
+                    { german: "die Party", russian: "вечеринка", pronunciation: "[ди па́рти]", level: "A2", theme: "hobbies", sentence: "Die Party bei Anna war super.", sentence_ru: "Вечеринка у Анны была супер." },
+                    { german: "das Konzert", russian: "концерт", pronunciation: "[дас конце́рт]", level: "A2", theme: "hobbies", sentence: "Das Konzert war komplett ausverkauft.", sentence_ru: "Концерт был полностью распродан." },
+                    { german: "die Galerie", russian: "галерея", pronunciation: "[ди галери́]", level: "A2", theme: "hobbies", sentence: "In der Galerie gibt es eine neue Ausstellung.", sentence_ru: "В галерее новая выставка." },
+                    { german: "das Museum", russian: "музей", pronunciation: "[дас музе́ум]", level: "A2", theme: "hobbies", sentence: "Das Museum hat am Montag geschlossen.", sentence_ru: "Музей закрыт в понедельник." },
+                    { german: "der Spaziergang", russian: "прогулка", pronunciation: "[дер шпаци́рганг]", level: "A2", theme: "hobbies", morphemes: [{m:"Spazier",t:"гулять"}, {m:"gang",t:"ходьба"}], sentence: "Wir machen einen Spaziergang im Park.", sentence_ru: "Мы гуляем в парке." },
+                    { german: "das Picknick", russian: "пикник", pronunciation: "[дас пи́кник]", level: "A2", theme: "hobbies", sentence: "Bei gutem Wetter machen wir ein Picknick.", sentence_ru: "В хорошую погоду мы устроим пикник." },
+                    { german: "die Wanderung", russian: "поход", pronunciation: "[ди ва́ндерунг]", level: "A2", theme: "hobbies", morphemes: [{m:"Wander",t:"бродить"}, {m:"ung",t:"суффикс"}], sentence: "Die Wanderung in den Bergen war anstrengend.", sentence_ru: "Поход в горы был утомительным." },
+                    { german: "die Fotografie", russian: "фотография", pronunciation: "[ди фотографи́]", level: "A2", theme: "hobbies", sentence: "Die Fotografie ist ein kreatives Hobby.", sentence_ru: "Фотография - это творческое хобби." },
+                    { german: "das Kochen", russian: "кулинария", pronunciation: "[дас ко́хен]", level: "A2", theme: "hobbies", sentence: "Das Kochen entspannt mich nach der Arbeit.", sentence_ru: "Готовка расслабляет меня после работы." },
+
+                    // A2 - Глаголы
+                    { german: "verstehen", russian: "понимать", pronunciation: "[ферште́ен]", level: "A2", theme: "verbs", morphemes: [{m:"ver",t:"префикс"}, {m:"stehen",t:"стоять"}], sentence: "Ich kann dich nicht verstehen, sprich lauter.", sentence_ru: "Я не могу тебя понять, говори громче." },
+                    { german: "arbeiten", russian: "работать", pronunciation: "[арба́йтен]", level: "A2", theme: "verbs", morphemes: [{m:"arbeit",t:"работа"}, {m:"en",t:"окончание"}], sentence: "Wo arbeiten Sie?", sentence_ru: "Где вы работаете?" },
+                    { german: "wohnen", russian: "жить", pronunciation: "[во́нен]", level: "A2", theme: "verbs", sentence: "Ich wohne in einer kleinen Stadt.", sentence_ru: "Я живу в маленьком городе." },
+                    { german: "spielen", russian: "играть", pronunciation: "[шпи́лен]", level: "A2", theme: "verbs", sentence: "Die Kinder spielen draußen.", sentence_ru: "Дети играют на улице." },
+                    { german: "kochen", russian: "готовить", pronunciation: "[ко́хен]", level: "A2", theme: "verbs", sentence: "Was kochst du heute Abend?", sentence_ru: "Что ты готовишь сегодня вечером?" },
+                    { german: "putzen", russian: "убирать", pronunciation: "[пу́цен]", level: "A2", theme: "verbs", sentence: "Ich muss am Samstag die Wohnung putzen.", sentence_ru: "В субботу мне нужно убраться в квартире." },
+                    { german: "hören", russian: "слышать", pronunciation: "[хё́рен]", level: "A2", theme: "verbs", sentence: "Kannst du die Musik hören?", sentence_ru: "Ты слышишь музыку?" },
+                    { german: "suchen", russian: "искать", pronunciation: "[зу́хен]", level: "A2", theme: "verbs", sentence: "Ich suche meine Schlüssel.", sentence_ru: "Я ищу свои ключи." },
+                    { german: "fragen", russian: "спрашивать", pronunciation: "[фра́ген]", level: "A2", theme: "verbs", sentence: "Kann ich dich etwas fragen?", sentence_ru: "Могу я тебя кое о чем спросить?" },
+                    { german: "antworten", russian: "отвечать", pronunciation: "[а́нтвортен]", level: "A2", theme: "verbs", morphemes: [{m:"ant",t:"противо-"}, {m:"wort",t:"слово"}, {m:"en",t:"окончание"}], sentence: "Bitte antworten Sie auf meine E-Mail.", sentence_ru: "Пожалуйста, ответьте на мое электронное письмо." },
+
+                    // A2 - Эмоции
+                    { german: "die Aufregung", russian: "волнение", pronunciation: "[ди а́уфрегунг]", level: "A2", theme: "emotions", morphemes: [{m:"Auf",t:"на-"}, {m:"reg",t:"двигать"}, {m:"ung",t:"суффикс"}], sentence: "Vor der Prüfung war die Aufregung groß.", sentence_ru: "Перед экзаменом волнение было большим." },
+                    { german: "die Enttäuschung", russian: "разочарование", pronunciation: "[ди энтто́йшунг]", level: "A2", theme: "emotions", morphemes: [{m:"Ent",t:"раз-"}, {m:"täusch",t:"обман"}, {m:"ung",t:"суффикс"}], sentence: "Die Enttäuschung war ihm ins Gesicht geschrieben.", sentence_ru: "Разочарование было написано у него на лице." },
+                    { german: "die Freundschaft", russian: "дружба", pronunciation: "[ди фро́йндшафт]", level: "A2", theme: "emotions", morphemes: [{m:"Freund",t:"друг"}, {m:"schaft",t:"суффикс -ство"}], sentence: "Unsere Freundschaft ist mir sehr wichtig.", sentence_ru: "Наша дружба очень важна для меня." },
+                    { german: "die Langeweile", russian: "скука", pronunciation: "[ди ла́нгевайле]", level: "A2", theme: "emotions", morphemes: [{m:"Lange",t:"долгий"}, {m:"weile",t:"время"}], sentence: "Aus Langeweile begann er zu lesen.", sentence_ru: "От скуки он начал читать." },
+                    { german: "die Wut", russian: "ярость", pronunciation: "[ди вут]", level: "A2", theme: "emotions", sentence: "Er konnte seine Wut kaum kontrollieren.", sentence_ru: "Он едва мог контролировать свой гнев." },
+                    { german: "die Eifersucht", russian: "ревность", pronunciation: "[ди а́йферзухт]", level: "A2", theme: "emotions", morphemes: [{m:"Eifer",t:"рвение"}, {m:"sucht",t:"страсть"}], sentence: "Eifersucht kann eine Beziehung zerstören.", sentence_ru: "Ревность может разрушить отношения." },
+                    { german: "die Neugier", russian: "любопытство", pronunciation: "[ди но́йгир]", level: "A2", theme: "emotions", morphemes: [{m:"Neu",t:"новый"}, {m:"gier",t:"жадность"}], sentence: "Die Neugier der Kinder ist grenzenlos.", sentence_ru: "Любопытство детей безгранично." },
+                    { german: "die Sympathie", russian: "симпатия", pronunciation: "[ди зюмпати́]", level: "A2", theme: "emotions", sentence: "Ich fühlte sofort Sympathie für sie.", sentence_ru: "Я сразу почувствовал к ней симпатию." },
+                    { german: "die Müdigkeit", russian: "усталость", pronunciation: "[ди мю́дигкайт]", level: "A2", theme: "emotions", morphemes: [{m:"Müd",t:"усталый"}, {m:"ig",t:"суффикс"}, {m:"keit",t:"суффикс -ость"}], sentence: "Nach der langen Reise spürte ich eine große Müdigkeit.", sentence_ru: "После долгой поездки я почувствовал сильную усталость." },
+                    { german: "die Entspannung", russian: "расслабление", pronunciation: "[ди энтшпа́нунг]", level: "A2", theme: "emotions", morphemes: [{m:"Ent",t:"раз-"}, {m:"spann",t:"напрягать"}, {m:"ung",t:"суффикс"}], sentence: "Ein warmes Bad sorgt für Entspannung.", sentence_ru: "Теплая ванна обеспечивает расслабление." },
+
+                    // A2 - Погода
+                    { german: "der Sonnenschein", russian: "солнечный свет", pronunciation: "[дер зо́неншайн]", level: "A2", theme: "weather", morphemes: [{m:"Sonnen",t:"солнце"}, {m:"schein",t:"свет"}], sentence: "Wir genießen den warmen Sonnenschein.", sentence_ru: "Мы наслаждаемся теплым солнечным светом." },
+                    { german: "der Regenschauer", russian: "ливень", pronunciation: "[дер ре́геншауэр]", level: "A2", theme: "weather", morphemes: [{m:"Regen",t:"дождь"}, {m:"schauer",t:"ливень"}], sentence: "Ein kurzer Regenschauer zog über die Stadt.", sentence_ru: "Короткий ливень прошел над городом." },
+                    { german: "die Schneeflocke", russian: "снежинка", pronunciation: "[ди шне́флоке]", level: "A2", theme: "weather", morphemes: [{m:"Schnee",t:"снег"}, {m:"flocke",t:"хлопья"}], sentence: "Jede Schneeflocke ist einzigartig.", sentence_ru: "Каждая снежинка уникальна." },
+                    { german: "der Regenbogen", russian: "радуга", pronunciation: "[дер ре́генбоген]", level: "A2", theme: "weather", morphemes: [{m:"Regen",t:"дождь"}, {m:"bogen",t:"дуга"}], sentence: "Nach dem Regen sahen wir einen Regenbogen.", sentence_ru: "После дождя мы увидели радугу." },
+                    { german: "die Trockenheit", russian: "засуха", pronunciation: "[ди тро́кенхайт]", level: "A2", theme: "weather", morphemes: [{m:"Trocken",t:"сухой"}, {m:"heit",t:"суффикс -ость"}], sentence: "Die lange Trockenheit schadet den Pflanzen.", sentence_ru: "Длительная засуха вредит растениям." },
+                    { german: "die Feuchtigkeit", russian: "влажность", pronunciation: "[ди фо́йхтигкайт]", level: "A2", theme: "weather", morphemes: [{m:"Feucht",t:"влажный"}, {m:"ig",t:"суффикс"}, {m:"keit",t:"суффикс -ость"}], sentence: "Die hohe Feuchtigkeit macht die Hitze unerträglich.", sentence_ru: "Высокая влажность делает жару невыносимой." },
+                    { german: "die Windstille", russian: "безветрие", pronunciation: "[ди ви́ндштиле]", level: "A2", theme: "weather", morphemes: [{m:"Wind",t:"ветер"}, {m:"stille",t:"тишина"}], sentence: "Am See herrschte absolute Windstille.", sentence_ru: "На озере царило абсолютное безветрие." },
+                    { german: "das Unwetter", russian: "непогода", pronunciation: "[дас у́нветер]", level: "A2", theme: "weather", morphemes: [{m:"Un",t:"не-"}, {m:"wetter",t:"погода"}], sentence: "Das Unwetter hat viele Bäume entwurzelt.", sentence_ru: "Непогода вырвала с корнем много деревьев." },
+                    { german: "die Wettervorhersage", russian: "прогноз погоды", pronunciation: "[ди ве́терфорхерзаге]", level: "A2", theme: "weather", morphemes: [{m:"Wetter",t:"погода"}, {m:"vor",t:"пред-"}, {m:"her",t:"-"}, {m:"sage",t:"сказание"}], sentence: "Die Wettervorhersage meldet Regen für morgen.", sentence_ru: "Прогноз погоды обещает завтра дождь." },
+                    { german: "der Klimawandel", russian: "изменение климата", pronunciation: "[дер кли́мавандель]", level: "A2", theme: "weather", morphemes: [{m:"Klima",t:"климат"}, {m:"wandel",t:"изменение"}], sentence: "Der Klimawandel ist eine globale Herausforderung.", sentence_ru: "Изменение климата - это глобальный вызов." },
+
+                    // B1 - Работа
+                    { german: "die Bewerbung", russian: "заявление о приеме", pronunciation: "[ди беве́рбунг]", level: "B1", theme: "work", morphemes: [{m:'Be',t:'префикс'}, {m:'werb',t:'вербовать'}, {m:'ung',t:'суффикс'}], sentence: "Ich habe meine Bewerbung gestern abgeschickt.", sentence_ru: "Я отправил свое резюме вчера." },
+                    { german: "das Vorstellungsgespräch", russian: "собеседование", pronunciation: "[дас форштелунгсгешпрех]", level: "B1", theme: "work", morphemes: [{m:'Vor',t:'пред-'}, {m:'stell',t:'ставить'}, {m:'ungs', t: 'связка'}, {m:'ge',t:'префикс'}, {m:'spräch',t:'разговор'}], sentence: "Das Vorstellungsgespräch war sehr aufregend.", sentence_ru: "Собеседование было очень волнующим." },
+                    { german: "die Überstunden", russian: "сверхурочные", pronunciation: "[ди ю́берштундеи]", level: "B1", theme: "work", morphemes: [{m:'Über',t:'сверх'}, {m:'stund',t:'час'}, {m:'en',t:'окончание'}], sentence: "Diese Woche muss ich viele Überstunden machen.", sentence_ru: "На этой неделе мне нужно много работать сверхурочно." },
+                    { german: "die Beförderung", russian: "повышение", pronunciation: "[ди бефё́рдерунг]", level: "B1", theme: "work", morphemes: [{m:'Be', t:'префикс'}, {m:'förd', t:'продвигать'}, {m:'er',t:'-'}, {m:'ung', t:'суффикс'}], sentence: "Er hat eine Beförderung zum Abteilungsleiter erhalten.", sentence_ru: "Он получил повышение до начальника отдела." },
+                    { german: "die Kündigung", russian: "увольнение", pronunciation: "[ди кю́ндигунг]", level: "B1", theme: "work", morphemes: [{m:'Künd', t:'объявлять'}, {m:'ig', t:'-'}, {m:'ung', t:'суффикс'}], sentence: "Die Kündigung kam für alle überraschend.", sentence_ru: "Увольнение стало для всех неожиданностью." },
+                    { german: "der Lebenslauf", russian: "резюме", pronunciation: "[дер ле́бенслауф]", level: "B1", theme: "work", morphemes: [{m:'Lebens', t:'жизнь'}, {m:'lauf', t:'бег/ход'}], sentence: "Bitte senden Sie uns Ihren Lebenslauf per E-Mail.", sentence_ru: "Пожалуйста, отправьте нам ваше резюме по электронной почте." },
+                    { german: "die Qualifikation", russian: "квалификация", pronunciation: "[ди квалификаци́он]", level: "B1", theme: "work", sentence: "Sie besitzt die nötige Qualifikation für den Job.", sentence_ru: "Она обладает необходимой квалификацией для этой работы." },
+                    { german: "die Verantwortung", russian: "ответственность", pronunciation: "[ди ферантво́ртунг]", level: "B1", theme: "work", morphemes: [{m:'Ver', t:'префикс'}, {m:'antwort', t:'ответ'}, {m:'ung', t:'суффикс'}], sentence: "Als Manager trägt man viel Verantwortung.", sentence_ru: "Как менеджер, ты несешь большую ответственность." },
+                    { german: "die Teamarbeit", russian: "командная работа", pronunciation: "[ди ти́марбайт]", level: "B1", theme: "work", morphemes: [{m:'Team', t:'команда'}, {m:'arbeit',t:'работа'}], sentence: "Gute Teamarbeit ist der Schlüssel zum Erfolg.", sentence_ru: "Хорошая командная работа - ключ к успеху." },
+                    { german: "der Betriebsrat", russian: "производственный совет", pronunciation: "[дер бетри́бсрат]", level: "B1", theme: "work", morphemes: [{m:'Betriebs', t:'предприятие'}, {m:'rat',t:'совет'}], sentence: "Der Betriebsrat vertritt die Interessen der Mitarbeiter.", sentence_ru: "Производственный совет представляет интересы сотрудников." },
+
+                    // B1 - Путешествия
+                    { german: "der Flughafen", russian: "аэропорт", pronunciation: "[дер флу́кхафен]", level: "B1", theme: "travel", morphemes: [{m:'Flug', t:'полет'}, {m:'hafen',t:'порт/гавань'}], sentence: "Wir müssen in zwei Stunden am Flughafen sein.", sentence_ru: "Мы должны быть в аэропорту через два часа." },
+                    { german: "die Sehenswürdigkeit", russian: "достопримечательность", pronunciation: "[ди зе́енсвюрдигкайт]", level: "B1", theme: "travel", morphemes: [{m:'Sehens',t:'видения'}, {m:'würdig',t:'достойный'}, {m:'keit',t:'суффикс'}], sentence: "Diese Kirche ist eine berühmte Sehenswürdigkeit.", sentence_ru: "Эта церковь — известная достопримечательность." },
+                    { german: "die Verspätung", russian: "опоздание", pronunciation: "[ди фершпе́тунг]", level: "B1", theme: "travel", morphemes: [{m:'Ver',t:'префикс'}, {m:'spät',t:'поздний'}, {m:'ung',t:'суффикс'}], sentence: "Der Zug hat 20 Minuten Verspätung.", sentence_ru: "Поезд опаздывает на 20 минут." },
+                    { german: "die Reservierung", russian: "бронирование", pronunciation: "[ди резерви́рунг]", level: "B1", theme: "travel", morphemes: [{m:'Re', t:'-'}, {m:'serv',t:'сервис'}, {m:'ier',t:'-'}, {m:'ung',t:'суффикс'}], sentence: "Ich möchte eine Reservierung für heute Abend machen.", sentence_ru: "Я хотел бы забронировать столик на сегодняшний вечер." },
+                    { german: "die Reiseplanung", russian: "планирование поездки", pronunciation: "[ди ра́йзепланунг]", level: "B1", theme: "travel", morphemes: [{m:'Reise',t:'поездка'}, {m:'plan',t:'план'}, {m:'ung',t:'суффикс'}], sentence: "Eine gute Reiseplanung spart Zeit und Geld.", sentence_ru: "Хорошее планирование поездки экономит время и деньги." },
+                    { german: "der Reisepass", russian: "паспорт", pronunciation: "[дер ра́йзепас]", level: "B1", theme: "travel", morphemes: [{m:'Reise',t:'поездка'}, {m:'pass',t:'паспорт'}], sentence: "Vergessen Sie Ihren Reisepass nicht!", sentence_ru: "Не забудьте свой загранпаспорт!" },
+                    { german: "die Gepäckaufbewahrung", russian: "камера хранения", pronunciation: "[ди гепе́каауфбевару­нг]", level: "B1", theme: "travel", morphemes: [{m:'Gepäck',t:'багаж'}, {m:'auf',t:'на'}, {m:'bewahr',t:'хранить'}, {m:'ung',t:'суффикс'}], sentence: "Wir haben unser Gepäck in der Gepäckaufbewahrung am Bahnhof gelassen.", sentence_ru: "Мы оставили наш багаж в камере хранения на вокзале." },
+                    { german: "der Aufenthalt", russian: "пребывание", pronunciation: "[дер а́уфентхальт]", level: "B1", theme: "travel", morphemes: [{m:'Auf',t:'на'}, {m:'ent',t:'-'}, {m:'halt',t:'остановка'}], sentence: "Unser Aufenthalt in Berlin war sehr angenehm.", sentence_ru: "Наше пребывание в Берлине было очень приятным." },
+                    { german: "die Reiseroute", russian: "маршрут", pronunciation: "[ди ра́йзерут]", level: "B1", theme: "travel", morphemes: [{m:'Reise',t:'поездка'}, {m:'route',t:'маршрут'}], sentence: "Wir haben die Reiseroute genau geplant.", sentence_ru: "Мы точно спланировали маршрут." },
+                    { german: "die Rückreise", russian: "обратная поездка", pronunciation: "[ди рю́крайзе]", level: "B1", theme: "travel", morphemes: [{m:'Rück',t:'назад'}, {m:'reise',t:'поездка'}], sentence: "Die Rückreise war leider sehr anstrengend.", sentence_ru: "Обратная поездка, к сожалению, была очень утомительной." },
+                    
+                    // B1 - Семья
+                    { german: "die Familienzusammenkunft", russian: "семейное собрание", pronunciation: "[ди фами́льенцузаменкунфт]", level: "B1", theme: "family", morphemes: [{m:"Familien",t:"семья"}, {m:"zusammen",t:"вместе"}, {m:"kunft",t:"прибытие"}], sentence: "Die jährliche Familienzusammenkunft findet bei meinen Großeltern statt.", sentence_ru: "Ежегодное семейное собрание проходит у моих дедушки и бабушки." },
+                    { german: "der Lebenspartner", russian: "спутник жизни", pronunciation: "[дер ле́бенспартнер]", level: "B1", theme: "family", morphemes: [{m:"Lebens",t:"жизнь"}, {m:"partner",t:"партнер"}], sentence: "Er hat in ihr seinen Lebenspartner gefunden.", sentence_ru: "Он нашел в ней своего спутника жизни." },
+                    { german: "die Erziehung", russian: "воспитание", pronunciation: "[ди эрци́хунг]", level: "B1", theme: "family", morphemes: [{m:"Er",t:"префикс"}, {m:"zieh",t:"тянуть"}, {m:"ung",t:"суффикс"}], sentence: "Die Erziehung von Kindern ist eine große Verantwortung.", sentence_ru: "Воспитание детей — это большая ответственность." },
+                    { german: "die Kindererziehung", russian: "воспитание детей", pronunciation: "[ди ки́ндерэрцихунг]", level: "B1", theme: "family", morphemes: [{m:"Kinder",t:"дети"}, {m:"er",t:"префикс"}, {m:"zieh",t:"тянуть"}, {m:"ung",t:"суффикс"}], sentence: "Über Kindererziehung gibt es viele verschiedene Meinungen.", sentence_ru: "О воспитании детей существует много разных мнений." },
+                    { german: "die Schwangerschaft", russian: "беременность", pronunciation: "[ди шва́нгершафт]", level: "B1", theme: "family", morphemes: [{m:"Schwanger",t:"беременная"}, {m:"schaft",t:"суффикс -ство"}], sentence: "Während der Schwangerschaft sollte man auf Alkohol verzichten.", sentence_ru: "Во время беременности следует воздерживаться от алкоголя." },
+                    { german: "die Patenschaft", russian: "крестное родство", pronunciation: "[ди па́теншафт]", level: "B1", theme: "family", morphemes: [{m:"Paten",t:"крестный"}, {m:"schaft",t:"суффикс -ство"}], sentence: "Wir haben die Patenschaft für ein Kind in Afrika übernommen.", sentence_ru: "Мы взяли шефство над ребенком в Африке." },
+                    { german: "der Generationsunterschied", russian: "разница поколений", pronunciation: "[дер генерацио́нсунтершид]", level: "B1", theme: "family", morphemes: [{m:"Generations",t:"поколение"}, {m:"unter",t:"между"}, {m:"schied",t:"различие"}], sentence: "Der Generationsunterschied führt manchmal zu Missverständnissen.", sentence_ru: "Разница поколений иногда приводит к недопониманию." },
+                    { german: "die Familienbande", russian: "семейные узы", pronunciation: "[ди фами́льенбанде]", level: "B1", theme: "family", morphemes: [{m:"Familien",t:"семья"}, {m:"bande",t:"узы"}], sentence: "Starke Familienbande geben Halt im Leben.", sentence_ru: "Крепкие семейные узы дают опору в жизни." },
+                    { german: "das Familienleben", russian: "семейная жизнь", pronunciation: "[дас фами́льенлебен]", level: "B1", theme: "family", morphemes: [{m:"Familien",t:"семья"}, {m:"leben",t:"жизнь"}], sentence: "Das Familienleben kann manchmal chaotisch sein.", sentence_ru: "Семейная жизнь иногда может быть хаотичной." },
+                    { german: "die Familiengründung", russian: "создание семьи", pronunciation: "[ди фами́льенгрюндунг]", level: "B1", theme: "family", morphemes: [{m:"Familien",t:"семья"}, {m:"gründ",t:"основывать"}, {m:"ung",t:"суффикс"}], sentence: "Die Familiengründung ist ein wichtiger Schritt.", sentence_ru: "Создание семьи — это важный шаг." },
+
+                    // B1 - Дом
+                    { german: "die Wohnungssuche", russian: "поиск квартиры", pronunciation: "[ди во́нунгсзухе]", level: "B1", theme: "home", morphemes: [{m:"Wohnungs",t:"квартира"}, {m:"suche",t:"поиск"}], sentence: "Die Wohnungssuche in der Stadt ist sehr schwierig.", sentence_ru: "Поиск квартиры в городе очень сложен." },
+                    { german: "der Mietvertrag", russian: "договор аренды", pronunciation: "[дер ми́тфертраг]", level: "B1", theme: "home", morphemes: [{m:"Miet",t:"аренда"}, {m:"vertrag",t:"договор"}], sentence: "Ich habe den Mietvertrag gestern unterschrieben.", sentence_ru: "Я вчера подписал договор аренды." },
+                    { german: "die Nebenkosten", russian: "коммунальные расходы", pronunciation: "[ди не́бенкостен]", level: "B1", theme: "home", morphemes: [{m:"Neben",t:"побочные"}, {m:"kosten",t:"расходы"}], sentence: "Die Nebenkosten sind in der Miete nicht enthalten.", sentence_ru: "Коммунальные расходы не включены в арендную плату." },
+                    { german: "die Wohngemeinschaft", russian: "совместное проживание", pronunciation: "[ди во́нгемайншафт]", level: "B1", theme: "home", morphemes: [{m:"Wohn",t:"жилье"}, {m:"gemein",t:"общий"}, {m:"schaft",t:"-ство"}], sentence: "Er lebt seit zwei Jahren in einer Wohngemeinschaft.", sentence_ru: "Он живет в коммунальной квартире уже два года." },
+                    { german: "der Hausmeister", russian: "управляющий домом", pronunciation: "[дер ха́усмайстер]", level: "B1", theme: "home", morphemes: [{m:"Haus",t:"дом"}, {m:"meister",t:"мастер"}], sentence: "Bei Problemen rufen Sie bitte den Hausmeister an.", sentence_ru: "При возникновении проблем, пожалуйста, позвоните управляющему." },
+                    { german: "die Inneneinrichtung", russian: "интерьер", pronunciation: "[ди и́ненайнрихтунг]", level: "B1", theme: "home", morphemes: [{m:"Innen",t:"внутри"}, {m:"ein",t:"в-"}, {m:"richt",t:"направлять"}, {m:"ung",t:"суффикс"}], sentence: "Sie hat ein gutes Gespür für Inneneinrichtung.", sentence_ru: "У нее хороший вкус в области дизайна интерьера." },
+                    { german: "die Hausversicherung", russian: "страховка дома", pronunciation: "[ди ха́усферзихерунг]", level: "B1", theme: "home", morphemes: [{m:"Haus",t:"дом"}, {m:"ver",t:"-"}, {m:"sicher",t:"безопасный"}, {m:"ung",t:"суффикс"}], sentence: "Eine Hausversicherung schützt vor Schäden.", sentence_ru: "Страхование дома защищает от ущерба." },
+                    { german: "die Renovierung", russian: "ремонт", pronunciation: "[ди реновирунг]", level: "B1", theme: "home", morphemes: [{m:"Renov",t:"обновлять"}, {m:"ier",t:"-"}, {m:"ung",t:"суффикс"}], sentence: "Die Renovierung des Badezimmers hat lange gedauert.", sentence_ru: "Ремонт ванной комнаты занял много времени." },
+                    { german: "der Nachbarschaftsstreit", russian: "соседский конфликт", pronunciation: "[дер на́хбаршафтсштрайт]", level: "B1", theme: "home", morphemes: [{m:"Nachbarschafts",t:"соседство"}, {m:"streit",t:"ссора"}], sentence: "Ein lauter Hund war der Grund für den Nachbarschaftsstreit.", sentence_ru: "Громкая собака стала причиной соседского конфликта." },
+                    { german: "die Umzugskosten", russian: "расходы на переезд", pronunciation: "[ди у́мцугскостен]", level: "B1", theme: "home", morphemes: [{m:"Umzugs",t:"переезд"}, {m:"kosten",t:"расходы"}], sentence: "Die Umzugskosten waren höher als erwartet.", sentence_ru: "Расходы на переезд оказались выше, чем ожидалось." },
+
+                    // B1 - Еда
+                    { german: "die Küchenausstattung", russian: "кухонное оборудование", pronunciation: "[ди кю́хенаусштатунг]", level: "B1", theme: "food", morphemes: [{m:"Küchen",t:"кухня"}, {m:"aus",t:"из"}, {m:"statt",t:"-"}, {m:"ung",t:"суффикс"}], sentence: "Die Wohnung hat eine moderne Küchenausstattung.", sentence_ru: "В квартире современное кухонное оборудование." },
+                    { german: "die Nahrungsergänzung", russian: "пищевая добавка", pronunciation: "[ди на́рунгсэргенцунг]", level: "B1", theme: "food", morphemes: [{m:"Nahrungs",t:"питание"}, {m:"er",t:"-"}, {m:"gänz",t:"дополнять"}, {m:"ung",t:"суффикс"}], sentence: "Manche Sportler nehmen Nahrungsergänzungsmittel.", sentence_ru: "Некоторые спортсмены принимают пищевые добавки." },
+                    { german: "die Kochkunst", russian: "кулинарное искусство", pronunciation: "[ди ко́хкунст]", level: "B1", theme: "food", morphemes: [{m:"Koch",t:"готовка"}, {m:"kunst",t:"искусство"}], sentence: "Die französische Kochkunst ist weltberühmt.", sentence_ru: "Французское кулинарное искусство всемирно известно." },
+                    { german: "das Lieblingsessen", russian: "любимая еда", pronunciation: "[дас ли́блингсэсен]", level: "B1", theme: "food", morphemes: [{m:"Lieblings",t:"любимый"}, {m:"essen",t:"еда"}], sentence: "Pizza ist mein absolutes Lieblingsessen.", sentence_ru: "Пицца - моя самая любимая еда." },
+                    { german: "die Geschmacksrichtung", russian: "вкус", pronunciation: "[ди гешма́ксрихтунг]", level: "B1", theme: "food", morphemes: [{m:"Geschmacks",t:"вкус"}, {m:"richt",t:"направление"}, {m:"ung",t:"суффикс"}], sentence: "Diese Schokolade hat eine interessante Geschmacksrichtung.", sentence_ru: "У этого шоколада интересный вкус." },
+                    { german: "die Essgewohnheit", russian: "пищевая привычка", pronunciation: "[ди э́сгевонхайт]", level: "B1", theme: "food", morphemes: [{m:"Ess",t:"еда"}, {m:"ge",t:"-"}, {m:"wohn",t:"привычка"}, {m:"heit",t:"-ость"}], sentence: "Gesunde Essgewohnheiten sind wichtig für das Wohlbefinden.", sentence_ru: "Здоровые пищевые привычки важны для хорошего самочувствия." },
+                    { german: "der Küchentisch", russian: "кухонный стол", pronunciation: "[дер кю́хентиш]", level: "B1", theme: "food", morphemes: [{m:"Küchen",t:"кухня"}, {m:"tisch",t:"стол"}], sentence: "Wir essen immer am Küchentisch.", sentence_ru: "Мы всегда едим за кухонным столом." },
+                    { german: "die Kochzeit", russian: "время готовки", pronunciation: "[ди ко́хцайт]", level: "B1", theme: "food", morphemes: [{m:"Koch",t:"готовка"}, {m:"zeit",t:"время"}], sentence: "Die Kochzeit für Nudeln beträgt etwa 10 Minuten.", sentence_ru: "Время варки макарон составляет около 10 минут." },
+                    { german: "das Abendessen", russian: "ужин", pronunciation: "[дас а́бендэсен]", level: "B1", theme: "food", morphemes: [{m:"Abend",t:"вечер"}, {m:"essen",t:"еда"}], sentence: "Was gibt es heute zum Abendessen?", sentence_ru: "Что сегодня на ужин?" },
+                    { german: "die Speisekarte", russian: "меню", pronunciation: "[ди шпа́йзекарте]", level: "B1", theme: "food", morphemes: [{m:"Speise",t:"блюдо"}, {m:"karte",t:"карта"}], sentence: "Könnten Sie mir bitte die Speisekarte bringen?", sentence_ru: "Не могли бы вы принести мне меню, пожалуйста?" },
+
+                    // B1 - Здоровье
+                    { german: "die Gesundheitsvorsorge", russian: "профилактика здоровья", pronunciation: "[ди гезу́ндхайтсфорзорге]", level: "B1", theme: "health", morphemes: [{m:"Gesundheits",t:"здоровье"}, {m:"vor",t:"пред-"}, {m:"sorge",t:"забота"}], sentence: "Zur Gesundheitsvorsorge gehört auch regelmäßige Bewegung.", sentence_ru: "К профилактике здоровья также относятся регулярные физические упражнения." },
+                    { german: "die Behandlung", russian: "лечение", pronunciation: "[ди беха́ндлунг]", level: "B1", theme: "health", morphemes: [{m:"Be",t:"-"}, {m:"handl",t:"действовать"}, {m:"ung",t:"суффикс"}], sentence: "Die Behandlung beim Arzt war erfolgreich.", sentence_ru: "Лечение у врача было успешным." },
+                    { german: "die Nebenwirkung", russian: "побочное действие", pronunciation: "[ди не́бенвиркунг]", level: "B1", theme: "health", morphemes: [{m:"Neben",t:"побочный"}, {m:"wirk",t:"действие"}, {m:"ung",t:"суффикс"}], sentence: "Lesen Sie die Packungsbeilage wegen möglicher Nebenwirkungen.", sentence_ru: "Прочитайте инструкцию на предмет возможных побочных эффектов." },
+                    { german: "die Selbstmedikation", russian: "самолечение", pronunciation: "[ди зе́льпстмедикацион]", level: "B1", theme: "health", morphemes: [{m:"Selbst",t:"само-"}, {m:"medikation",t:"лечение"}], sentence: "Selbstmedikation kann gefährlich sein.", sentence_ru: "Самолечение может быть опасным." },
+                    { german: "die Krankschreibung", russian: "больничный лист", pronunciation: "[ди кра́нкшрайбунг]", level: "B1", theme: "health", morphemes: [{m:"Krank",t:"больной"}, {m:"schreib",t:"писать"}, {m:"ung",t:"суффикс"}], sentence: "Ich brauche eine Krankschreibung für meinen Arbeitgeber.", sentence_ru: "Мне нужен больничный лист для моего работодателя." },
+                    { german: "die Rehabilitation", russian: "реабилитация", pronunciation: "[ди реабилитацион]", level: "B1", theme: "health", morphemes: [{m:"Re",t:"ре-"}, {m:"habilitation",t:"абилитация"}], sentence: "Nach der Operation braucht er eine lange Rehabilitation.", sentence_ru: "После операции ему нужна длительная реабилитация." },
+                    { german: "die Schmerztherapie", russian: "болевая терапия", pronunciation: "[ди шме́рцтерапи]", level: "B1", theme: "health", morphemes: [{m:"Schmerz",t:"боль"}, {m:"therapie",t:"терапия"}], sentence: "Die Schmerztherapie hat ihm sehr geholfen.", sentence_ru: "Болевая терапия ему очень помогла." },
+                    { german: "die Diagnose", russian: "диагноз", pronunciation: "[ди диагно́зе]", level: "B1", theme: "health", sentence: "Der Arzt stellte eine klare Diagnose.", sentence_ru: "Врач поставил ясный диагноз." },
+                    { german: "die Genesung", russian: "выздоровление", pronunciation: "[ди генезунг]", level: "B1", theme: "health", morphemes: [{m:"Genes",t:"выздоравливать"}, {m:"ung",t:"суффикс"}], sentence: "Wir wünschen Ihnen eine schnelle Genesung.", sentence_ru: "Мы желаем Вам скорейшего выздоровления." },
+                    { german: "die Physiotherapie", russian: "физиотерапия", pronunciation: "[ди физиотерапи́]", level: "B1", theme: "health", morphemes: [{m:"Physio",t:"физио"}, {m:"therapie",t:"терапия"}], sentence: "Er bekommt zweimal pro Woche Physiotherapie.", sentence_ru: "Он получает физиотерапию два раза в неделю." },
+
+                    // B1 - Образование
+                    { german: "die Weiterbildung", russian: "повышение квалификации", pronunciation: "[ди ва́йтербильдунг]", level: "B1", theme: "education", morphemes: [{m:"Weiter",t:"дальше"}, {m:"bild",t:"учить"}, {m:"ung",t:"суффикс"}], sentence: "Eine Weiterbildung kann die Karrierechancen verbessern.", sentence_ru: "Повышение квалификации может улучшить карьерные шансы." },
+                    { german: "die Ausbildung", russian: "образование", pronunciation: "[ди а́усбільдунг]", level: "B1", theme: "education", morphemes: [{m:"Aus",t:"из/вы-"}, {m:"bild",t:"учить"}, {m:"ung",t:"суффикс"}], sentence: "Er macht eine Ausbildung zum Mechaniker.", sentence_ru: "Он получает образование механика." },
+                    { german: "der Schulabschluss", russian: "окончание школы", pronunciation: "[дер шу́лябшлус]", level: "B1", theme: "education", morphemes: [{m:"Schul",t:"школа"}, {m:"ab",t:"от-"}, {m:"schluss",t:"завершение"}], sentence: "Nach dem Schulabschluss möchte er studieren.", sentence_ru: "После окончания школы он хочет учиться в вузе." },
+                    { german: "die Hochschulbildung", russian: "высшее образование", pronunciation: "[ди хо́хшульбільдунг]", level: "B1", theme: "education", morphemes: [{m:"Hoch",t:"высшая"}, {m:"schul",t:"школа"}, {m:"bild",t:"учить"}, {m:"ung",t:"суффикс"}], sentence: "Eine Hochschulbildung ist heute sehr wertvoll.", sentence_ru: "Высшее образование сегодня очень ценно." },
+                    { german: "das Stipendium", russian: "стипендия", pronunciation: "[дас штипе́ндиум]", level: "B1", theme: "education", sentence: "Sie hat ein Stipendium für ihr Studium bekommen.", sentence_ru: "Она получила стипендию на учебу." },
+                    { german: "die Lernmethode", russian: "метод обучения", pronunciation: "[ди ле́рнметоде]", level: "B1", theme: "education", morphemes: [{m:"Lern",t:"учить"}, {m:"methode",t:"метод"}], sentence: "Jeder hat seine eigene effektive Lernmethode.", sentence_ru: "У каждого свой эффективный метод обучения." },
+                    { german: "der Studiengang", russian: "направление обучения", pronunciation: "[дер шту́диенганг]", level: "B1", theme: "education", morphemes: [{m:"Studien",t:"учеба"}, {m:"gang",t:"ход/курс"}], sentence: "Dieser Studiengang ist sehr beliebt.", sentence_ru: "Это направление обучения очень популярно." },
+                    { german: "die Abschlussarbeit", russian: "дипломная работа", pronunciation: "[ди а́пшлусарбайт]", level: "B1", theme: "education", morphemes: [{m:"Ab",t:"от-"}, {m:"schluss",t:"завершение"}, {m:"arbeit",t:"работа"}], sentence: "Ich schreibe gerade an meiner Abschlussarbeit.", sentence_ru: "Я как раз пишу свою дипломную работу." },
+                    { german: "die Bildungseinrichtung", russian: "учебное заведение", pronunciation: "[ди бі́льдунгсайнрихтунг]", level: "B1", theme: "education", morphemes: [{m:"Bildungs",t:"образование"}, {m:"ein",t:"в-"}, {m:"richt",t:"направлять"}, {m:"ung",t:"суффикс"}], sentence: "Schulen und Universitäten sind Bildungseinrichtungen.", sentence_ru: "Школы и университеты являются образовательными учреждениями." },
+                    { german: "der Fachbereich", russian: "специализация", pronunciation: "[дер фа́хберайх]", level: "B1", theme: "education", morphemes: [{m:"Fach",t:"предмет"}, {m:"bereich",t:"область"}], sentence: "Sie arbeitet im Fachbereich Biologie.", sentence_ru: "Она работает на кафедре биологии." },
+
+                    // B1 - Хобби
+                    { german: "die Freizeitgestaltung", russian: "организация досуга", pronunciation: "[ди фра́йцайтгештальтунг]", level: "B1", theme: "hobbies", morphemes: [{m:"Freizeit",t:"досуг"}, {m:"ge",t:"-"}, {m:"stalt",t:"форма"}, {m:"ung",t:"суффикс"}], sentence: "Es gibt viele Möglichkeiten zur Freizeitgestaltung.", sentence_ru: "Существует много возможностей для организации досуга." },
+                    { german: "die Vereinsmitgliedschaft", russian: "членство в клубе", pronunciation: "[ди ферайнсмитглідшафт]", level: "B1", theme: "hobbies", morphemes: [{m:"Vereins",t:"клуб"}, {m:"mit",t:"со-"}, {m:"glied",t:"член"}, {m:"schaft",t:"-ство"}], sentence: "Die Vereinsmitgliedschaft kostet 50 Euro im Jahr.", sentence_ru: "Членство в клубе стоит 50 евро в год." },
+                    { german: "die Hobbyausrüstung", russian: "оборудование для хобби", pronunciation: "[ди хо́біаусрюстунг]", level: "B1", theme: "hobbies", morphemes: [{m:"Hobby",t:"хобби"}, {m:"aus",t:"из"}, {m:"rüst",t:"снаряжать"}, {m:"ung",t:"суффикс"}], sentence: "Gute Hobbyausrüstung kann teuer sein.", sentence_ru: "Хорошее оборудование для хобби может быть дорогим." },
+                    { german: "die Sammelleidenschaft", russian: "страсть к коллекционированию", pronunciation: "[ди за́мельляйденшафт]", level: "B1", theme: "hobbies", morphemes: [{m:"Sammel",t:"собирать"}, {m:"leiden",t:"страдать"}, {m:"schaft",t:"-ство"}], sentence: "Seine Sammelleidenschaft für Briefmarken ist bekannt.", sentence_ru: "Его страсть к коллекционированию почтовых марок известна." },
+                    { german: "das Kunsthandwerk", russian: "художественное ремесло", pronunciation: "[дас ку́нстхандверк]", level: "B1", theme: "hobbies", morphemes: [{m:"Kunst",t:"искусство"}, {m:"hand",t:"рука"}, {m:"werk",t:"труд"}], sentence: "Auf dem Markt wird lokales Kunsthandwerk verkauft.", sentence_ru: "На рынке продаются изделия местных ремесленников." },
+                    { german: "der Sportverein", russian: "спортивный клуб", pronunciation: "[дер шпо́ртферайн]", level: "B1", theme: "hobbies", morphemes: [{m:"Sport",t:"спорт"}, {m:"verein",t:"клуб"}], sentence: "Er ist Mitglied in einem Sportverein.", sentence_ru: "Он является членом спортивного клуба." },
+                    { german: "die Wettkampfteilnahme", russian: "участие в соревнованиях", pronunciation: "[ди ве́ткампфтайльнаме]", level: "B1", theme: "hobbies", morphemes: [{m:"Wett",t:"состязание"}, {m:"kampf",t:"борьба"}, {m:"teil",t:"часть"}, {m:"nahme",t:"взятие"}], sentence: "Die Wettkampfteilnahme erfordert viel Training.", sentence_ru: "Участие в соревнованиях требует много тренировок." },
+                    { german: "das Vereinsleben", russian: "клубная жизнь", pronunciation: "[дас ферайнслебен]", level: "B1", theme: "hobbies", morphemes: [{m:"Vereins",t:"клуб"}, {m:"leben",t:"жизнь"}], sentence: "Das aktive Vereinsleben macht ihm viel Spaß.", sentence_ru: "Активная клубная жизнь доставляет ему много удовольствия." },
+                    { german: "die Kreativität", russian: "творчество", pronunciation: "[ди креативите́т]", level: "B1", theme: "hobbies", sentence: "Kreativität ist in diesem Beruf sehr wichtig.", sentence_ru: "Творчество очень важно в этой профессии." },
+                    { german: "der Zeitvertreib", russian: "времяпрепровождение", pronunciation: "[дер ца́йтфертрайб]", level: "B1", theme: "hobbies", morphemes: [{m:"Zeit",t:"время"}, {m:"ver",t:"про-"}, {m:"treib",t:"гнать"}], sentence: "Lesen ist für mich ein angenehmer Zeitvertreib.", sentence_ru: "Чтение для меня приятное времяпрепровождение." },
+
+                    // B1 - Глаголы
+                    { german: "sich bewerben", russian: "подавать заявление", pronunciation: "[зих беве́рбен]", level: "B1", theme: "verbs", morphemes: [{m:"sich", t:"себя"}, {m:"be",t:"-"}, {m:"werb",t:"вербовать"}, {m:"en",t:"окончание"}], sentence: "Ich werde mich um diese Stelle bewerben.", sentence_ru: "Я подам заявление на эту должность." },
+                    { german: "vereinbaren", russian: "договариваться", pronunciation: "[ферайнба́рен]", level: "B1", theme: "verbs", morphemes: [{m:"ver",t:"-"}, {m:"ein",t:"один"}, {m:"bar",t:"-"}, {m:"en",t:"окончание"}], sentence: "Wir müssen einen neuen Termin vereinbaren.", sentence_ru: "Нам нужно договориться о новой встрече." },
+                    { german: "überlegen", russian: "обдумывать", pronunciation: "[ю́берлеген]", level: "B1", theme: "verbs", morphemes: [{m:"über",t:"над"}, {m:"leg",t:"класть"}, {m:"en",t:"окончание"}], sentence: "Ich muss mir das gut überlegen.", sentence_ru: "Я должен это хорошо обдумать." },
+                    { german: "entscheiden", russian: "решать", pronunciation: "[энтша́йден]", level: "B1", theme: "verbs", morphemes: [{m:"ent",t:"раз-"}, {m:"scheid",t:"отделять"}, {m:"en",t:"окончание"}], sentence: "Ich kann mich nicht zwischen den beiden entscheiden.", sentence_ru: "Я не могу выбрать между этими двумя." },
+                    { german: "sich vorbereiten", russian: "готовиться", pronunciation: "[зих форберайтен]", level: "B1", theme: "verbs", morphemes: [{m:"sich",t:"себя"}, {m:"vor",t:"пред-"}, {m:"bereit",t:"готовый"}, {m:"en",t:"окончание"}], sentence: "Wir müssen uns auf die Präsentation gut vorbereiten.", sentence_ru: "Мы должны хорошо подготовиться к презентации." },
+                    { german: "untersuchen", russian: "исследовать", pronunciation: "[унтерзу́хен]", level: "B1", theme: "verbs", morphemes: [{m:"unter",t:"под"}, {m:"such",t:"искать"}, {m:"en",t:"окончание"}], sentence: "Der Arzt wird Sie jetzt untersuchen.", sentence_ru: "Врач сейчас вас осмотрит." },
+                    { german: "vergleichen", russian: "сравнивать", pronunciation: "[фергла́йхен]", level: "B1", theme: "verbs", morphemes: [{m:"ver",t:"с-"}, {m:"gleich",t:"равный"}, {m:"en",t:"окончание"}], sentence: "Man sollte nicht Äpfel mit Birnen vergleichen.", sentence_ru: "Не следует сравнивать яблоки с грушами." },
+                    { german: "entwickeln", russian: "развивать", pronunciation: "[энтви́кельн]", level: "B1", theme: "verbs", morphemes: [{m:"ent",t:"раз-"}, {m:"wickeln",t:"разворачивать"}], sentence: "Die Firma entwickelt eine neue Software.", sentence_ru: "Фирма разрабатывает новое программное обеспечение." },
+                    { german: "sich interessieren", russian: "интересоваться", pronunciation: "[зих интересі́рен]", level: "B1", theme: "verbs", morphemes: [{m:"sich",t:"себя"}, {m:"interess",t:"интерес"}, {m:"ier",t:"-"}, {m:"en",t:"окончание"}], sentence: "Ich interessiere mich sehr für Geschichte.", sentence_ru: "Я очень интересуюсь историей." },
+                    { german: "verwirklichen", russian: "осуществлять", pronunciation: "[ферви́рклихен]", level: "B1", theme: "verbs", morphemes: [{m:"ver",t:"-"}, {m:"wirklich",t:"действительный"}, {m:"en",t:"окончание"}], sentence: "Er möchte seine Träume verwirklichen.", sentence_ru: "Он хочет осуществить свои мечты." },
+
+                    // B1 - Эмоции
+                    { german: "die Zufriedenheit", russian: "удовлетворенность", pronunciation: "[ди цуфри́денхайт]", level: "B1", theme: "emotions", morphemes: [{m:"Zu",t:"к"}, {m:"frieden",t:"мир/покой"}, {m:"heit",t:"-ость"}], sentence: "Zufriedenheit ist wichtiger als Reichtum.", sentence_ru: "Удовлетворенность важнее богатства." },
+                    { german: "die Dankbarkeit", russian: "благодарность", pronunciation: "[ди да́нкбаркайт]", level: "B1", theme: "emotions", morphemes: [{m:"Dank",t:"благодарность"}, {m:"bar",t:"-"}, {m:"keit",t:"-ость"}], sentence: "Er zeigte seine Dankbarkeit mit einem Geschenk.", sentence_ru: "Он выразил свою благодарность подарком." },
+                    { german: "die Begeisterung", russian: "воодушевление", pronunciation: "[ди бегайстерунг]", level: "B1", theme: "emotions", morphemes: [{m:"Be",t:"-"}, {m:"geister",t:"дух"}, {m:"ung",t:"суффикс"}], sentence: "Die Kinder zeigten große Begeisterung für das Spiel.", sentence_ru: "Дети проявили большой энтузиазм к игре." },
+                    { german: "die Verwirrung", russian: "смущение", pronunciation: "[ди ферви́рунг]", level: "B1", theme: "emotions", morphemes: [{m:"Ver",t:"-"}, {m:"wirr",t:"путаный"}, {m:"ung",t:"суффикс"}], sentence: "Seine Antwort sorgte für große Verwirrung.", sentence_ru: "Его ответ вызвал большое недоумение." },
+                    { german: "die Erleichterung", russian: "облегчение", pronunciation: "[ди эрла́йхтерунг]", level: "B1", theme: "emotions", morphemes: [{m:"Er",t:"-"}, {m:"leichter",t:"легче"}, {m:"ung",t:"суффикс"}], sentence: "Nach der Prüfung spürte ich eine große Erleichterung.", sentence_ru: "После экзамена я почувствовал большое облегчение." },
+                    { german: "die Nervosität", russian: "нервозность", pronunciation: "[ди нервозите́т]", level: "B1", theme: "emotions", sentence: "Trotz seiner Nervosität hielt er eine gute Rede.", sentence_ru: "Несмотря на свою нервозность, он произнес хорошую речь." },
+                    { german: "die Verzweiflung", russian: "отчаяние", pronunciation: "[ди ферцва́йфлунг]", level: "B1", theme: "emotions", morphemes: [{m:"Ver",t:"-"}, {m:"zweifl",t:"сомнение"}, {m:"ung",t:"суффикс"}], sentence: "In seiner Verzweiflung wusste er nicht, was er tun sollte.", sentence_ru: "В отчаянии он не знал, что делать." },
+                    { german: "die Leidenschaft", russian: "страсть", pronunciation: "[ди ля́йденшафт]", level: "B1", theme: "emotions", morphemes: [{m:"Leiden",t:"страдание"}, {m:"schaft",t:"-ство"}], sentence: "Musik ist seine große Leidenschaft.", sentence_ru: "Музыка - его большая страсть." },
+                    { german: "die Selbstsicherheit", russian: "уверенность в себе", pronunciation: "[ди зе́льпстзихерхайт]", level: "B1", theme: "emotions", morphemes: [{m:"Selbst",t:"сам"}, {m:"sicher",t:"уверенный"}, {m:"heit",t:"-ость"}], sentence: "Sie tritt mit großer Selbstsicherheit auf.", sentence_ru: "Она выступает с большой уверенностью в себе." },
+                    { german: "die Ungeduld", russian: "нетерпение", pronunciation: "[ди у́нгедульд]", level: "B1", theme: "emotions", morphemes: [{m:"Un",t:"не-"}, {m:"geduld",t:"терпение"}], sentence: "Seine Ungeduld machte alle nervös.", sentence_ru: "Его нетерпение заставляло всех нервничать." },
+
+                    // B1 - Погода
+                    { german: "die Wetterveränderung", russian: "изменение погоды", pronunciation: "[ди ве́терферендерунг]", level: "B1", theme: "weather", morphemes: [{m:"Wetter",t:"погода"}, {m:"ver",t:"-"}, {m:"änder",t:"изменять"}, {m:"ung",t:"суффикс"}], sentence: "Die plötzliche Wetterveränderung hat uns überrascht.", sentence_ru: "Внезапное изменение погоды нас удивило." },
+                    { german: "der Temperatursturz", russian: "резкое похолодание", pronunciation: "[дер температу́рштурц]", level: "B1", theme: "weather", morphemes: [{m:"Temperatur",t:"температура"}, {m:"sturz",t:"падение"}], sentence: "Der Temperatursturz kündigt den Winter an.", sentence_ru: "Резкое похолодание предвещает зиму." },
+                    { german: "die Hitzewelle", russian: "волна жары", pronunciation: "[ди хи́цевеле]", level: "B1", theme: "weather", morphemes: [{m:"Hitze",t:"жара"}, {m:"welle",t:"волна"}], sentence: "Die Hitzewelle dauert schon eine Woche.", sentence_ru: "Волна жары длится уже неделю." },
+                    { german: "die Kältewelle", russian: "волна холода", pronunciation: "[ди ке́льтевеле]", level: "B1", theme: "weather", morphemes: [{m:"Kälte",t:"холод"}, {m:"welle",t:"волна"}], sentence: "Eine Kältewelle kommt aus dem Norden.", sentence_ru: "С севера идет волна холода." },
+                    { german: "der Wetterbericht", russian: "сводка погоды", pronunciation: "[дер ве́терберихт]", level: "B1", theme: "weather", morphemes: [{m:"Wetter",t:"погода"}, {m:"bericht",t:"отчет"}], sentence: "Laut Wetterbericht soll es morgen sonnig werden.", sentence_ru: "Согласно прогнозу погоды, завтра должно быть солнечно." },
+                    { german: "die Luftfeuchtigkeit", russian: "влажность воздуха", pronunciation: "[ди лу́фтфойхтигкайт]", level: "B1", theme: "weather", morphemes: [{m:"Luft",t:"воздух"}, {m:"feucht",t:"влажный"}, {m:"ig",t:"-"}, {m:"keit",t:"-ость"}], sentence: "Die hohe Luftfeuchtigkeit ist typisch für den Sommer hier.", sentence_ru: "Высокая влажность воздуха типична для лета здесь." },
+                    { german: "der Luftdruck", russian: "атмосферное давление", pronunciation: "[дер лу́фтдрук]", level: "B1", theme: "weather", morphemes: [{m:"Luft",t:"воздух"}, {m:"druck",t:"давление"}], sentence: "Der hohe Luftdruck sorgt für stabiles Wetter.", sentence_ru: "Высокое атмосферное давление обеспечивает стабильную погоду." },
+                    { german: "die Windgeschwindigkeit", russian: "скорость ветра", pronunciation: "[ди ви́ндгешвиндигкайт]", level: "B1", theme: "weather", morphemes: [{m:"Wind",t:"ветер"}, {m:"ge",t:"-"}, {m:"schwind",t:"скорость"}, {m:"ig",t:"-"}, {m:"keit",t:"-ость"}], sentence: "Die Windgeschwindigkeit erreichte 100 km/h.", sentence_ru: "Скорость ветра достигла 100 км/ч." },
+                    { german: "das Hochwasser", russian: "наводнение", pronunciation: "[дас хо́хвасер]", level: "B1", theme: "weather", morphemes: [{m:"Hoch",t:"высокая"}, {m:"wasser",t:"вода"}], sentence: "Das Hochwasser hat mehrere Straßen überflutet.", sentence_ru: "Наводнение затопило несколько улиц." },
+                    { german: "die Überschwemmung", russian: "затопление", pronunciation: "[ди ю́бершвемунг]", level: "B1", theme: "weather", morphemes: [{m:"Über",t:"пере-"}, {m:"schwemm",t:"затоплять"}, {m:"ung",t:"суффикс"}], sentence: "Die Überschwemmung verursachte große Schäden.", sentence_ru: "Затопление нанесло большой ущерб." },
+
+                    // B2 - Эмоции
+                    { german: "die Gelassenheit", russian: "спокойствие", pronunciation: "[ди гела́сенхайт]", level: "B2", theme: "emotions", morphemes: [{m:'Ge', t:'префикс'}, {m:'lass', t:'оставлять'}, {m:'en', t:'-'}, {m:'heit', t:'-ость'}], sentence: "Er reagierte mit großer Gelassenheit.", sentence_ru: "Он отреагировал с большим спокойствием." },
+                    { german: "die Melancholie", russian: "меланхолия", pronunciation: "[ди меланхоли́]", level: "B2", theme: "emotions", sentence: "Ein Gefühl von Melancholie überkam sie.", sentence_ru: "Ее охватило чувство меланхолии." },
+                    { german: "die Nostalgie", russian: "ностальгия", pronunciation: "[ди носталги́]", level: "B2", theme: "emotions", sentence: "Alte Fotos wecken oft Nostalgie.", sentence_ru: "Старые фотографии часто вызывают ностальгию." },
+                    { german: "die Euphorie", russian: "эйфория", pronunciation: "[ди эуфори́]", level: "B2", theme: "emotions", sentence: "Nach dem Sieg herrschte pure Euphorie.", sentence_ru: "После победы царила чистая эйфория." },
+                    { german: "die Sehnsucht", russian: "тоска", pronunciation: "[ди зе́нзухт]", level: "B2", theme: "emotions", morphemes: [{m:'Sehn', t:'стремление'}, {m:'sucht', t:'страсть'}], sentence: "Er hatte Sehnsucht nach seiner Heimat.", sentence_ru: "Он тосковал по своей родине." },
+                    { german: "die Zerrissenheit", russian: "раздвоенность", pronunciation: "[ди церрі́сенхайт]", level: "B2", theme: "emotions", morphemes: [{m:'Zer', t:'раз-'}, {m:'riss', t:'рвать'}, {m:'en', t:'-'}, {m:'heit', t:'-ость'}], sentence: "Ihre innere Zerrissenheit war offensichtlich.", sentence_ru: "Ее внутренняя раздвоенность была очевидна." },
+                    { german: "die Ausgeglichenheit", russian: "уравновешенность", pronunciation: "[ди а́усгегліхенхайт]", level: "B2", theme: "emotions", morphemes: [{m:'Aus', t:'из/окончание'}, {m:'ge', t:'-'}, {m:'glich', t:'равный'}, {m:'en', t:'-'}, {m:'heit', t:'-ость'}], sentence: "Yoga hilft bei der Ausgeglichenheit.", sentence_ru: "Йога помогает достичь уравновешенности." },
+                    { german: "die Empathiefähigkeit", russian: "способность к эмпатии", pronunciation: "[ди эмпа́тифехигкайт]", level: "B2", theme: "emotions", morphemes: [{m:'Empathie',t:'эмпатия'}, {m:'fähig',t:'способный'}, {m:'keit',t:'-ость'}], sentence: "Empathiefähigkeit ist eine wichtige soziale Kompetenz.", sentence_ru: "Способность к эмпатии - важная социальная компетенция." },
+                    { german: "die Selbstbeherrschung", russian: "самообладание", pronunciation: "[ди зе́льпстбехершунг]", level: "B2", theme: "emotions", morphemes: [{m:'Selbst', t:'само-'}, {m:'be', t:'-'}, {m:'herrsch', t:'властвовать'}, {m:'ung', t:'суффикс'}], sentence: "In dieser Situation ist Selbstbeherrschung gefragt.", sentence_ru: "В этой ситуации требуется самообладание." },
+                    { german: "die Ungewissheit", russian: "неопределенность", pronunciation: "[ди у́нгевисхайт]", level: "B2", theme: "emotions", morphemes: [{m:'Un', t:'не-'}, {m:'ge', t:'-'}, {m:'wiss', t:'знать'}, {m:'heit', t:'-ость'}], sentence: "Die Ungewissheit über die Zukunft macht Angst.", sentence_ru: "Неопределенность будущего пугает." }
+                ];
+                
+                console.log(`Загружен стандартный словарь: ${this.allWords.length} слов`);
+                this.updateStats();
+                this.saveToLocalStorage();
+                this.showMessage('Загружен стандартный словарь: ' + this.allWords.length + ' слов');
+            }
+
+            bindEvents() {
+                document.addEventListener('click', () => this.initializeSpeech(), { once: true });
+                document.getElementById('soundToggle').addEventListener('click', () => this.toggleSound());
+                document.getElementById('translationSoundToggle').addEventListener('click', () => this.toggleTranslationSound());
+                document.getElementById('sentenceSoundToggle').addEventListener('click', () => this.toggleSentenceSound());
+                document.getElementById('toggleArticles').addEventListener('click', () => this.toggleArticles());
+                document.getElementById('toggleMorphemes').addEventListener('click', () => this.toggleMorphemes());
+                document.getElementById('toggleMorphemeTranslations').addEventListener('click', () => this.toggleMorphemeTranslations());
+                document.getElementById('toggleSentences').addEventListener('click', () => this.toggleSentences());
+                document.getElementById('reloadDefaultWords').addEventListener('click', () => this.reloadDefaultWords());
+                document.querySelectorAll('.repeat-selector').forEach(btn => !btn.id.startsWith('toggle') && btn.addEventListener('click', (e) => this.setRepeatMode(e.target.dataset.mode)));
+                document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', (e) => this.toggleLevel(e.target.dataset.level)));
+                document.querySelectorAll('.block-btn').forEach(btn => btn.addEventListener('click', (e) => this.setTheme(e.target.dataset.theme)));
+                document.getElementById('toggleButton').addEventListener('click', () => this.toggleAutoPlay());
+                document.getElementById('prevButton').addEventListener('click', () => this.showPreviousWord());
+                document.getElementById('nextButton').addEventListener('click', () => this.showNextWordManually());
+                document.getElementById('exportWords').addEventListener('click', () => this.exportWords());
+                document.getElementById('importWords').addEventListener('click', () => document.getElementById('fileInput').click());
+                document.getElementById('fileInput').addEventListener('change', (e) => this.importWords(e));
+                document.getElementById('loadFromGithub').addEventListener('click', () => this.loadFromGithub());
+            }
+
+            getNextWord() {
+                const activeWords = this.getActiveWords();
+                if (activeWords.length === 0) return null;
+                if (this.repeatMode === 'random') {
+                    return activeWords[Math.floor(Math.random() * activeWords.length)];
+                }
+                const currentIndex = activeWords.findIndex(w => this.currentWord && w.german === this.currentWord.german);
+                const nextIndex = (currentIndex + 1) % activeWords.length;
+                return activeWords[nextIndex];
+            }
+
+            getActiveWords() {
+                return this.allWords.filter(w => this.selectedLevels.includes(w.level) && (this.selectedTheme === 'all' || w.theme === this.selectedTheme));
+            }
+
+            parseGermanWord(word) {
+                const german = word.german;
+                if (german.startsWith('der ')) return { article: 'der', mainWord: german.substring(4), genderClass: 'der' };
+                if (german.startsWith('die ')) return { article: 'die', mainWord: german.substring(4), genderClass: 'die' };
+                if (german.startsWith('das ')) return { article: 'das', mainWord: german.substring(4), genderClass: 'das' };
+                return { article: null, mainWord: german, genderClass: 'das' };
+            }
+            
+            formatGermanWord(word) {
+                const parsed = this.parseGermanWord(word);
+                const articleClass = this.showArticles ? '' : 'hide-articles';
+                const mainWordHtml = `<span class="morpheme">${parsed.mainWord}</span>`;
+                const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : '';
+                return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`;
+            }
+
+            startAutoPlay() {
+                this.isAutoPlaying = true;
+                this.showNextWordInSequence();
+                this.updateToggleButton();
+            }
+
+            stopAutoPlay() {
+                this.isAutoPlaying = false;
+                clearTimeout(this.autoPlayTimeout);
+                this.autoPlayTimeout = null;
+                this.updateToggleButton();
+            }
+
+            showNextWordInSequence() {
+                if (!this.isAutoPlaying) return;
+                const activeWords = this.getActiveWords();
+                if (activeWords.length === 0) {
+                    document.getElementById('studyArea').innerHTML = `<div class="no-words"><p>Нет слов для выбранных уровней и темы</p></div>`;
+                    return;
+                }
+                this.currentWord = this.getNextWord();
+                if (this.currentWord) this.renderWord(this.currentWord, true);
+            }
+
+            renderWord(word, withAnimation = false) {
+                if (this.isAutoPlaying) this.addToHistory(word);
+                
+                const studyArea = document.getElementById('studyArea');
+                const animationClass = withAnimation ? 'card-appear' : '';
+
+                studyArea.innerHTML = `
+                    <div class="card ${animationClass}" id="wordCard">
+                        <div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>
+                        <div class="word-container">
+                            ${this.formatGermanWord(word)}
+                            <div class="pronunciation" style="opacity: 0.7;">${word.pronunciation || ''}</div>
+                            <div id="translationContainer"></div>
+                            <div id="morphemeTranslations" class="morpheme-translations"></div>
+                            <div id="sentenceContainer"></div>
+                        </div>
+                    </div>`;
+
+                const cardElement = document.getElementById('wordCard');
+                if (cardElement) {
+                    cardElement.addEventListener('click', () => this.toggleAutoPlay());
+                    if (this.isAutoPlaying) cardElement.classList.add('is-clickable');
+                }
+                speechSynthesis.cancel();
+                this.repeatGermanPart(word, 1);
+                this.updateNavigationButtons();
+            }
+            
+            repeatGermanPart(word, count) {
+                if (!this.isAutoPlaying || !document.getElementById('wordCard')) return;
+                this.speakGerman(word.german);
+                const totalRepeats = this.repeatMode === 'random' ? 1 : parseInt(this.repeatMode, 10);
+                if (count < totalRepeats) {
+                    this.autoPlayTimeout = setTimeout(() => this.repeatGermanPart(word, count + 1), 3000);
+                } else {
+                    this.autoPlayTimeout = setTimeout(() => this.startTransformation(word), 2000);
+                }
+            }
+
+            startTransformation(word) {
+                const card = document.getElementById('wordCard');
+                if (!card) return;
+                card.classList.add('transform-phase');
+                
+                this.autoPlayTimeout = setTimeout(() => {
+                    if (!document.body.contains(card)) return;
+                    if (word.morphemes && this.showMorphemes) this.displayMorphemesAndTranslations(word);
+                    card.classList.add('morpheme-phase');
+
+                    this.autoPlayTimeout = setTimeout(() => {
+                        if (!document.body.contains(card)) return;
+                        if (word.sentence && this.showSentences) this.displaySentence(word);
+                        card.classList.add('sentence-phase');
+
+                        this.autoPlayTimeout = setTimeout(() => {
+                            if (!document.body.contains(card)) return;
+                            this.showTranslation(word);
+                        }, 4000);
+                    }, 2500);
+                }, 2000);
+            }
+
+            displaySentence(word) {
+                const container = document.getElementById('sentenceContainer');
+                if (!container) return;
+                container.innerHTML = `
+                    <div class="sentence sentence-appear">
+                        ${word.sentence}
+                        <div class="sentence-translation">${word.sentence_ru}</div>
+                    </div>
+                `;
+                if(this.sentenceSoundEnabled) {
+                    setTimeout(() => this.speakGerman(word.sentence), 500);
+                }
+            }
+            
+            showTranslation(word) {
+                const card = document.getElementById('wordCard');
+                if (!card || !document.body.contains(card)) return;
+                card.classList.remove('transform-phase', 'morpheme-phase', 'sentence-phase', 'zoom-phase');
+                card.classList.add('final-phase');
+                this.studiedToday++;
+                this.updateStats();
+                this.saveToLocalStorage();
+
+                const translationContainer = document.getElementById('translationContainer');
+                if (translationContainer) {
+                    const translationElement = document.createElement('div');
+                    translationElement.className = 'translation translation-appear';
+                    translationElement.textContent = word.russian;
+                    translationContainer.innerHTML = '';
+                    translationContainer.appendChild(translationElement);
+                    if(this.translationSoundEnabled) {
+                        setTimeout(() => this.speakRussian(word.russian), 500);
+                    }
+                }
+                
+                this.autoPlayTimeout = setTimeout(() => this.isAutoPlaying && this.transitionToNextWord(), 5000);
+            }
+
+            transitionToNextWord() {
+                const mainContent = document.getElementById('mainContent');
+                const card = document.getElementById('wordCard');
+                if (!card) { this.showNextWordInSequence(); return; }
+                mainContent.style.minHeight = `${card.offsetHeight}px`;
+                card.classList.add('word-crossfade', 'word-fade-out');
+                this.autoPlayTimeout = setTimeout(() => {
+                    this.showNextWordInSequence();
+                    setTimeout(() => { mainContent.style.minHeight = ''; }, 100);
+                }, 750);
+            }
+
+            displayMorphemesAndTranslations(word) {
+                const mainWordElement = document.querySelector('.word .main-word');
+                const translationsContainer = document.getElementById('morphemeTranslations');
+                const wordElement = document.querySelector('.word');
+                if (!mainWordElement || !translationsContainer || !wordElement || !word.morphemes || !Array.isArray(word.morphemes)) return;
+                mainWordElement.innerHTML = word.morphemes.map(item => `<span class="morpheme">${item.m}</span>`).join('<span class="morpheme-separator">-</span>');
+                setTimeout(() => wordElement.classList.add('show-morphemes'), 10);
+                if (this.showMorphemeTranslations) {
+                    translationsContainer.innerHTML = word.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m}</span><span class="translation-part">${item.t || '?'}</span></div>`).join('');
+                    setTimeout(() => translationsContainer.classList.add('visible'), 10);
+                }
+            }
+            
+            reloadDefaultWords() { localStorage.clear(); window.location.reload(); }
+
+            initializeSpeech() {
+                if ('speechSynthesis' in window && !this.speechInitialized) {
+                    speechSynthesis.speak(new SpeechSynthesisUtterance('')); this.speechInitialized = true;
+                }
+            }
+
+            speak(text, lang, rate) {
+                if (!('speechSynthesis' in window)) return;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang; utterance.rate = rate;
+                speechSynthesis.speak(utterance);
+            }
+
+            speakGerman(text) { if (this.soundEnabled) this.speak(text, 'de-DE', 0.8); }
+            speakRussian(text) { if (this.translationSoundEnabled) this.speak(text, 'ru-RU', 0.9); }
+            
+            updateStats() {
+                document.getElementById('totalWords').textContent = this.getActiveWords().length;
+                document.getElementById('studiedToday').textContent = this.studiedToday;
+                const acc = this.accuracy.total > 0 ? Math.round((this.accuracy.correct / this.accuracy.total) * 100) : 0;
+                document.getElementById('accuracy').textContent = acc + '%';
+            }
+
+            addToHistory(word) {
+                if (this.currentHistoryIndex < this.wordHistory.length - 1) this.wordHistory.splice(this.currentHistoryIndex + 1);
+                this.wordHistory.push(word);
+                if (this.wordHistory.length > 50) this.wordHistory.shift();
+                this.currentHistoryIndex = this.wordHistory.length - 1;
+            }
+
+            showPreviousWord() {
+                if (this.isAutoPlaying) this.stopAutoPlay();
+                if (this.currentHistoryIndex > 0) {
+                    this.currentHistoryIndex--;
+                    this.renderWordDirectly(this.wordHistory[this.currentHistoryIndex]);
+                }
+            }
+
+            showNextWordManually() {
+                if (this.isAutoPlaying) this.stopAutoPlay();
+                if (this.currentHistoryIndex < this.wordHistory.length - 1) {
+                    this.currentHistoryIndex++;
+                    this.renderWordDirectly(this.wordHistory[this.currentHistoryIndex]);
+                } else {
+                    const nextWord = this.getNextWord();
+                    if (nextWord) { this.addToHistory(nextWord); this.renderWordDirectly(nextWord); }
+                }
+            }
+            
+            renderWordDirectly(word) {
+                this.currentWord = word;
+                const studyArea = document.getElementById('studyArea');
+                const oldCard = document.getElementById('wordCard');
+                
+                const renderNew = () => {
+                    studyArea.innerHTML = `
+                        <div class="card card-appear" id="wordCard">
+                           <div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>
+                            <div class="word-container">
+                                ${this.formatGermanWord(word)}
+                                <div class="pronunciation" style="opacity: 0.7;">${word.pronunciation || ''}</div>
+                                <div id="translationContainer"><div class="translation">${word.russian}</div></div>
+                                <div id="morphemeTranslations" class="morpheme-translations"></div>
+                                <div id="sentenceContainer"></div>
+                            </div>
+                        </div>`;
+                    
+                    document.getElementById('wordCard').addEventListener('click', () => this.toggleAutoPlay());
+                    this.updateMorphemeDisplayOnCard(true);
+                    this.updateSentenceDisplayOnCard();
+
+                    speechSynthesis.cancel();
+                    setTimeout(() => {
+                        this.speakGerman(word.german);
+                        if(this.showSentences && word.sentence && this.sentenceSoundEnabled) {
+                           setTimeout(() => this.speakGerman(word.sentence), 1500);
+                           setTimeout(() => this.speakRussian(word.russian), 3500);
+                        } else {
+                           setTimeout(() => this.speakRussian(word.russian), 1500);
+                        }
+                    }, 300);
+                };
+
+                if (oldCard) {
+                    oldCard.classList.add('word-crossfade', 'word-fade-out');
+                    setTimeout(renderNew, 300); 
+                } else {
+                    renderNew();
+                }
+                this.updateNavigationButtons();
+            }
+            
+            // --- UI Update Methods ---
+            updateNavigationButtons() {
+                document.getElementById('prevButton').disabled = this.wordHistory.length === 0 || this.currentHistoryIndex <= 0;
+                document.getElementById('nextButton').disabled = this.getActiveWords().length === 0;
+            }
+            toggleAutoPlay() { this.isAutoPlaying ? this.stopAutoPlay() : this.startAutoPlay(); }
+            updateToggleButton() {
+                const btn = document.getElementById('toggleButton');
+                if (btn) {
+                    const icon = this.isAutoPlaying ? '#icon-pause' : '#icon-play';
+                    btn.innerHTML = `<svg class="icon" width="22px" height="22px"><use xlink:href="${icon}"></use></svg>`;
+                    btn.classList.toggle('playing', this.isAutoPlaying);
+                }
+            }
+            updateSoundButton() {
+                const btn = document.getElementById('soundToggle');
+                const icon = this.soundEnabled ? '#icon-sound-on' : '#icon-sound-off';
+                btn.innerHTML = `<svg class="icon" width="20px" height="20px"><use xlink:href="${icon}"></use></svg>`;
+                btn.classList.toggle('enabled', this.soundEnabled);
+            }
+            updateTranslationSoundButton() {
+                const btn = document.getElementById('translationSoundToggle');
+                const icon = this.translationSoundEnabled ? '#icon-chat-on' : '#icon-chat-off';
+                btn.innerHTML = `<svg class="icon" width="20px" height="20px"><use xlink:href="${icon}"></use></svg>`;
+                btn.classList.toggle('enabled', this.translationSoundEnabled);
+            }
+            updateSentenceSoundButton() {
+                const btn = document.getElementById('sentenceSoundToggle');
+                const icon = this.sentenceSoundEnabled ? '#icon-sentence-on' : '#icon-sentence-off';
+                btn.innerHTML = `<svg class="icon" width="20px" height="20px"><use xlink:href="${icon}"></use></svg>`;
+                btn.classList.toggle('enabled', this.sentenceSoundEnabled);
+            }
+
+            updateRepeatControlsState() {
+                const repeatButtons = document.querySelectorAll('.repeat-selector[data-mode]');
+                const isDisabled = !this.soundEnabled;
+
+                repeatButtons.forEach(btn => {
+                    btn.disabled = isDisabled;
+                    if (isDisabled) {
+                        btn.classList.remove('active');
+                    } else {
+                        btn.classList.toggle('active', btn.dataset.mode === this.repeatMode);
+                    }
+                });
+            }
+            updateLevelButtons() { document.querySelectorAll('.level-btn').forEach(btn => btn.classList.toggle('active', this.selectedLevels.includes(btn.dataset.level))); }
+            updateThemeButtons() { document.querySelectorAll('.block-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === this.selectedTheme)); }
+            updateArticleButton() { document.getElementById('toggleArticles')?.classList.toggle('active', this.showArticles); }
+            updateMorphemeButton() { document.getElementById('toggleMorphemes')?.classList.toggle('active', this.showMorphemes); }
+            updateMorphemeTranslationsButton() {
+                const btn = document.getElementById('toggleMorphemeTranslations');
+                if (!btn) return;
+
+                if (!this.showMorphemes) {
+                    btn.classList.remove('active');
+                    btn.disabled = true;
+                } else {
+                    btn.disabled = false;
+                    btn.classList.toggle('active', this.showMorphemeTranslations);
+                }
+            }
+            updateSentenceButton() { document.getElementById('toggleSentences')?.classList.toggle('active', this.showSentences); }
+
+            // --- Toggle Methods ---
+            toggleSound() { 
+                this.soundEnabled = !this.soundEnabled; 
+                this.saveToLocalStorage(); 
+                this.updateSoundButton(); 
+                this.updateRepeatControlsState(); 
+            }
+            toggleTranslationSound() { this.translationSoundEnabled = !this.translationSoundEnabled; this.saveToLocalStorage(); this.updateTranslationSoundButton(); }
+            toggleSentenceSound() { this.sentenceSoundEnabled = !this.sentenceSoundEnabled; this.saveToLocalStorage(); this.updateSentenceSoundButton(); }
+            toggleArticles() {
+                this.showArticles = !this.showArticles; this.saveToLocalStorage(); this.updateArticleButton();
+                document.querySelector('#wordCard .word')?.classList.toggle('hide-articles', !this.showArticles);
+            }
+            toggleMorphemes() {
+                this.showMorphemes = !this.showMorphemes;
+                if (!this.showMorphemes) {
+                    this.showMorphemeTranslations = false;
+                }
+                this.saveToLocalStorage();
+                this.updateMorphemeButton();
+                this.updateMorphemeTranslationsButton();
+                this.updateMorphemeDisplayOnCard();
+            }
+            toggleMorphemeTranslations() {
+                if (!this.showMorphemes) return; // Нельзя включить, если морфемы выключены
+                this.showMorphemeTranslations = !this.showMorphemeTranslations;
+                this.saveToLocalStorage();
+                this.updateMorphemeTranslationsButton();
+                this.updateMorphemeDisplayOnCard();
+            }
+            toggleSentences() {
+                this.showSentences = !this.showSentences; this.saveToLocalStorage(); this.updateSentenceButton();
+                this.updateSentenceDisplayOnCard();
+            }
+
+            updateMorphemeDisplayOnCard(isDirect = false) {
+                const word = this.currentWord; if (!word || !document.getElementById('wordCard')) return;
+                const wordElement = document.querySelector('.word'); const mainWordElement = document.querySelector('.word .main-word'); const translationsContainer = document.getElementById('morphemeTranslations');
+                if (!wordElement || !mainWordElement || !translationsContainer) return;
+                const parsed = this.parseGermanWord(word); mainWordElement.innerHTML = `<span class="morpheme">${parsed.mainWord}</span>`;
+                wordElement.classList.remove('show-morphemes'); translationsContainer.classList.remove('visible'); translationsContainer.innerHTML = '';
+                if (this.showMorphemes && word.morphemes && Array.isArray(word.morphemes)) {
+                    mainWordElement.innerHTML = word.morphemes.map(item => `<span class="morpheme">${item.m}</span>`).join('<span class="morpheme-separator">-</span>');
+                    if (isDirect) {
+                        wordElement.classList.add('show-morphemes');
+                        if (this.showMorphemeTranslations) {
+                            translationsContainer.innerHTML = word.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m}</span><span class="translation-part">${item.t || '?'}</span></div>`).join('');
+                            translationsContainer.classList.add('visible');
+                        }
+                    }
+                }
+            }
+            
+            updateSentenceDisplayOnCard() {
+                const word = this.currentWord; const container = document.getElementById('sentenceContainer');
+                if (!word || !container) return;
+                if (this.showSentences && word.sentence) {
+                    container.innerHTML = `<div class="sentence">${word.sentence}<div class="sentence-translation">${word.sentence_ru}</div></div>`;
+                } else {
+                    container.innerHTML = '';
+                }
+            }
+
+            setRepeatMode(mode) { 
+                this.repeatMode = mode; 
+                this.saveToLocalStorage(); 
+                this.updateRepeatControlsState(); 
+                this.restartAutoPlay(); 
+            }
+            toggleLevel(level) {
+                const index = this.selectedLevels.indexOf(level);
+                if (index > -1) this.selectedLevels.splice(index, 1); else this.selectedLevels.push(level);
+                if (this.selectedLevels.length === 0) this.selectedLevels.push(level);
+                this.saveToLocalStorage(); this.updateLevelButtons(); this.updateStats(); this.restartAutoPlay();
+            }
+            setTheme(theme) { this.selectedTheme = theme; this.saveToLocalStorage(); this.updateThemeButtons(); this.updateStats(); this.restartAutoPlay(); }
+            restartAutoPlay() { if (this.isAutoPlaying) { this.stopAutoPlay(); this.autoPlayTimeout = setTimeout(() => this.startAutoPlay(), 100); } else { this.currentWord = null; this.showNextWordManually(); } }
+
+            saveToLocalStorage() {
+                const state = {
+                    selectedLevels: this.selectedLevels, selectedTheme: this.selectedTheme, studiedToday: this.studiedToday, 
+                    soundEnabled: this.soundEnabled, translationSoundEnabled: this.translationSoundEnabled, sentenceSoundEnabled: this.sentenceSoundEnabled,
+                    repeatMode: this.repeatMode, showArticles: this.showArticles, showMorphemes: this.showMorphemes, 
+                    showMorphemeTranslations: this.showMorphemeTranslations, showSentences: this.showSentences, 
+                    accuracy: this.accuracy
+                };
+                for (const key in state) { localStorage.setItem(key, JSON.stringify(state[key])); }
+                localStorage.setItem('germanWords', JSON.stringify(this.allWords));
+            }
+
+            showMessage(text) {
+                const statusDiv = document.getElementById('levelStatus');
+                if (statusDiv) {
+                    statusDiv.textContent = text;
+                    statusDiv.style.display = 'block';
+                    setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                }
+            }
+            
+            async loadFromGithub() { this.showMessage('GitHub словари пока недоступны.'); }
+            exportWords() {
+                const blob = new Blob([JSON.stringify(this.allWords, null, 2)], {type: 'application/json'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = `german-vocabulary-${new Date().toISOString().split('T')[0]}.json`;
+                a.click(); URL.revokeObjectURL(a.href); this.showMessage('Словарь экспортирован!');
+            }
+            importWords(event) {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (Array.isArray(imported) && imported.length > 0 && imported[0].german && imported[0].russian) {
+                            this.allWords = [...this.allWords, ...imported];
+                            this.updateStats(); this.saveToLocalStorage(); this.showMessage(`Импортировано ${imported.length} слов!`);
+                        } else { this.showMessage('Неверный формат файла.'); }
+                    } catch (error) { this.showMessage('Ошибка чтения файла: ' + error.message); }
+                };
+                reader.readAsText(file); event.target.value = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try { 
+                window.app = new VocabularyApp(); 
+                console.log('✅ Приложение (Морфемы + Предложения) успешно инициализировано.'); 
+            } 
+            catch (error) { console.error('❌ Ошибка инициализации:', error); }
+        });
+    </script>
+</body>
+</html>
