@@ -1,1 +1,38 @@
+<!-- START OF FILE index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Deutsch Lernen 2.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Стили будут более компонентными */
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .app-container { max-width: 500px; width: 100%; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 30px; margin: 20px; }
+        
+        /* Стили для Чанков */
+        .chunk-card .phrase { font-size: 2rem; font-weight: 300; text-align: center; margin-bottom: 15px; }
+        .chunk-card .phrase-translation { font-size: 1.2rem; color: #666; text-align: center; margin-bottom: 25px; }
+        .chunk-card .usage-note { font-size: 0.9rem; font-style: italic; color: #888; background: #f8f8f8; padding: 10px; border-radius: 6px; }
+        .clickable-word { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; font-weight: 500 !important; }
+        .clickable-word:hover { background: #eef8ff; }
 
+        /* Стили для Слов */
+        .word-card .word-display { font-size: 2.5rem; font-weight: bold; }
+        .word-card .pronunciation { font-size: 1rem; color: #777; margin-bottom: 20px; }
+        .word-card .translation { font-size: 1.5rem; color: #444; margin-bottom: 20px; }
+        .word-card h3 { font-size: 0.8rem; text-transform: uppercase; color: #999; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px; }
+        /* ...другие стили для морфем, форм глаголов и т.д. ... */
+        .back-button { display: inline-block; margin-top: 20px; padding: 8px 15px; background: #ddd; color: #333; border-radius: 5px; cursor: pointer; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Карточки будут рендериться сюда -->
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+<!-- END OF FILE index.html -->
