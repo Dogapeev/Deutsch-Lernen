@@ -1,75 +1,234 @@
-// --- START OF FILE vocabulary.json ---
 [
   {
     "id": "chunk_001",
     "type": "chunk",
-    "level": "A2",
-    "theme": "common_phrases",
     "components": [
       {
         "type": "phrase",
-        "german_template": "Ich habe {word:word_001} für dich {word:word_002}.",
-        "german_display": "Ich habe <strong>eine Überraschung</strong> für dich <strong>vorbereitet</strong>.",
-        "russian": "Я приготовил для тебя сюрприз."
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_001'>Gut<em class='gender-m'>en</em> <span class='word-in-chunk'><small class='article-hint gender-m'>der</small><strong class='gender-m'>Tag</strong></span>!</strong>",
+        "russian": "добрый день!"
       },
       {
-        "type": "usage_note",
-        "note": "Типичная структура Perfekt для глагола с отделяемой приставкой."
+        "type": "morpheme_breakdown",
+        "morphemes": [
+          {
+            "m": "Gut",
+            "t": "хороший"
+          },
+          {
+            "m": "en",
+            "t": "вин. падеж"
+          },
+          {
+            "m": "Tag",
+            "t": "день"
+          }
+        ]
       }
     ]
   },
   {
-    "id": "word_001",
-    "type": "word",
-    "level": "A1",
-    "theme": "emotions",
-    "part_of_speech": "noun",
+    "id": "chunk_002",
+    "type": "chunk",
     "components": [
       {
-        "type": "word_display",
-        "german": "die Überraschung",
-        "pronunciation": "[ди ю́беррашунг]"
+        "type": "phrase",
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_002'>noch einmal</strong>",
+        "russian": "еще раз"
       },
       {
         "type": "morpheme_breakdown",
-        "morphemes": [{"m": "Über", "t": "пере-"}, {"m": "rasch", "t": "быстрый"}, {"m": "ung", "t": "суффикс"}]
-      },
-      {
-        "type": "translation",
-        "russian": "сюрприз, удивление"
+        "morphemes": [
+          {
+            "m": "noch",
+            "t": "еще"
+          },
+          {
+            "m": "einmal",
+            "t": "один раз"
+          }
+        ]
       }
     ]
   },
   {
-    "id": "word_002",
-    "type": "word",
-    "level": "B1",
-    "theme": "verbs",
-    "part_of_speech": "verb",
+    "id": "chunk_003",
+    "type": "chunk",
     "components": [
       {
-        "type": "word_display",
-        "german": "vorbereiten",
-        "pronunciation": "[фо́рберайтен]"
+        "type": "phrase",
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_003'>fast fertig</strong>",
+        "russian": "почти готово"
       },
-       {
+      {
         "type": "morpheme_breakdown",
-        "morphemes": [{"m": "vor", "t": "пред- (отделяемая)"}, {"m": "bereiten", "t": "готовить"}]
+        "morphemes": [
+          {
+            "m": "fast",
+            "t": "почти"
+          },
+          {
+            "m": "fertig",
+            "t": "готовый"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "chunk_004",
+    "type": "chunk",
+    "components": [
+      {
+        "type": "phrase",
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_004'>Pass auf!</strong>",
+        "russian": "осторожно!"
       },
       {
-        "type": "translation",
-        "russian": "готовить, подготавливать"
+        "type": "morpheme_breakdown",
+        "morphemes": [
+          {
+            "m": "auf",
+            "t": "на"
+          },
+          {
+            "m": "passen",
+            "t": "соответствовать"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "chunk_005",
+    "type": "chunk",
+    "components": [
+      {
+        "type": "phrase",
+        "german_display": "<span class='word-in-chunk'><small class='article-hint gender-n'>das</small><strong class='clickable-word' data-chunk-id='chunk_005'><span class='gender-f'>Butter</span><span class='gender-n'>brot</span></strong></span>",
+        "russian": "бутерброд"
       },
       {
-        "type": "verb_forms",
-        "forms": {
-          "präsens_er": "bereitet vor",
-          "präteritum_er": "bereitete vor",
-          "hilfsverb": "haben",
-          "partizip_ii": "vorbereitet"
-        }
+        "type": "morpheme_breakdown",
+        "morphemes": [
+          {
+            "m": "Butter",
+            "t": "масло"
+          },
+          {
+            "m": "Brot",
+            "t": "хлеб"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "chunk_006",
+    "type": "chunk",
+    "components": [
+      {
+        "type": "phrase",
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_006'>lang<em class='gender-f'>e</em> <span class='word-in-chunk'><small class='article-hint gender-f'>die</small><strong class='gender-f'>Schlange</strong></span></strong>",
+        "russian": "длинная очередь"
+      },
+      {
+        "type": "morpheme_breakdown",
+        "morphemes": [
+          {
+            "m": "lang",
+            "t": "длинный"
+          },
+          {
+            "m": "e",
+            "t": "им. падеж"
+          },
+          {
+            "m": "Schlange",
+            "t": "змея"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "chunk_007",
+    "type": "chunk",
+    "components": [
+      {
+        "type": "phrase",
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_007'>Gut<em class='gender-m'>en</em> <span class='word-in-chunk'><small class='article-hint gender-m'>der</small><strong class='gender-m'>Appetit</strong></span>!</strong>",
+        "russian": "приятного аппетита!"
+      },
+      {
+        "type": "morpheme_breakdown",
+        "morphemes": [
+          {
+            "m": "Gut",
+            "t": "хороший"
+          },
+          {
+            "m": "en",
+            "t": "вин. падеж"
+          },
+          {
+            "m": "Appetit",
+            "t": "аппетит"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "chunk_008",
+    "type": "chunk",
+    "components": [
+      {
+        "type": "phrase",
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_008'>kein<em class='gender-f'>e</em> <span class='word-in-chunk'><small class='article-hint gender-f'>die</small><strong class='gender-f'>Ahnung</strong></span>!</strong>",
+        "russian": "без понятия!"
+      },
+      {
+        "type": "morpheme_breakdown",
+        "morphemes": [
+          {
+            "m": "kein",
+            "t": "никакой"
+          },
+          {
+            "m": "e",
+            "t": "окончание (ж.р.)"
+          },
+          {
+            "m": "Ahnung",
+            "t": "понятие"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "chunk_009",
+    "type": "chunk",
+    "components": [
+      {
+        "type": "phrase",
+        "german_display": "<strong class='clickable-word' data-chunk-id='chunk_009'>kein <span class='word-in-chunk'><small class='article-hint gender-n'>das</small><strong class='gender-n'>Problem</strong></span></strong>",
+        "russian": "не проблема"
+      },
+      {
+        "type": "morpheme_breakdown",
+        "morphemes": [
+          {
+            "m": "kein",
+            "t": "никакой"
+          },
+          {
+            "m": "Problem",
+            "t": "проблема"
+          }
+        ]
       }
     ]
   }
 ]
-// --- END OF FILE vocabulary.json ---

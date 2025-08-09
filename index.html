@@ -1,38 +1,203 @@
-<!-- START OF FILE index.html -->
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
-    <title>Deutsch Lernen 2.0</title>
+    <title>Deutsch Lernen 4.1 (Final)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* Стили будут более компонентными */
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .app-container { max-width: 500px; width: 100%; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 30px; margin: 20px; }
-        
-        /* Стили для Чанков */
-        .chunk-card .phrase { font-size: 2rem; font-weight: 300; text-align: center; margin-bottom: 15px; }
-        .chunk-card .phrase-translation { font-size: 1.2rem; color: #666; text-align: center; margin-bottom: 25px; }
-        .chunk-card .usage-note { font-size: 0.9rem; font-style: italic; color: #888; background: #f8f8f8; padding: 10px; border-radius: 6px; }
-        .clickable-word { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; font-weight: 500 !important; }
-        .clickable-word:hover { background: #eef8ff; }
+        * {
+            box-sizing: border-box;
+        }
 
-        /* Стили для Слов */
-        .word-card .word-display { font-size: 2.5rem; font-weight: bold; }
-        .word-card .pronunciation { font-size: 1rem; color: #777; margin-bottom: 20px; }
-        .word-card .translation { font-size: 1.5rem; color: #444; margin-bottom: 20px; }
-        .word-card h3 { font-size: 0.8rem; text-transform: uppercase; color: #999; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px; }
-        /* ...другие стили для морфем, форм глаголов и т.д. ... */
-        .back-button { display: inline-block; margin-top: 20px; padding: 8px 15px; background: #ddd; color: #333; border-radius: 5px; cursor: pointer; font-size: 0.9rem; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            /* 1. Увеличиваем нижний отступ еще на 10px */
+            padding: 60px 40px 90px 40px;
+            position: relative;
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.05);
+            border: none;
+            font-size: 24px;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease-out, background-color 0.2s ease-out;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card:hover .nav-arrow {
+            opacity: 1;
+        }
+
+        .nav-arrow:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-prev {
+            left: -20px;
+        }
+
+        .nav-next {
+            right: -20px;
+        }
+
+        .clickable-word {
+            cursor: pointer;
+            text-decoration: none;
+            border-bottom: 2px dotted rgba(0, 0, 0, 0.2);
+            padding-bottom: 2px;
+            transition: background-color 0.2s, border-bottom-color 0.2s;
+        }
+
+        .clickable-word:hover {
+            background-color: #f5faff;
+            border-bottom-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .gender-m {
+            color: #0066cc;
+        }
+
+        .gender-f {
+            color: #cc0066;
+        }
+
+        .gender-n {
+            color: #666666;
+        }
+
+        em {
+            font-style: normal;
+        }
+
+        .chunk-card .phrase {
+            font-size: 3rem;
+            text-align: center;
+            color: #333;
+            padding-top: 0.8em;
+            margin-bottom: 30px;
+        }
+
+        .chunk-card .phrase,
+        .chunk-card .phrase strong {
+            font-weight: 300;
+        }
+
+        .chunk-card .phrase-translation {
+            font-size: 1.5rem;
+            color: #666;
+            text-align: center;
+            text-transform: none;
+        }
+
+        .word-in-chunk {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* 2. Ваши точные координаты для подсказки */
+        .article-hint {
+            position: absolute;
+            top: -0.8em;
+            left: 0.4em;
+            font-size: 0.8rem;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+
+        .details-container {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.35s ease-in-out, margin-top 0.35s ease-in-out;
+            margin-top: 0;
+        }
+
+        .details-content {
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.25s ease-in-out;
+            padding-bottom: 10px;
+        }
+
+        .card.expanded .details-container {
+            grid-template-rows: 1fr;
+            margin-top: 30px;
+        }
+
+        .card.expanded .details-content {
+            opacity: 1;
+            transition-delay: 0.15s;
+        }
+
+        .morpheme-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 1.5em;
+            text-align: center;
+        }
+
+        .morpheme-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.3;
+        }
+
+        .morpheme-german {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .morpheme-russian {
+            font-size: 0.9rem;
+            color: #888;
+            font-style: italic;
+        }
+
+        .morpheme-separator {
+            color: #ccc;
+            font-size: 1.5rem;
+            padding-top: 0.2em;
+        }
     </style>
 </head>
-<body>
-    <div id="app" class="app-container">
-        <!-- Карточки будут рендериться сюда -->
-    </div>
 
+<body>
+    <div id="app" class="app-container"></div>
     <script src="app.js"></script>
 </body>
+
 </html>
-<!-- END OF FILE index.html -->

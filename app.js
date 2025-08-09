@@ -1,143 +1,121 @@
-// --- START OF FILE app.js ---
 class VocabularyApp {
     constructor(containerId) {
         this.appContainer = document.getElementById(containerId);
-        this.allWords = []; // Будет хранить все записи из JSON
-        this.history = []; // Для кнопки "назад"
+        if (!this.appContainer) { console.error(`Контейнер с id "${containerId}" не найден!`); return; }
+        this.allData = [];
+        this.currentCardIndex = 0;
+        this.isNavigating = false;
+        this.speechSynth = window.speechSynthesis;
+        this.germanVoice = null;
+        this.initSpeechSynthesis();
         this.loadVocabulary();
+    }
+
+    initSpeechSynthesis() {
+        const setVoice = () => { this.germanVoice = this.speechSynth.getVoices().find(voice => voice.lang === 'de-DE'); };
+        if (this.speechSynth.getVoices().length) { setVoice(); } else { this.speechSynth.onvoiceschanged = setVoice; }
+    }
+
+    speak(text) {
+        if (!this.speechSynth || !text) return;
+        this.speechSynth.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'de-DE';
+        if (this.germanVoice) { utterance.voice = this.germanVoice; }
+        utterance.rate = 0.9;
+        this.speechSynth.speak(utterance);
     }
 
     async loadVocabulary() {
         try {
             const response = await fetch('vocabulary.json');
-            if (!response.ok) throw new Error('Network response was not ok');
-            this.allWords = await response.json();
+            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            this.allData = await response.json();
             this.start();
-        } catch (error) {
-            this.appContainer.innerHTML = `<div class="card"><p>Ошибка загрузки словаря: ${error.message}</p></div>`;
-        }
+        } catch (error) { this.appContainer.innerHTML = `<div class="card"><p>Ошибка загрузки словаря: ${error.message}</p></div>`; }
     }
 
     start() {
         this.bindEvents();
-        // Начинаем с показа первой карточки в словаре (наш чанк)
-        if (this.allWords.length > 0) {
-            this.showCardById(this.allWords[0].id);
+        this.showCurrentCard();
+    }
+
+    getMainCards() { return this.allData.filter(c => c.type === 'chunk'); }
+
+    showCurrentCard() {
+        const mainCards = this.getMainCards();
+        if (mainCards.length > 0) {
+            const cardData = mainCards[this.currentCardIndex];
+            this.appContainer.innerHTML = this.renderPhraseCard(cardData);
+            const phraseComponent = cardData.components.find(c => c.type === 'phrase');
+            const textToSpeak = phraseComponent.german_display.replace(/<[^>]+>/g, '').trim();
+            this.speak(textToSpeak);
         }
     }
 
     bindEvents() {
-        // Используем делегирование событий для обработки кликов внутри карточек
         this.appContainer.addEventListener('click', (event) => {
             const wordTarget = event.target.closest('.clickable-word');
-            const backTarget = event.target.closest('.back-button');
-
-            if (wordTarget && wordTarget.dataset.wordId) {
-                event.preventDefault();
-                this.showCardById(wordTarget.dataset.wordId, true); // true - значит, это переход с другой карточки
-            } else if (backTarget) {
-                event.preventDefault();
-                this.goBack();
-            }
+            const prevArrow = event.target.closest('.nav-prev');
+            const nextArrow = event.target.closest('.nav-next');
+            if (wordTarget && wordTarget.dataset.chunkId) { this.toggleDetails(wordTarget); }
+            else if (prevArrow) { this.navigate(-1); }
+            else if (nextArrow) { this.navigate(1); }
         });
+        document.addEventListener('keydown', (event) => { if (event.key === 'ArrowRight') this.navigate(1); else if (event.key === 'ArrowLeft') this.navigate(-1); });
     }
 
-    showCardById(cardId, isDrillDown = false) {
-        const cardData = this.allWords.find(item => item.id === cardId);
-        if (!cardData) {
-            console.error(`Карточка с ID ${cardId} не найдена!`);
-            return;
-        }
-
-        // Управление историей для кнопки "назад"
-        if (isDrillDown) {
-            // Если мы "проваливаемся" в слово, запоминаем, откуда пришли
-            const previousCardId = this.history.length > 0 ? this.history[this.history.length - 1] : null;
-            if (previousCardId !== cardId) { // чтобы не дублировать
-                 this.history.push(this.appContainer.dataset.currentCardId);
-            }
+    navigate(direction) {
+        if (this.isNavigating) return;
+        this.isNavigating = true;
+        const cardElement = this.appContainer.querySelector('.card');
+        const switchCard = () => {
+            const mainCards = this.getMainCards();
+            if (mainCards.length === 0) return;
+            this.currentCardIndex = (this.currentCardIndex + direction + mainCards.length) % mainCards.length;
+            this.showCurrentCard();
+            setTimeout(() => { this.isNavigating = false; }, 50);
+        };
+        if (cardElement) {
+            cardElement.classList.add('card-fade-out');
+            setTimeout(switchCard, 200);
         } else {
-            // Если это основной показ (не "проваливание"), история сбрасывается
-            this.history = [];
-        }
-        this.appContainer.dataset.currentCardId = cardId;
-        
-        // Рендерим карточку в зависимости от ее типа
-        let cardHtml = '';
-        if (cardData.type === 'chunk') {
-            cardHtml = this.renderChunkCard(cardData);
-        } else if (cardData.type === 'word') {
-            cardHtml = this.renderWordCard(cardData);
-        }
-        
-        this.appContainer.innerHTML = cardHtml;
-    }
-
-    goBack() {
-        const previousCardId = this.history.pop();
-        if (previousCardId) {
-            this.showCardById(previousCardId, false); // false - мы не "проваливаемся", а возвращаемся
+            switchCard();
         }
     }
 
-    // --- РЕНДЕРЕРЫ ---
+    toggleDetails(targetElement) {
+        const cardElement = targetElement.closest('.card');
+        const detailsContainer = cardElement.querySelector('.details-container');
+        const chunkId = targetElement.dataset.chunkId;
 
-    renderChunkCard(cardData) {
+        if (cardElement.classList.contains('expanded')) {
+            cardElement.classList.remove('expanded');
+        } else {
+            const chunkData = this.allData.find(item => item.id === chunkId);
+            const morphemeComponent = chunkData.components.find(c => c.type === 'morpheme_breakdown');
+
+            if (morphemeComponent) {
+                detailsContainer.innerHTML = `<div class="details-content">${this.getMorphemeHTML(morphemeComponent)}</div>`;
+                cardElement.classList.add('expanded');
+            }
+        }
+    }
+
+    renderPhraseCard(cardData) {
         const phraseComponent = cardData.components.find(c => c.type === 'phrase');
-        const noteComponent = cardData.components.find(c => c.type === 'usage_note');
+        return `<div class="card chunk-card" data-id="${cardData.id}"><button class="nav-arrow nav-prev">‹</button><div class="phrase-container"><div class="phrase">${phraseComponent.german_display}</div><div class="phrase-translation">– ${phraseComponent.russian}</div></div><div class="details-container"></div><button class="nav-arrow nav-next">›</button></div>`;
+    }
 
-        // Превращаем ссылки в data-атрибуты
-        let displayHtml = phraseComponent.german_display;
-        if (phraseComponent.german_template) {
-             displayHtml = phraseComponent.german_template.replace(
-                /\{word:(.*?)\}/g,
-                (match, wordId) => `<strong class="clickable-word" data-word-id="${wordId}">${this.getWordById(wordId).components[0].german}</strong>`
-            );
-        }
-
-        return `
-            <div class="card chunk-card">
-                <div class="phrase">${displayHtml}</div>
-                <div class="phrase-translation">${phraseComponent.russian}</div>
-                ${noteComponent ? `<div class="usage-note">${noteComponent.note}</div>` : ''}
+    getMorphemeHTML(component) {
+        const morphemesHtml = component.morphemes.map(m => `
+            <div class="morpheme-item">
+                <span class="morpheme-german">${m.m}</span>
+                <span class="morpheme-russian">${m.t}</span>
             </div>
-        `;
-    }
-
-    renderWordCard(cardData) {
-        let componentsHtml = cardData.components.map(component => this.getComponentHTML(component)).join('');
-        
-        // Добавляем кнопку "назад", если мы пришли с другой карточки
-        const backButtonHtml = this.history.length > 0 ? `<div class="back-button">&larr; Назад к фразе</div>` : '';
-
-        return `<div class="card word-card">${componentsHtml}${backButtonHtml}</div>`;
-    }
-
-    // --- ХЕЛПЕРЫ ---
-
-    getComponentHTML(component) {
-        // Этот "мини-рендерер" собирает HTML для каждого компонента слова
-        switch (component.type) {
-            case 'word_display':
-                return `<div class="word-display">${component.german}</div><div class="pronunciation">${component.pronunciation || ''}</div>`;
-            case 'translation':
-                return `<div class="translation">${component.russian}</div>`;
-            case 'morpheme_breakdown':
-                const morphemes = component.morphemes.map(m => `<span>${m.m} <small>(${m.t})</small></span>`).join(' - ');
-                return `<div><h3>Морфемы</h3><div>${morphemes}</div></div>`;
-            case 'verb_forms':
-                 const forms = component.forms;
-                 return `<div><h3>Формы</h3><p>Perfekt: <strong>${forms.hilfsverb} ${forms.partizip_ii}</strong></p></div>`;
-            default:
-                return '';
-        }
-    }
-    
-    getWordById(wordId) {
-        return this.allWords.find(w => w.id === wordId);
+        `).join('<span class="morpheme-separator">+</span>');
+        return `<div class="morpheme-container">${morphemesHtml}</div>`;
     }
 }
 
-// Запускаем приложение
 new VocabularyApp('app');
-// --- END OF FILE app.js ---
