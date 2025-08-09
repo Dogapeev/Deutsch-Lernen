@@ -1,1 +1,75 @@
-
+// --- START OF FILE vocabulary.json ---
+[
+  {
+    "id": "chunk_001",
+    "type": "chunk",
+    "level": "A2",
+    "theme": "common_phrases",
+    "components": [
+      {
+        "type": "phrase",
+        "german_template": "Ich habe {word:word_001} für dich {word:word_002}.",
+        "german_display": "Ich habe <strong>eine Überraschung</strong> für dich <strong>vorbereitet</strong>.",
+        "russian": "Я приготовил для тебя сюрприз."
+      },
+      {
+        "type": "usage_note",
+        "note": "Типичная структура Perfekt для глагола с отделяемой приставкой."
+      }
+    ]
+  },
+  {
+    "id": "word_001",
+    "type": "word",
+    "level": "A1",
+    "theme": "emotions",
+    "part_of_speech": "noun",
+    "components": [
+      {
+        "type": "word_display",
+        "german": "die Überraschung",
+        "pronunciation": "[ди ю́беррашунг]"
+      },
+      {
+        "type": "morpheme_breakdown",
+        "morphemes": [{"m": "Über", "t": "пере-"}, {"m": "rasch", "t": "быстрый"}, {"m": "ung", "t": "суффикс"}]
+      },
+      {
+        "type": "translation",
+        "russian": "сюрприз, удивление"
+      }
+    ]
+  },
+  {
+    "id": "word_002",
+    "type": "word",
+    "level": "B1",
+    "theme": "verbs",
+    "part_of_speech": "verb",
+    "components": [
+      {
+        "type": "word_display",
+        "german": "vorbereiten",
+        "pronunciation": "[фо́рберайтен]"
+      },
+       {
+        "type": "morpheme_breakdown",
+        "morphemes": [{"m": "vor", "t": "пред- (отделяемая)"}, {"m": "bereiten", "t": "готовить"}]
+      },
+      {
+        "type": "translation",
+        "russian": "готовить, подготавливать"
+      },
+      {
+        "type": "verb_forms",
+        "forms": {
+          "präsens_er": "bereitet vor",
+          "präteritum_er": "bereitete vor",
+          "hilfsverb": "haben",
+          "partizip_ii": "vorbereitet"
+        }
+      }
+    ]
+  }
+]
+// --- END OF FILE vocabulary.json ---
