@@ -13,16 +13,11 @@ class VocabularyApp {
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
 
-        // --- ИЗМЕНЕНИЕ: Адрес вашего нового сервера для генерации речи ---
+        // Адрес вашего рабочего сервера
         this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com';
 
-        // --- УДАЛЕНО: Свойства, связанные со старым движком speechSynthesis ---
-        // this.speechSynth = window.speechSynthesis;
-        // this.isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        // this.speechReady = false;
-        // this.germanVoice = null;
-        // this.russianVoice = null;
-        // this.voicesLoading = false;
+        // --- НОВОЕ СВОЙСТВО: Ссылка на глобальный аудиоплеер из index.html ---
+        this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
         this.runMigrations();
@@ -56,7 +51,6 @@ class VocabularyApp {
     }
 
     async init() {
-        // --- УДАЛЕНО: Вызов initSpeechSynthesis() ---
         await this.loadVocabulary();
         this.setupIcons();
         this.bindEvents();
@@ -64,17 +58,16 @@ class VocabularyApp {
 
         if (this.getActiveWords().length === 0) {
             this.showNoWordsMessage();
-            this.stopAutoPlay(); // Stop just in case
+            this.stopAutoPlay();
             return;
         }
 
         const wordToStart = this.getNextWord();
         if (wordToStart) {
-            this.currentWord = wordToStart; // Set initial word
+            this.currentWord = wordToStart;
             if (this.isAutoPlaying) {
                 this.startAutoPlay();
             } else {
-                // Show the first word without starting the loop
                 this.runDisplaySequence(this.currentWord);
             }
         }
@@ -97,10 +90,6 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        // --- УДАЛЕНО: Отмена системного синтезатора, он больше не используется ---
-        // if (this.speechSynth.speaking) {
-        //     this.speechSynth.cancel();
-        // }
         this.updateToggleButton();
     }
 
@@ -133,7 +122,7 @@ class VocabularyApp {
 
             const oldCard = document.getElementById('wordCard');
             if (oldCard && oldCard.innerHTML.includes(this.formatGermanWord(word))) {
-                // Do nothing if the same word is already displayed
+                // Do nothing
             } else if (oldCard) {
                 oldCard.classList.add('word-crossfade', 'word-fade-out');
                 await delay(300); checkAborted();
@@ -177,67 +166,77 @@ class VocabularyApp {
         }
     }
 
-    // --- УДАЛЕНО: Методы initSpeechSynthesis и loadVoices ---
-
-    // --- ИЗМЕНЕНИЕ: Полностью новая функция speak, работающая с вашим сервером ---
+    // --- ИЗМЕНЕНИЕ: Полностью заменена функция speak для работы на мобильных ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
                 return resolve();
             }
 
-            // Перехватываем ошибки, чтобы не сломать всю цепочку воспроизведения
             try {
-                // 1. Формируем URL для запроса к нашему API
                 const apiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
-
-                // 2. Делаем запрос к серверу
                 const response = await fetch(apiUrl, { signal: this.sequenceController.signal });
-                if (!response.ok) {
-                    throw new Error(`TTS server error: ${response.statusText}`);
-                }
+
+                if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
+
                 const data = await response.json();
+                const audioUrl = `${this.ttsApiBaseUrl}${data.url}`;
 
-                if (this.sequenceController && this.sequenceController.signal.aborted) {
-                    return resolve();
+                if (this.sequenceController.signal.aborted) return resolve();
+
+                this.audioPlayer.src = audioUrl;
+
+                const playPromise = this.audioPlayer.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        if (error.name === "NotAllowedError") {
+                            console.warn("Воспроизведение заблокировано браузером. Требуется действие пользователя.");
+                            resolve();
+                        } else {
+                            console.error('Ошибка воспроизведения аудио:', error);
+                            resolve();
+                        }
+                    });
                 }
 
-                // 3. Создаем аудио-объект и проигрываем MP3
-                const audioUrl = `${this.ttsApiBaseUrl}${data.url}`;
-                const audio = new Audio(audioUrl);
-
-                // Обработчик для отмены воспроизведения
                 const abortHandler = () => {
-                    audio.pause();
-                    audio.src = ''; // Останавливаем загрузку
+                    this.audioPlayer.pause();
+                    this.audioPlayer.src = '';
+                    cleanUp();
                     reject(new DOMException('Sequence aborted', 'AbortError'));
                 };
-                // Если последовательность прервется, сработает этот обработчик
-                this.sequenceController.signal.addEventListener('abort', abortHandler, { once: true });
 
-                audio.onended = () => {
-                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
+                const endedHandler = () => {
+                    cleanUp();
                     resolve();
                 };
-                audio.onerror = (e) => {
-                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
-                    console.error('Ошибка воспроизведения аудио:', e);
-                    resolve(); // Решаем промис, чтобы не останавливать всю цепочку, а просто пропустить звук
+
+                const errorHandler = (e) => {
+                    console.error('Ошибка аудио элемента:', e);
+                    cleanUp();
+                    resolve();
                 };
 
-                audio.play();
+                const cleanUp = () => {
+                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
+                    this.audioPlayer.removeEventListener('ended', endedHandler);
+                    this.audioPlayer.removeEventListener('error', errorHandler);
+                };
+
+                this.sequenceController.signal.addEventListener('abort', abortHandler, { once: true });
+                this.audioPlayer.addEventListener('ended', endedHandler, { once: true });
+                this.audioPlayer.addEventListener('error', errorHandler, { once: true });
 
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error('Ошибка получения аудио с сервера:', error);
                 }
-                // Решаем промис в любом случае, чтобы не ломать приложение
                 resolve();
             }
         });
     }
 
-    // --- ИЗМЕНЕНИЕ: Методы speak... стали асинхронными и используют новые коды языков ---
     async speakGerman(text) {
         if (this.soundEnabled) await this.speak(text, 'de');
     }
@@ -373,7 +372,7 @@ class VocabularyApp {
                 return this.wordHistory[this.currentHistoryIndex];
             }
             const nextWord = this.getNextWord();
-            if (nextWord && nextWord.id !== this.currentWord.id) {
+            if (nextWord && (!this.currentWord || nextWord.id !== this.currentWord.id)) {
                 return nextWord;
             }
             return null;
@@ -507,7 +506,6 @@ class VocabularyApp {
         document.getElementById('importWords_mobile')?.addEventListener('click', () => document.getElementById('fileInput_mobile').click());
         document.getElementById('fileInput_mobile')?.addEventListener('change', e => { this.importWords(e); this.toggleSettingsPanel(false); });
 
-        // This is a mobile-specific behavior, let's keep it.
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         if (isMobile) setTimeout(() => document.querySelector('.header-mobile')?.classList.add('collapsed'), 5000);
     }
