@@ -69,33 +69,37 @@ class VocabularyApp {
         const wordToStart = this.getNextWord();
         if (wordToStart) {
             this.currentWord = wordToStart;
-            if (this.isAutoPlaying) {
-                this.startAutoPlay();
-            } else {
-                this.runDisplaySequence(this.currentWord);
-            }
+            this.runDisplaySequence(this.currentWord);
         }
     }
 
+    // --- ИСПРАВЛЕНИЕ: Функция для разблокировки аудио и запуска автоплея ---
     startAutoPlay() {
         if (this.isAutoPlaying && this.sequenceController && !this.sequenceController.signal.aborted) return;
 
-        // Попытка разблокировать аудио при первом ручном запуске
+        // Ключевой момент: разблокируем аудио ПРЯМО в обработчике клика
         if (!this.audioUnlocked) {
-            const unlockAudio = async () => {
-                try {
-                    await this.audioPlayer.play();
+            const promise = this.audioPlayer.play();
+            if (promise !== undefined) {
+                promise.then(() => {
                     this.audioPlayer.pause();
-                } catch (e) {
-                    // Ошибка не страшна, это просто попытка
-                } finally {
                     this.audioUnlocked = true;
-                    console.log('🔊 Попытка разблокировки аудиоконтекста выполнена.');
-                }
-            };
-            unlockAudio();
+                    console.log('🔊 Аудиоконтекст успешно разблокирован.');
+                    // Теперь, когда аудио разблокировано, запускаем последовательность
+                    this.proceedWithAutoPlay();
+                }).catch(error => {
+                    console.warn('⚠️ Не удалось разблокировать аудио автоматически, ждем следующей попытки.', error.name);
+                    // Даже если не удалось, все равно продолжаем. Ошибка будет поймана позже.
+                    this.proceedWithAutoPlay();
+                });
+            }
+        } else {
+            // Аудио уже было разблокировано, просто запускаем
+            this.proceedWithAutoPlay();
         }
+    }
 
+    proceedWithAutoPlay() {
         this.isAutoPlaying = true;
         this.saveStateToLocalStorage();
         this.updateToggleButton();
@@ -139,7 +143,7 @@ class VocabularyApp {
 
         try {
             const oldCard = document.getElementById('wordCard');
-            if (oldCard) {
+            if (oldCard && oldCard.style.opacity !== '0') {
                 oldCard.classList.add('word-crossfade', 'word-fade-out');
                 await delay(300); checkAborted();
             }
@@ -196,13 +200,12 @@ class VocabularyApp {
                 console.log('▶️ Последовательность корректно остановлена.');
             } else {
                 console.error('❌ Ошибка в последовательности воспроизведения:', error);
-                this.showMessage('Ошибка звука. Попробуйте нажать Play.');
-                this.stopAutoPlay(); // Останавливаем автоплей при ошибке
+                this.showMessage('Ошибка звука. Нажмите Play еще раз.');
+                this.stopAutoPlay();
             }
         }
     }
 
-    // --- ИСПРАВЛЕНИЕ: Переписанная функция speak ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -215,12 +218,13 @@ class VocabularyApp {
                 signal.removeEventListener('abort', abortHandler);
                 this.audioPlayer.removeEventListener('ended', endedHandler);
                 this.audioPlayer.removeEventListener('error', errorHandler);
-                // Прекращаем загрузку, если она еще идет
-                this.audioPlayer.src = '';
+                if (this.audioPlayer) {
+                    this.audioPlayer.src = '';
+                }
             };
 
             const abortHandler = () => {
-                this.audioPlayer.pause();
+                if (this.audioPlayer) this.audioPlayer.pause();
                 cleanUpAndRemoveListeners();
                 reject(new DOMException('Sequence aborted by user', 'AbortError'));
             };
@@ -233,7 +237,6 @@ class VocabularyApp {
             const errorHandler = (e) => {
                 console.error('Audio Element Error:', this.audioPlayer.error);
                 cleanUpAndRemoveListeners();
-                // Вместо resolve() вызываем reject(), чтобы сообщить об ошибке
                 reject(new Error(`Audio playback error: ${this.audioPlayer.error.message}`));
             };
 
@@ -251,19 +254,22 @@ class VocabularyApp {
 
                 const data = await response.json();
 
-                if (signal.aborted) return; // Проверка после асинхронной операции
+                if (signal.aborted) {
+                    reject(new DOMException('Sequence aborted before playback', 'AbortError'));
+                    return;
+                }
 
                 const audioUrl = `${this.ttsApiBaseUrl}${data.url}`;
                 this.audioPlayer.src = audioUrl;
-
                 await this.audioPlayer.play();
 
             } catch (error) {
-                // Если это не отмена пользователем, то это реальная ошибка
                 if (error.name !== 'AbortError') {
                     console.error('Error in speak function:', error);
                     cleanUpAndRemoveListeners();
-                    // Отклоняем промис, чтобы `runDisplaySequence` мог обработать ошибку
+                    reject(error);
+                } else {
+                    cleanUpAndRemoveListeners();
                     reject(error);
                 }
             }
@@ -338,7 +344,11 @@ class VocabularyApp {
         this.updateUI();
         setTimeout(() => {
             this.currentWord = this.getNextWord();
-            this.runDisplaySequence(this.currentWord);
+            if (this.currentWord) {
+                this.runDisplaySequence(this.currentWord);
+            } else {
+                this.showNoWordsMessage();
+            }
         }, 100);
     }
 
@@ -370,18 +380,21 @@ class VocabularyApp {
 
     navigateWithState(getNewWord) {
         const wasAutoPlaying = this.isAutoPlaying;
-        this.stopAutoPlay();
+        if (wasAutoPlaying) this.stopAutoPlay();
 
         const newWord = getNewWord();
 
         if (newWord) {
             if (wasAutoPlaying) {
-                this.isAutoPlaying = true;
-                this.runDisplaySequence(newWord);
+                // Запускаем через startAutoPlay, чтобы он корректно обработал флаги
+                this.isFirstPlay = true;
+                this.currentWord = newWord;
+                this.startAutoPlay();
             } else {
                 this.runDisplaySequence(newWord);
             }
         } else {
+            this.updateNavigationButtons();
             if (wasAutoPlaying) this.startAutoPlay();
         }
     }
@@ -392,6 +405,7 @@ class VocabularyApp {
                 this.currentHistoryIndex--;
                 return this.wordHistory[this.currentHistoryIndex];
             }
+            this.updateNavigationButtons();
             return null;
         });
     }
@@ -406,13 +420,14 @@ class VocabularyApp {
             if (nextWord && (!this.currentWord || nextWord.id !== this.currentWord.id)) {
                 return nextWord;
             }
+            this.updateNavigationButtons();
             return null;
         });
     }
 
     renderInitialCard(word) {
         const studyArea = document.getElementById('studyArea');
-        studyArea.innerHTML = `<div class="card card-appear" id="wordCard"><div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div><div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div id="translationContainer" class="translation-container"></div><div id="morphemeTranslations" class="morpheme-translations"></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
+        studyArea.innerHTML = `<div class="card card-appear" id="wordCard" style="opacity: 1;"><div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div><div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div id="translationContainer" class="translation-container"></div><div id="morphemeTranslations" class="morpheme-translations"></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
         document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateToggleButton(); this.updateNavigationButtons();
     }
@@ -503,8 +518,11 @@ class VocabularyApp {
 
     updateNavigationButtons() {
         document.querySelectorAll('[id^=prevButton]').forEach(btn => btn.disabled = this.currentHistoryIndex <= 0);
-        const hasNext = this.currentHistoryIndex < this.wordHistory.length - 1 || this.getActiveWords().length > this.wordHistory.length;
-        document.querySelectorAll('[id^=nextButton]').forEach(btn => btn.disabled = !hasNext);
+        const activeWords = this.getActiveWords();
+        const hasNextInHistory = this.currentHistoryIndex < this.wordHistory.length - 1;
+        const hasMoreNewWords = activeWords.length > 0 && (this.wordHistory.length === 0 || this.wordHistory.every(hw => activeWords.some(aw => aw.id === hw.id)));
+        const canShowNext = hasNextInHistory || hasMoreNewWords;
+        document.querySelectorAll('[id^=nextButton]').forEach(btn => btn.disabled = !canShowNext);
     }
 
     updateStats() { document.getElementById('totalWords').textContent = this.getActiveWords().length; document.getElementById('studiedToday').textContent = this.studiedToday; const acc = this.accuracy.total > 0 ? Math.round((this.accuracy.correct / this.accuracy.total) * 100) : 0; document.getElementById('accuracy').textContent = acc + '%'; }
@@ -557,8 +575,8 @@ class VocabularyApp {
         this[key] = !this[key];
         this.saveStateToLocalStorage();
         this.updateControlButtons();
-        if (requiresRestart) {
-            this.handleFilterChange();
+        if (requiresRestart && this.currentWord) {
+            this.runDisplaySequence(this.currentWord);
         }
     }
 
@@ -600,6 +618,11 @@ class VocabularyApp {
         if (activeWords.length === 0) return null;
 
         if (this.repeatMode === 'random') {
+            // Исключаем повторение текущего слова, если в выборке больше одного слова
+            if (activeWords.length > 1 && this.currentWord) {
+                const availableWords = activeWords.filter(w => w.id !== this.currentWord.id);
+                return availableWords[Math.floor(Math.random() * availableWords.length)];
+            }
             return activeWords[Math.floor(Math.random() * activeWords.length)];
         }
 
