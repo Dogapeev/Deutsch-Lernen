@@ -2,3 +2,4 @@ Flask
 gTTS
 python-dotenv
 Flask-Cors
+gunicorn
