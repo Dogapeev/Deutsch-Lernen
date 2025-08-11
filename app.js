@@ -14,7 +14,7 @@ class VocabularyApp {
         this.sequenceController = null;
 
         // --- ИЗМЕНЕНИЕ: Адрес вашего нового сервера для генерации речи ---
-        this.ttsApiBaseUrl = 'http://localhost:5000';
+        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com';
 
         // --- УДАЛЕНО: Свойства, связанные со старым движком speechSynthesis ---
         // this.speechSynth = window.speechSynthesis;
