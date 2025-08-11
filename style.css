@@ -187,7 +187,6 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     width: 100%;
     flex-grow: 1;
 }
@@ -354,19 +353,6 @@ body {
     background: #000;
 }
 
-.card.final-phase .word-container {
-    transform: translateY(0) scale(1.0);
-}
-
-.word-crossfade {
-    transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out;
-}
-
-.word-fade-out {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
 @keyframes slideInFromBottom {
     from {
         opacity: 0;
@@ -377,10 +363,6 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.card-appear {
-    animation: slideInFromBottom 0.6s ease-out;
 }
 
 .translation-appear,
@@ -746,20 +728,6 @@ body {
         display: inline;
     }
 
-    .card.sentence-phase {
-        transform: scale(1.02);
-    }
-
-    .card.sentence-phase .word-container {
-        transform: translateY(-35px) scale(1.1);
-        transition: all 1.2s ease-in-out;
-    }
-
-    .card.sentence-phase .level-indicator {
-        opacity: 0;
-        transition: opacity 0.4s ease-in-out;
-    }
-
     .player-controls-mobile {
         display: flex;
         position: fixed;
@@ -952,7 +920,7 @@ body {
 }
 
 /* Скрываем иконку внутри кнопки во время загрузки */
-.play-pause.loading svg {
+.play-pause.loading .icon {
     opacity: 0;
 }
 
@@ -998,4 +966,13 @@ body {
         margin-top: -18px;
         margin-left: -18px;
     }
+}
+
+/* --- Стили для плавной смены карточек --- */
+#studyArea {
+    transition: opacity 0.2s ease-in-out;
+}
+
+#studyArea.fading {
+    opacity: 0;
 }
