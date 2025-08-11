@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Изучение немецких слов - Новый движок</title>
-    <!-- Ссылка на внешний файл стилей -->
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -77,9 +76,12 @@
         <div class="player-controls-desktop">
             <div class="player-buttons">
                 <button class="player-btn" id="prevButton_desktop" title="Предыдущее слово"></button>
-                <!-- ИСПРАВЛЕНО: убран атрибут disabled -->
-                <button class="player-btn play-pause loading" id="toggleButton_desktop"
-                    title="Остановить/Запустить"></button>
+                <!-- ИЗМЕНЕНИЕ: Полностью новая структура кнопки на основе вашего примера -->
+                <button class="player-btn play-pause loading" id="toggleButton_desktop" title="Остановить/Запустить">
+                    <div class="loading-ring"></div>
+                    <div class="icon play-icon"></div>
+                    <div class="icon stop-icon"></div>
+                </button>
                 <button class="player-btn" id="nextButton_desktop" title="Следующее слово"></button>
             </div>
             <div class="player-options">
@@ -125,8 +127,12 @@
     <!-- Mobile Controls -->
     <div class="player-controls-mobile">
         <button class="player-btn" id="prevButton_mobile" title="Предыдущее слово"></button>
-        <!-- ИСПРАВЛЕНО: убран атрибут disabled -->
-        <button class="player-btn play-pause loading" id="toggleButton_mobile" title="Остановить/Запустить"></button>
+        <!-- ИЗМЕНЕНИЕ: Полностью новая структура кнопки на основе вашего примера -->
+        <button class="player-btn play-pause loading" id="toggleButton_mobile" title="Остановить/Запустить">
+            <div class="loading-ring"></div>
+            <div class="icon play-icon"></div>
+            <div class="icon stop-icon"></div>
+        </button>
         <button class="player-btn" id="nextButton_mobile" title="Следующее слово"></button>
         <button id="settingsButton" title="Настройки"></button>
     </div>
@@ -187,12 +193,7 @@
     <!-- SVG иконки -->
     <svg width="0" height="0" style="position:absolute">
         <defs>
-            <symbol id="icon-play" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-            </symbol>
-            <symbol id="icon-pause" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-            </symbol>
+            <!-- ИЗМЕНЕНИЕ: Удалены неиспользуемые #icon-play и #icon-pause -->
             <symbol id="icon-prev" viewBox="0 0 24 24">
                 <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
             </symbol>
@@ -224,7 +225,7 @@
             </symbol>
             <symbol id="icon-settings" viewBox="0 0 24 24">
                 <path
-                    d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61-.22l2.49-1c.52.4 1.08.73 1.69-.98l-.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l-.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49-1c.23-.09.49 0 .61.22l2 3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+                    d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12-.64l2 3.46c.12.22.39.3.61-.22l2.49-1c.52.4 1.08.73 1.69-.98l-.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l-.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49-1c.23-.09.49 0 .61.22l2 3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
             </symbol>
             <symbol id="icon-levels" viewBox="0 0 24 24">
                 <path d="M3 13h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V7H3v2z" />
@@ -240,10 +241,7 @@
         </defs>
     </svg>
 
-    <!-- Глобальный аудиоплеер для исправления работы на мобильных -->
     <audio id="audioPlayer" style="display:none;"></audio>
-
-    <!-- Ссылка на внешний файл скрипта -->
     <script src="app.js"></script>
 </body>
 

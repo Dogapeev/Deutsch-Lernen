@@ -164,7 +164,6 @@ body {
 .main-content {
     padding: 40px;
     height: 450px;
-    /* FIXED HEIGHT TO PREVENT JITTER */
     background: white;
     display: flex;
     align-items: stretch;
@@ -339,7 +338,6 @@ body {
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    transition: opacity 0.4s ease-in-out;
 }
 
 .level-indicator.a1 {
@@ -447,10 +445,11 @@ body {
     align-items: center;
     justify-content: center;
     color: #666;
+    position: relative;
 }
 
 .player-btn svg {
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s ease;
 }
 
 .player-btn:hover {
@@ -462,27 +461,14 @@ body {
     transform: scale(0.9);
 }
 
-/* ИСПРАВЛЕНИЕ: Используем класс .is-disabled вместо :disabled */
 .player-btn.is-disabled {
-    border-color: #ddd;
-    background: #f5f5f5;
-    color: #ccc;
+    border-color: #ddd !important;
+    background: #f5f5f5 !important;
+    color: #ccc !important;
     cursor: not-allowed;
     pointer-events: none;
-    /* Главное изменение */
-}
-
-.play-pause {
-    width: 60px;
-    height: 60px;
-    border-width: 3px;
-    position: relative;
-}
-
-.play-pause.playing {
-    background: #333;
-    color: white;
-    border-color: #333;
+    box-shadow: none !important;
+    animation: none !important;
 }
 
 .sound-btn,
@@ -548,12 +534,11 @@ body {
     border-color: #333;
 }
 
-.option-btn.is-disabled,
-.repeat-selector.is-disabled {
+.option-btn:disabled,
+.repeat-selector:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     background: #f5f5f5;
-    pointer-events: none;
 }
 
 .vocabulary-manager {
@@ -584,12 +569,6 @@ body {
 
 .vocab-btn:hover {
     border-color: #999;
-}
-
-.vocab-btn.load {
-    background: #333;
-    color: white;
-    border-color: #333;
 }
 
 .hidden-input {
@@ -625,7 +604,137 @@ body {
     stroke-width: 0;
     stroke: currentColor;
     fill: currentColor;
+    position: relative;
 }
+
+
+/* --- НОВЫЕ СТИЛИ ДЛЯ КНОПКИ PLAY/PAUSE НА ОСНОВЕ ВАШЕГО ПРИМЕРА --- */
+.play-pause {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #ddd;
+    cursor: pointer;
+    transition: all 0.6s ease;
+    overflow: visible;
+}
+
+.play-pause.loading {
+    cursor: not-allowed;
+    border-color: transparent;
+    pointer-events: none;
+}
+
+.play-pause.loaded {
+    border-color: #000;
+    cursor: pointer;
+}
+
+.play-pause.loaded:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.loading-ring {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    background: conic-gradient(from 0deg, #000000 0deg, #000000 30deg, #ff0000 60deg, #ff0000 90deg, #ffff00 120deg, #ffff00 150deg, #000000 180deg, #000000 210deg, #ff0000 240deg, #ff0000 270deg, #ffff00 300deg, #ffff00 330deg, #000000 360deg) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: rotate 2.5s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.play-pause.loading .loading-ring {
+    opacity: 1;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.play-pause .icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+.play-icon {
+    width: 0;
+    height: 0;
+    border-left: 14px solid #ccc;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    margin-left: 3px;
+    opacity: 0;
+    transition: all 0.6s ease;
+}
+
+.play-pause.loaded .play-icon {
+    border-left-color: #000;
+    opacity: 1;
+}
+
+.stop-icon {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+.stop-icon::before,
+.stop-icon::after {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: #fff;
+}
+
+.play-pause.playing .play-icon {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+.play-pause.playing .stop-icon {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.play-pause.playing {
+    background: #333;
+    border-color: #333;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(51, 51, 51, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(51, 51, 51, 0);
+    }
+}
+
 
 /* --- MOBILE-SPECIFIC STYLES --- */
 .header-mobile,
@@ -641,10 +750,15 @@ body {
         padding: 0 0 120px;
     }
 
-    .container {
-        margin: 0;
+    .container,
+    .header,
+    .level-selector,
+    .block-selector,
+    .main-content {
         border-radius: 0;
         box-shadow: none;
+        border-left: none;
+        border-right: none;
     }
 
     .main-content {
@@ -654,8 +768,6 @@ body {
 
     .card {
         padding: 40px 20px;
-        border: none;
-        margin-bottom: 0;
     }
 
     .word {
@@ -693,15 +805,9 @@ body {
         border-color: transparent;
     }
 
-    .level-selector {
-        margin-top: 0;
-    }
-
     .level-selector,
     .block-selector {
-        display: block;
         padding: 10px;
-        border-bottom: 1px solid #e9ecef;
     }
 
     .level-buttons,
@@ -752,6 +858,16 @@ body {
         gap: 20px;
     }
 
+    .player-controls-mobile .play-pause {
+        width: 64px;
+        height: 64px;
+    }
+
+    .player-controls-mobile .loading-ring {
+        width: 64px;
+        height: 64px;
+    }
+
     #settingsButton {
         display: flex;
         position: absolute;
@@ -765,6 +881,11 @@ body {
         justify-content: center;
     }
 
+    #settingsButton .icon {
+        width: 34px;
+        height: 34px;
+    }
+
     .player-controls-mobile .player-btn {
         width: 52px;
         height: 52px;
@@ -772,32 +893,9 @@ body {
         color: #6c757d;
     }
 
-    .player-controls-mobile .play-pause {
-        width: 64px;
-        height: 64px;
-        border: 2px solid #adb5bd;
-        color: #6c757d;
-    }
-
-    .player-controls-mobile .player-btn .icon {
+    .player-controls-mobile .player-btn svg {
         width: 28px;
         height: 28px;
-    }
-
-    .player-controls-mobile .play-pause .icon {
-        width: 32px;
-        height: 32px;
-    }
-
-    #settingsButton .icon {
-        width: 34px;
-        height: 34px;
-    }
-
-    .player-controls-mobile .play-pause.playing {
-        background: #343a40;
-        border-color: #343a40;
-        color: white;
     }
 
     .settings-overlay {
@@ -902,61 +1000,5 @@ body {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-    }
-}
-
-@media (max-width: 480px) {
-    .word {
-        font-size: 2.5rem;
-    }
-
-    .block-buttons {
-        gap: 6px;
-    }
-
-    .block-btn {
-        padding: 6px 10px;
-        font-size: 0.8rem;
-    }
-}
-
-/* --- LOADING SPINNER STYLES --- */
-
-/* ИСПРАВЛЕНИЕ: Прячем SVG, а не .icon */
-.play-pause.loading svg {
-    opacity: 0;
-}
-
-.play-pause.loading::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 32px;
-    height: 32px;
-    margin-top: -16px;
-    margin-left: -16px;
-    border-radius: 50%;
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    border-top-color: #333;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-@media (max-width: 768px) {
-    .play-pause.loading::before {
-        width: 36px;
-        height: 36px;
-        margin-top: -18px;
-        margin-left: -18px;
     }
 }
