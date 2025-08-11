@@ -80,11 +80,20 @@ class VocabularyApp {
     startAutoPlay() {
         if (this.isAutoPlaying && this.sequenceController && !this.sequenceController.signal.aborted) return;
 
+        // Попытка разблокировать аудио при первом ручном запуске
         if (!this.audioUnlocked) {
-            this.audioPlayer.play().catch(() => { });
-            this.audioPlayer.pause();
-            this.audioUnlocked = true;
-            console.log('🔊 Аудиоконтекст разблокирован действием пользователя.');
+            const unlockAudio = async () => {
+                try {
+                    await this.audioPlayer.play();
+                    this.audioPlayer.pause();
+                } catch (e) {
+                    // Ошибка не страшна, это просто попытка
+                } finally {
+                    this.audioUnlocked = true;
+                    console.log('🔊 Попытка разблокировки аудиоконтекста выполнена.');
+                }
+            };
+            unlockAudio();
         }
 
         this.isAutoPlaying = true;
@@ -114,7 +123,6 @@ class VocabularyApp {
         }
     }
 
-    // --- ИСПРАВЛЕНИЕ: Переписанная функция для плавной анимации ---
     async runDisplaySequence(word) {
         if (!word) {
             this.showNoWordsMessage();
@@ -122,7 +130,6 @@ class VocabularyApp {
             return;
         }
 
-        // 1. Всегда прерываем любую текущую последовательность
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
@@ -131,24 +138,20 @@ class VocabularyApp {
         const checkAborted = () => { if (signal.aborted) throw new DOMException('Sequence aborted', 'AbortError'); };
 
         try {
-            // 2. Всегда запускаем анимацию затухания для старой карточки
             const oldCard = document.getElementById('wordCard');
             if (oldCard) {
                 oldCard.classList.add('word-crossfade', 'word-fade-out');
                 await delay(300); checkAborted();
             }
 
-            // 3. Обновляем и рендерим новую карточку для всех режимов
             this.currentWord = word;
             this.renderInitialCard(word);
             this.addToHistory(word);
 
-            // 4. Если автоплей выключен, на этом все. Анимация сработала.
             if (!this.isAutoPlaying) {
                 return;
             }
 
-            // 5. Если автоплей включен, продолжаем полную последовательность
             if (this.isFirstPlay) {
                 await this.speakGerman(this.currentWord.german); checkAborted();
                 this.isFirstPlay = false;
@@ -192,78 +195,77 @@ class VocabularyApp {
             if (error.name === 'AbortError') {
                 console.log('▶️ Последовательность корректно остановлена.');
             } else {
-                console.error('Ошибка в последовательности воспроизведения:', error);
+                console.error('❌ Ошибка в последовательности воспроизведения:', error);
+                this.showMessage('Ошибка звука. Попробуйте нажать Play.');
+                this.stopAutoPlay(); // Останавливаем автоплей при ошибке
             }
         }
     }
 
-
+    // --- ИСПРАВЛЕНИЕ: Переписанная функция speak ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
                 return resolve();
             }
 
+            const signal = this.sequenceController.signal;
+
+            const cleanUpAndRemoveListeners = () => {
+                signal.removeEventListener('abort', abortHandler);
+                this.audioPlayer.removeEventListener('ended', endedHandler);
+                this.audioPlayer.removeEventListener('error', errorHandler);
+                // Прекращаем загрузку, если она еще идет
+                this.audioPlayer.src = '';
+            };
+
+            const abortHandler = () => {
+                this.audioPlayer.pause();
+                cleanUpAndRemoveListeners();
+                reject(new DOMException('Sequence aborted by user', 'AbortError'));
+            };
+
+            const endedHandler = () => {
+                cleanUpAndRemoveListeners();
+                resolve();
+            };
+
+            const errorHandler = (e) => {
+                console.error('Audio Element Error:', this.audioPlayer.error);
+                cleanUpAndRemoveListeners();
+                // Вместо resolve() вызываем reject(), чтобы сообщить об ошибке
+                reject(new Error(`Audio playback error: ${this.audioPlayer.error.message}`));
+            };
+
+            signal.addEventListener('abort', abortHandler, { once: true });
+            this.audioPlayer.addEventListener('ended', endedHandler, { once: true });
+            this.audioPlayer.addEventListener('error', errorHandler, { once: true });
+
             try {
                 const apiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
-                const response = await fetch(apiUrl, { signal: this.sequenceController.signal });
+                const response = await fetch(apiUrl, { signal });
 
-                if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
+                if (!response.ok) {
+                    throw new Error(`TTS server request failed: ${response.statusText}`);
+                }
 
                 const data = await response.json();
+
+                if (signal.aborted) return; // Проверка после асинхронной операции
+
                 const audioUrl = `${this.ttsApiBaseUrl}${data.url}`;
-
-                if (this.sequenceController.signal.aborted) return resolve();
-
                 this.audioPlayer.src = audioUrl;
 
-                const playPromise = this.audioPlayer.play();
-
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        if (error.name === "NotAllowedError") {
-                            console.warn("Воспроизведение заблокировано браузером. Требуется действие пользователя.");
-                            resolve();
-                        } else {
-                            console.error('Ошибка воспроизведения аудио:', error);
-                            resolve();
-                        }
-                    });
-                }
-
-                const abortHandler = () => {
-                    this.audioPlayer.pause();
-                    this.audioPlayer.src = '';
-                    cleanUp();
-                    reject(new DOMException('Sequence aborted', 'AbortError'));
-                };
-
-                const endedHandler = () => {
-                    cleanUp();
-                    resolve();
-                };
-
-                const errorHandler = (e) => {
-                    console.error('Ошибка аудио элемента:', e);
-                    cleanUp();
-                    resolve();
-                };
-
-                const cleanUp = () => {
-                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
-                    this.audioPlayer.removeEventListener('ended', endedHandler);
-                    this.audioPlayer.removeEventListener('error', errorHandler);
-                };
-
-                this.sequenceController.signal.addEventListener('abort', abortHandler, { once: true });
-                this.audioPlayer.addEventListener('ended', endedHandler, { once: true });
-                this.audioPlayer.addEventListener('error', errorHandler, { once: true });
+                await this.audioPlayer.play();
 
             } catch (error) {
+                // Если это не отмена пользователем, то это реальная ошибка
                 if (error.name !== 'AbortError') {
-                    console.error('Ошибка получения аудио с сервера:', error);
+                    console.error('Error in speak function:', error);
+                    cleanUpAndRemoveListeners();
+                    // Отклоняем промис, чтобы `runDisplaySequence` мог обработать ошибку
+                    reject(error);
                 }
-                resolve();
             }
         });
     }
@@ -373,8 +375,6 @@ class VocabularyApp {
         const newWord = getNewWord();
 
         if (newWord) {
-            // Запускаем последовательность. Она сама разберется, как себя вести
-            // в зависимости от флага wasAutoPlaying.
             if (wasAutoPlaying) {
                 this.isAutoPlaying = true;
                 this.runDisplaySequence(newWord);
