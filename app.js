@@ -73,36 +73,44 @@ class VocabularyApp {
         }
     }
 
-    // --- ИСПРАВЛЕНИЕ: Функция для разблокировки аудио и запуска автоплея ---
-    startAutoPlay() {
-        if (this.isAutoPlaying && this.sequenceController && !this.sequenceController.signal.aborted) return;
+    // --- ИСПРАВЛЕНИЕ 1: Новый метод для разблокировки аудио ---
+    unlockAudioContext() {
+        if (this.audioUnlocked) {
+            return Promise.resolve();
+        }
+        // Встраиваем крошечный беззвучный WAV файл
+        const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+        this.audioPlayer.src = silentWav;
 
-        // Ключевой момент: разблокируем аудио ПРЯМО в обработчике клика
-        if (!this.audioUnlocked) {
-            const promise = this.audioPlayer.play();
+        const promise = this.audioPlayer.play();
+
+        return new Promise((resolve, reject) => {
             if (promise !== undefined) {
                 promise.then(() => {
                     this.audioPlayer.pause();
+                    this.audioPlayer.src = ''; // Очищаем для настоящих аудио
                     this.audioUnlocked = true;
                     console.log('🔊 Аудиоконтекст успешно разблокирован.');
-                    // Теперь, когда аудио разблокировано, запускаем последовательность
-                    this.proceedWithAutoPlay();
+                    resolve();
                 }).catch(error => {
-                    console.warn('⚠️ Не удалось разблокировать аудио автоматически, ждем следующей попытки.', error.name);
-                    // Даже если не удалось, все равно продолжаем. Ошибка будет поймана позже.
-                    this.proceedWithAutoPlay();
+                    console.error('⚠️ Ошибка разблокировки аудиоконтекста:', error);
+                    this.audioPlayer.src = '';
+                    reject(error);
                 });
+            } else {
+                reject(new Error("HTML5 Audio play() is not supported by this browser."));
             }
-        } else {
-            // Аудио уже было разблокировано, просто запускаем
-            this.proceedWithAutoPlay();
-        }
+        });
     }
 
-    proceedWithAutoPlay() {
+    // --- ИСПРАВЛЕНИЕ 2: Упрощенная функция старта ---
+    startAutoPlay() {
+        if (this.isAutoPlaying) return;
+
         this.isAutoPlaying = true;
         this.saveStateToLocalStorage();
         this.updateToggleButton();
+
         const wordToShow = this.currentWord || this.getNextWord();
         if (wordToShow) {
             this.runDisplaySequence(wordToShow);
@@ -118,11 +126,21 @@ class VocabularyApp {
         this.updateToggleButton();
     }
 
-    toggleAutoPlay() {
+    // --- ИСПРАВЛЕНИЕ 3: Переписанный главный переключатель ---
+    async toggleAutoPlay() {
         if (this.isAutoPlaying) {
             this.stopAutoPlay();
         } else {
-            this.isFirstPlay = true; // Сбрасываем флаг при каждом ручном запуске
+            // Сначала пытаемся разблокировать аудио
+            try {
+                await this.unlockAudioContext();
+            } catch (e) {
+                // Если не удалось, пользователь увидит ошибку в консоли.
+                // Но мы все равно попытаемся продолжить.
+            }
+
+            // И только потом запускаем автоплей
+            this.isFirstPlay = true;
             this.startAutoPlay();
         }
     }
@@ -386,7 +404,6 @@ class VocabularyApp {
 
         if (newWord) {
             if (wasAutoPlaying) {
-                // Запускаем через startAutoPlay, чтобы он корректно обработал флаги
                 this.isFirstPlay = true;
                 this.currentWord = newWord;
                 this.startAutoPlay();
@@ -520,7 +537,7 @@ class VocabularyApp {
         document.querySelectorAll('[id^=prevButton]').forEach(btn => btn.disabled = this.currentHistoryIndex <= 0);
         const activeWords = this.getActiveWords();
         const hasNextInHistory = this.currentHistoryIndex < this.wordHistory.length - 1;
-        const hasMoreNewWords = activeWords.length > 0 && (this.wordHistory.length === 0 || this.wordHistory.every(hw => activeWords.some(aw => aw.id === hw.id)));
+        const hasMoreNewWords = activeWords.length > 0 && (this.wordHistory.length === 0 || activeWords.length > this.wordHistory.length);
         const canShowNext = hasNextInHistory || hasMoreNewWords;
         document.querySelectorAll('[id^=nextButton]').forEach(btn => btn.disabled = !canShowNext);
     }
@@ -541,10 +558,10 @@ class VocabularyApp {
         bindUniversalClick(['soundToggle_desktop', 'soundToggle_mobile'], () => this.toggleSetting('soundEnabled', false));
         bindUniversalClick(['translationSoundToggle_desktop', 'translationSoundToggle_mobile'], () => this.toggleSetting('translationSoundEnabled', false));
         bindUniversalClick(['sentenceSoundToggle_desktop', 'sentenceSoundToggle_mobile'], () => this.toggleSetting('sentenceSoundEnabled', false));
-        bindUniversalClick(['toggleArticles_desktop', 'toggleArticles_mobile'], () => this.toggleSetting('showArticles', false));
-        bindUniversalClick(['toggleMorphemes_desktop', 'toggleMorphemes_mobile'], () => { this.toggleSetting('showMorphemes', false); if (!this.showMorphemes) { this.showMorphemeTranslations = false; this.saveStateToLocalStorage(); } this.updateControlButtons(); });
-        bindUniversalClick(['toggleMorphemeTranslations_desktop', 'toggleMorphemeTranslations_mobile'], () => { if (this.showMorphemes) { this.toggleSetting('showMorphemeTranslations', false); } });
-        bindUniversalClick(['toggleSentences_desktop', 'toggleSentences_mobile'], () => this.toggleSetting('showSentences', false));
+        bindUniversalClick(['toggleArticles_desktop', 'toggleArticles_mobile'], () => this.toggleSetting('showArticles', true));
+        bindUniversalClick(['toggleMorphemes_desktop', 'toggleMorphemes_mobile'], () => { this.toggleSetting('showMorphemes', true); if (!this.showMorphemes) { this.showMorphemeTranslations = false; this.saveStateToLocalStorage(); } this.updateControlButtons(); });
+        bindUniversalClick(['toggleMorphemeTranslations_desktop', 'toggleMorphemeTranslations_mobile'], () => { if (this.showMorphemes) { this.toggleSetting('showMorphemeTranslations', true); } });
+        bindUniversalClick(['toggleSentences_desktop', 'toggleSentences_mobile'], () => this.toggleSetting('showSentences', true));
         document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => this.toggleLevel(e.target.dataset.level)));
         document.querySelectorAll('.block-btn[data-theme]').forEach(btn => btn.addEventListener('click', e => this.setTheme(e.target.dataset.theme)));
         document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', e => this.setRepeatMode(e.target.dataset.mode)));
@@ -571,11 +588,11 @@ class VocabularyApp {
 
     toggleSettingsPanel(show) { document.getElementById('settings-panel').classList.toggle('visible', show); document.getElementById('settings-overlay').classList.toggle('visible', show); }
 
-    toggleSetting(key, requiresRestart = true) {
+    toggleSetting(key, shouldRerender) {
         this[key] = !this[key];
         this.saveStateToLocalStorage();
         this.updateControlButtons();
-        if (requiresRestart && this.currentWord) {
+        if (shouldRerender && this.currentWord && !this.isAutoPlaying) {
             this.runDisplaySequence(this.currentWord);
         }
     }
@@ -618,10 +635,11 @@ class VocabularyApp {
         if (activeWords.length === 0) return null;
 
         if (this.repeatMode === 'random') {
-            // Исключаем повторение текущего слова, если в выборке больше одного слова
             if (activeWords.length > 1 && this.currentWord) {
                 const availableWords = activeWords.filter(w => w.id !== this.currentWord.id);
-                return availableWords[Math.floor(Math.random() * availableWords.length)];
+                if (availableWords.length > 0) {
+                    return availableWords[Math.floor(Math.random() * availableWords.length)];
+                }
             }
             return activeWords[Math.floor(Math.random() * activeWords.length)];
         }
@@ -656,6 +674,7 @@ class VocabularyApp {
             ? 'Нет слов для выбранных фильтров.<br>Попробуйте изменить уровень или тему.'
             : 'Словарь пуст. Загрузите стандартный или импортируйте свой.';
         document.getElementById('studyArea').innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
+        document.querySelectorAll('[id^=toggleButton], [id^=nextButton], [id^=prevButton]').forEach(btn => btn.disabled = true);
     }
 
     showMessage(text) {
