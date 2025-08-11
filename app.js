@@ -12,6 +12,8 @@ class VocabularyApp {
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
+        this.audioUnlocked = false; // Флаг для однократной разблокировки аудио
+        this.isFirstPlay = true; // Флаг для первого запуска, чтобы обойти блокировку звука
 
         // Адрес вашего рабочего сервера
         this.ttsApiBaseUrl = 'https://deutsch-lernen-je9l.onrender.com';
@@ -19,11 +21,7 @@ class VocabularyApp {
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
-
-        // --- ИСПРАВЛЕНИЕ ---
         // Принудительно выключаем автопроигрывание при каждой загрузке страницы.
-        // Это гарантирует, что пользователь сам инициирует воспроизведение,
-        // что необходимо для корректной работы звука в браузерах.
         this.isAutoPlaying = false;
 
         this.runMigrations();
@@ -71,11 +69,9 @@ class VocabularyApp {
         const wordToStart = this.getNextWord();
         if (wordToStart) {
             this.currentWord = wordToStart;
-            // Так как isAutoPlaying по умолчанию false, будет вызван блок else
             if (this.isAutoPlaying) {
                 this.startAutoPlay();
             } else {
-                // Просто показываем первое слово, не запуская проигрывание
                 this.runDisplaySequence(this.currentWord);
             }
         }
@@ -83,6 +79,14 @@ class VocabularyApp {
 
     startAutoPlay() {
         if (this.isAutoPlaying && this.sequenceController && !this.sequenceController.signal.aborted) return;
+
+        if (!this.audioUnlocked) {
+            this.audioPlayer.play().catch(() => { });
+            this.audioPlayer.pause();
+            this.audioUnlocked = true;
+            console.log('🔊 Аудиоконтекст разблокирован действием пользователя.');
+        }
+
         this.isAutoPlaying = true;
         this.saveStateToLocalStorage();
         this.updateToggleButton();
@@ -105,10 +109,12 @@ class VocabularyApp {
         if (this.isAutoPlaying) {
             this.stopAutoPlay();
         } else {
+            this.isFirstPlay = true; // Сбрасываем флаг при каждом ручном запуске
             this.startAutoPlay();
         }
     }
 
+    // --- ИСПРАВЛЕНИЕ: Переписанная функция для плавной анимации ---
     async runDisplaySequence(word) {
         if (!word) {
             this.showNoWordsMessage();
@@ -116,44 +122,50 @@ class VocabularyApp {
             return;
         }
 
-        // --- Ключевая логика ---
-        // Если автопроигрывание выключено, мы просто отображаем карточку и выходим.
-        // Это срабатывает при первой загрузке и при ручном переключении слов.
-        if (!this.isAutoPlaying) {
-            this.renderInitialCard(word);
-            this.addToHistory(word);
-            return;
-        }
-
-        // Весь код ниже будет выполняться ТОЛЬКО если isAutoPlaying === true.
-
+        // 1. Всегда прерываем любую текущую последовательность
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-
         this.sequenceController = new AbortController();
         const { signal } = this.sequenceController;
         const checkAborted = () => { if (signal.aborted) throw new DOMException('Sequence aborted', 'AbortError'); };
 
         try {
-            this.currentWord = word;
-            this.addToHistory(word);
-
+            // 2. Всегда запускаем анимацию затухания для старой карточки
             const oldCard = document.getElementById('wordCard');
-            if (oldCard && oldCard.innerHTML.includes(this.formatGermanWord(word))) {
-                // Do nothing
-            } else if (oldCard) {
+            if (oldCard) {
                 oldCard.classList.add('word-crossfade', 'word-fade-out');
                 await delay(300); checkAborted();
             }
 
+            // 3. Обновляем и рендерим новую карточку для всех режимов
+            this.currentWord = word;
             this.renderInitialCard(word);
+            this.addToHistory(word);
 
-            const repeats = this.repeatMode === 'random' ? 1 : parseInt(this.repeatMode, 10);
-            for (let i = 0; i < repeats; i++) {
-                await delay(i === 0 ? 500 : 1500); checkAborted();
-                await this.speakGerman(this.currentWord.german); checkAborted();
+            // 4. Если автоплей выключен, на этом все. Анимация сработала.
+            if (!this.isAutoPlaying) {
+                return;
             }
+
+            // 5. Если автоплей включен, продолжаем полную последовательность
+            if (this.isFirstPlay) {
+                await this.speakGerman(this.currentWord.german); checkAborted();
+                this.isFirstPlay = false;
+
+                const repeatsLeft = this.repeatMode === 'random' ? 0 : parseInt(this.repeatMode, 10) - 1;
+                for (let i = 0; i < repeatsLeft; i++) {
+                    await delay(1500); checkAborted();
+                    await this.speakGerman(this.currentWord.german); checkAborted();
+                }
+            } else {
+                const repeats = this.repeatMode === 'random' ? 1 : parseInt(this.repeatMode, 10);
+                for (let i = 0; i < repeats; i++) {
+                    await delay(i === 0 ? 500 : 1500); checkAborted();
+                    await this.speakGerman(this.currentWord.german); checkAborted();
+                }
+            }
+
             await delay(1500); checkAborted();
             this.displayMorphemesAndTranslations();
             await delay(2500); checkAborted();
@@ -184,6 +196,7 @@ class VocabularyApp {
             }
         }
     }
+
 
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
@@ -280,8 +293,6 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
-        // isAutoPlaying будет перезаписано в конструкторе, так что его загрузка здесь не имеет решающего значения
-        // но мы оставляем ее для целостности (вдруг понадобится для других целей)
         this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
@@ -362,16 +373,15 @@ class VocabularyApp {
         const newWord = getNewWord();
 
         if (newWord) {
+            // Запускаем последовательность. Она сама разберется, как себя вести
+            // в зависимости от флага wasAutoPlaying.
             if (wasAutoPlaying) {
-                this.isAutoPlaying = true; // Сразу восстанавливаем состояние для следующего вызова
-                this.currentWord = newWord;
+                this.isAutoPlaying = true;
                 this.runDisplaySequence(newWord);
             } else {
-                this.currentWord = newWord;
                 this.runDisplaySequence(newWord);
             }
         } else {
-            // Если нового слова нет, но автоплей был включен, вернем его
             if (wasAutoPlaying) this.startAutoPlay();
         }
     }
