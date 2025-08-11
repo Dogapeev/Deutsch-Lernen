@@ -176,9 +176,10 @@ class VocabularyApp {
         }
     }
 
-    // --- ПРАВИЛЬНАЯ, РАБОЧАЯ ВЕРСИЯ ФУНКЦИИ SPEAK ---
-    // Эта версия работает, потому что вызывает .play() немедленно после
-    // установки .src, что соответствует требованиям безопасности браузеров.
+    // --- ИСПРАВЛЕННАЯ ВЕРСИЯ ФУНКЦИИ SPEAK ---
+    // Эта версия работает более надежно, так как явно вызывает .load()
+    // после смены источника звука, что решает проблемы с состоянием плеера
+    // в асинхронных операциях и соответствует требованиям браузеров.
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -219,6 +220,11 @@ class VocabularyApp {
                 if (signal.aborted) return;
 
                 this.audioPlayer.src = `${this.ttsApiBaseUrl}${data.url}`;
+
+                // --- ВОТ ИСПРАВЛЕНИЕ ---
+                // Явно говорим плееру загрузить новый источник. Это ключ к стабильной работе.
+                this.audioPlayer.load();
+
                 await this.audioPlayer.play();
             } catch (error) {
                 // Отклоняем промис, чтобы внешний try/catch мог его поймать
