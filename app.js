@@ -1,4 +1,4 @@
-// app.js - Исправленная версия с правильным URL и прокси
+// app.js
 
 const APP_VERSION = '1.2';
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -8,13 +8,16 @@ class VocabularyApp {
         this.appVersion = APP_VERSION;
         this.allWords = [];
         this.currentWord = null;
-        this.isAutoPlaying = true;
+        // --- ИЗМЕНЕНИЕ №1: Автопроигрывание по умолчанию выключено ---
+        this.isAutoPlaying = false;
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
 
-        // --- ИЗМЕНЕНО: Правильный публичный адрес сервера ---
-        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com';
+        // Адрес вашего рабочего сервера
+        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com'; // У вас может быть je9i, проверьте!
+
+        this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
         this.runMigrations();
@@ -65,6 +68,7 @@ class VocabularyApp {
             if (this.isAutoPlaying) {
                 this.startAutoPlay();
             } else {
+                // Просто показываем первое слово, не запуская проигрывание
                 this.runDisplaySequence(this.currentWord);
             }
         }
@@ -102,6 +106,13 @@ class VocabularyApp {
         if (!word) {
             this.showNoWordsMessage();
             this.stopAutoPlay();
+            return;
+        }
+
+        // Если это не автопроигрывание, а просто показ слова, останавливаемся здесь
+        if (!this.isAutoPlaying && this.sequenceController && this.sequenceController.signal.aborted) {
+            this.renderInitialCard(word);
+            this.addToHistory(word);
             return;
         }
 
@@ -163,7 +174,6 @@ class VocabularyApp {
         }
     }
 
-    // --- ИЗМЕНЕНО: Функция speak теперь использует прокси для обхода CORS ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -171,47 +181,59 @@ class VocabularyApp {
             }
 
             try {
-                // Используем надежный прокси-сервер
-                const PROXY_URL = 'https://simple-cors-proxy-alpha.vercel.app/api?url=';
+                const apiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
+                const response = await fetch(apiUrl, { signal: this.sequenceController.signal });
 
-                // 1. Формируем URL для запроса к API и пропускаем через прокси
-                const targetApiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
-                const proxiedApiUrl = PROXY_URL + encodeURIComponent(targetApiUrl);
+                if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
 
-                // 2. Делаем запрос к серверу через прокси
-                const response = await fetch(proxiedApiUrl, { signal: this.sequenceController.signal });
-                if (!response.ok) {
-                    throw new Error(`TTS server error: ${response.statusText}`);
-                }
                 const data = await response.json();
+                const audioUrl = `${this.ttsApiBaseUrl}${data.url}`;
 
-                if (this.sequenceController && this.sequenceController.signal.aborted) {
-                    return resolve();
+                if (this.sequenceController.signal.aborted) return resolve();
+
+                this.audioPlayer.src = audioUrl;
+
+                const playPromise = this.audioPlayer.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        if (error.name === "NotAllowedError") {
+                            console.warn("Воспроизведение заблокировано браузером. Требуется действие пользователя.");
+                            resolve();
+                        } else {
+                            console.error('Ошибка воспроизведения аудио:', error);
+                            resolve();
+                        }
+                    });
                 }
-
-                // 3. Создаем аудио-объект и проигрываем MP3 (URL файла тоже пропускаем через прокси!)
-                const targetAudioUrl = `${this.ttsApiBaseUrl}${data.url}`;
-                const proxiedAudioUrl = PROXY_URL + encodeURIComponent(targetAudioUrl);
-                const audio = new Audio(proxiedAudioUrl);
 
                 const abortHandler = () => {
-                    audio.pause();
-                    audio.src = '';
+                    this.audioPlayer.pause();
+                    this.audioPlayer.src = '';
+                    cleanUp();
                     reject(new DOMException('Sequence aborted', 'AbortError'));
                 };
+
+                const endedHandler = () => {
+                    cleanUp();
+                    resolve();
+                };
+
+                const errorHandler = (e) => {
+                    console.error('Ошибка аудио элемента:', e);
+                    cleanUp();
+                    resolve();
+                };
+
+                const cleanUp = () => {
+                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
+                    this.audioPlayer.removeEventListener('ended', endedHandler);
+                    this.audioPlayer.removeEventListener('error', errorHandler);
+                };
+
                 this.sequenceController.signal.addEventListener('abort', abortHandler, { once: true });
-
-                audio.onended = () => {
-                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
-                    resolve();
-                };
-                audio.onerror = (e) => {
-                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
-                    console.error('Ошибка воспроизведения аудио:', e);
-                    resolve();
-                };
-
-                audio.play();
+                this.audioPlayer.addEventListener('ended', endedHandler, { once: true });
+                this.audioPlayer.addEventListener('error', errorHandler, { once: true });
 
             } catch (error) {
                 if (error.name !== 'AbortError') {
@@ -247,7 +269,8 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
-        this.isAutoPlaying = safeJsonParse('isAutoPlaying', true);
+        // --- ИЗМЕНЕНИЕ №2: Значение по умолчанию для isAutoPlaying теперь false ---
+        this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
         this.accuracy = safeJsonParse('accuracy', { correct: 0, total: 0 });
@@ -290,7 +313,8 @@ class VocabularyApp {
         this.updateUI();
         setTimeout(() => {
             this.currentWord = this.getNextWord();
-            this.startAutoPlay();
+            // После смены фильтров просто показываем слово, не запуская autoplay
+            this.runDisplaySequence(this.currentWord);
         }, 100);
     }
 
@@ -357,7 +381,7 @@ class VocabularyApp {
                 return this.wordHistory[this.currentHistoryIndex];
             }
             const nextWord = this.getNextWord();
-            if (nextWord && nextWord.id !== this.currentWord.id) {
+            if (nextWord && (!this.currentWord || nextWord.id !== this.currentWord.id)) {
                 return nextWord;
             }
             return null;
