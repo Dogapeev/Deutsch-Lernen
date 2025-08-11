@@ -4,213 +4,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Немецкий словарь</title>
+    <title>Изучение немецких слов - Новый движок</title>
+    <!-- Ссылка на внешний файл стилей -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-    <!-- Скрытый контейнер для SVG иконок -->
-    <svg style="display: none;">
-        <symbol id="icon-play" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-        </symbol>
-        <symbol id="icon-pause" viewBox="0 0 24 24">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-        </symbol>
-        <symbol id="icon-prev" viewBox="0 0 24 24">
-            <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
-        </symbol>
-        <symbol id="icon-next" viewBox="0 0 24 24">
-            <path d="M16 6h2v12h-2zm-10 6-8.5-6v12z" />
-        </symbol>
-        <symbol id="icon-sound-on" viewBox="0 0 24 24">
-            <path
-                d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-        </symbol>
-        <symbol id="icon-sound-off" viewBox="0 0 24 24">
-            <path
-                d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-        </symbol>
-        <symbol id="icon-chat-on" viewBox="0 0 24 24">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-        </symbol>
-        <symbol id="icon-chat-off" viewBox="0 0 24 24">
-            <path
-                d="M22.12 4.12L20 2H4c-1.1 0-2 .9-2 2v12c0 .28.06.55.16.8L2.05 17.05l-1-1L2.93 14.17 2 13.24V4c0-1.1.9-2 2-2h16c.38 0 .73.11 1.03.29l-1.47 1.47L20 4H4v10.76l2-2H14.76l2-2H4V4l18.12.12zM21.9 21.9l-1-1L4.25 4.25l-1-1L1.41 5.09l2.83 2.83L2 17l4-4h13l.88.88 2.19 2.19L21.9 21.9z" />
-        </symbol>
-        <symbol id="icon-sentence-on" viewBox="0 0 24 24">
-            <path
-                d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM9 16H6v-5h3v5zm5 0h-3v-5h3v5zm5 0h-3v-5h3v5z" />
-        </symbol>
-        <symbol id="icon-sentence-off" viewBox="0 0 24 24">
-            <path
-                d="M2.22 3L1 4.22l2 2V20c0 1.1.9 2 2 2h13.78l2 2L22 23.78l-20-20L2.22 3zM21 18.78L6.22 4H21c1.1 0 2 .9 2 2v12c0 .44-.14.84-.37 1.18zM9 16H6v-5h3v5zm5 0h-3v-5h1.78l2 2V16zm5-1.1l-2-2H14v-1.9H9v-2H6v-1.78l-2-2V6c0-1.1.9-2 2-2h18c1.1 0 2 .9 2 2v12.78z" />
-        </symbol>
-        <symbol id="icon-settings" viewBox="0 0 24 24">
-            <path
-                d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
-        </symbol>
-    </svg>
-
     <div class="container">
-        <!-- Шапка (для десктопа) -->
-        <header class="header">
-            <h1>Deutsch Lernen</h1>
-            <p>Карточки для изучения немецких слов</p>
-        </header>
-
-        <!-- Шапка (для мобильных) -->
-        <div class="header-mobile">
-            <p id="levelStatus">Словарь</p>
+        <!-- Desktop Header -->
+        <div class="header">
+            <h1>🇩🇪 Deutsch Lernen</h1>
+            <p>Словарь с морфемами и предложениями</p>
         </div>
 
-        <!-- Статистика (для десктопа) -->
+        <!-- Mobile Header -->
+        <div class="header-mobile">
+            <h1>🇩🇪 Deutsch Lernen</h1>
+        </div>
+
+        <!-- Common Elements -->
         <div class="stats">
             <div class="stat">
-                <div id="totalWords" class="stat-number">0</div>
-                <div class="stat-label">Слов в фильтре</div>
+                <div class="stat-number" id="totalWords">0</div>
+                <div class="stat-label">Всего слов</div>
             </div>
             <div class="stat">
-                <div id="studiedToday" class="stat-number">0</div>
+                <div class="stat-number" id="studiedToday">0</div>
                 <div class="stat-label">Изучено сегодня</div>
             </div>
+            <div class="stat">
+                <div class="stat-number" id="accuracy">0%</div>
+                <div class="stat-label">Точность</div>
+            </div>
         </div>
-
-        <!-- Фильтр по уровням -->
         <div class="level-selector">
             <div class="level-buttons">
-                <button class="level-btn" data-level="A1">A1</button>
-                <button class="level-btn" data-level="A2">A2</button>
-                <button class="level-btn" data-level="B1">B1</button>
-                <button class="level-btn" data-level="B2">B2</button>
+                <span class="block-label"><svg class="icon">
+                        <use xlink:href="#icon-levels"></use>
+                    </svg>Уровни</span>
+                <button class="level-btn a1" data-level="A1">A1</button>
+                <button class="level-btn a2" data-level="A2">A2</button>
+                <button class="level-btn b1" data-level="B1">B1</button>
+                <button class="level-btn b2" data-level="B2">B2</button>
             </div>
+            <div id="levelStatus" class="status-message" style="display: none;"></div>
         </div>
-
-        <!-- Фильтр по темам -->
         <div class="block-selector">
             <div class="block-buttons">
-                <button class="block-btn" data-theme="all">Все</button>
-                <button class="block-btn" data-theme="1">Блок 1</button>
-                <button class="block-btn" data-theme="2">Блок 2</button>
-                <button class="block-btn" data-theme="3">Блок 3</button>
+                <span class="block-label"><svg class="icon">
+                        <use xlink:href="#icon-category"></use>
+                    </svg>Темы</span>
+                <button class="block-btn active" data-theme="all">Все темы</button><button class="block-btn"
+                    data-theme="family">Семья</button><button class="block-btn" data-theme="work">Работа</button><button
+                    class="block-btn" data-theme="home">Дом</button><button class="block-btn"
+                    data-theme="food">Еда</button><button class="block-btn"
+                    data-theme="travel">Путешествия</button><button class="block-btn"
+                    data-theme="health">Здоровье</button><button class="block-btn"
+                    data-theme="education">Учеба</button><button class="block-btn"
+                    data-theme="hobbies">Хобби</button><button class="block-btn"
+                    data-theme="verbs">Глаголы</button><button class="block-btn"
+                    data-theme="emotions">Эмоции</button><button class="block-btn" data-theme="weather">Погода</button>
+            </div>
+        </div>
+        <div class="main-content" id="mainContent">
+            <div id="studyArea">
+                <div class="no-words">
+                    <p>Загружаю словарь...</p>
+                </div>
             </div>
         </div>
 
-        <!-- Основная область -->
-        <main class="main-content">
-            <div id="studyArea">
-                <!-- Карточки будут появляться здесь -->
-            </div>
-        </main>
-
-        <!-- Управление плеером (десктоп) -->
         <div class="player-controls-desktop">
             <div class="player-buttons">
-                <button id="prevButton_desktop" class="player-btn"></button>
-                <button id="toggleButton_desktop" class="player-btn play-pause"></button>
-                <button id="nextButton_desktop" class="player-btn"></button>
+                <button class="player-btn" id="prevButton_desktop" title="Предыдущее слово"></button>
+                <button class="player-btn play-pause" id="toggleButton_desktop" title="Остановить/Запустить"></button>
+                <button class="player-btn" id="nextButton_desktop" title="Следующее слово"></button>
             </div>
             <div class="player-options">
                 <div class="control-group">
-                    <button id="soundToggle_desktop" class="player-btn sound-btn"></button>
-                    <button id="translationSoundToggle_desktop" class="player-btn sound-btn"></button>
-                    <button id="sentenceSoundToggle_desktop" class="player-btn sound-btn"></button>
+                    <span class="control-label">Звук:</span>
+                    <button class="player-btn sound-btn" id="soundToggle_desktop" title="Звук слова"></button>
+                    <button class="player-btn translation-sound-btn" id="translationSoundToggle_desktop"
+                        title="Звук перевода"></button>
+                    <button class="player-btn sentence-sound-btn" id="sentenceSoundToggle_desktop"
+                        title="Звук примера"></button>
                 </div>
                 <div class="control-group">
-                    <span class="control-label">Повторы:</span>
-                    <button class="repeat-selector" data-mode="1">1x</button>
-                    <button class="repeat-selector" data-mode="2">2x</button>
-                    <button class="repeat-selector" data-mode="random">Случайно</button>
+                    <span class="control-label">Повторений:</span>
+                    <button class="repeat-selector" data-mode="1">1</button><button class="repeat-selector"
+                        data-mode="2">2</button><button class="repeat-selector" data-mode="3">3</button><button
+                        class="repeat-selector" data-mode="random">∞</button>
                 </div>
-                <div class="control-group">
-                    <span class="control-label">Артикли:</span>
-                    <button id="toggleArticles_desktop" class="option-btn"></button>
-                </div>
-                <div class="control-group">
-                    <span class="control-label">Морфемы:</span>
-                    <button id="toggleMorphemes_desktop" class="option-btn"></button>
-                    <button id="toggleMorphemeTranslations_desktop" class="option-btn">Перевод</button>
-                </div>
-                <div class="control-group">
-                    <span class="control-label">Примеры:</span>
-                    <button id="toggleSentences_desktop" class="option-btn"></button>
+                <div class="control-group"><span class="control-label">Артикли:</span><button class="repeat-selector"
+                        id="toggleArticles_desktop" title="Показать/Скрыть артикли"></button></div>
+                <div class="control-group"><span class="control-label">Морфемы:</span><button class="repeat-selector"
+                        id="toggleMorphemes_desktop" title="Показать/Скрыть разделение"></button></div>
+                <div class="control-group"><span class="control-label">Перевод морфем:</span><button
+                        class="repeat-selector" id="toggleMorphemeTranslations_desktop"
+                        title="Показать/Скрыть перевод морфем"></button></div>
+                <div class="control-group"><span class="control-label">Пример использования:</span><button
+                        class="repeat-selector" id="toggleSentences_desktop" title="Показать/Скрыть примеры"></button>
                 </div>
             </div>
         </div>
-
-        <!-- Управление словарем (десктоп) -->
         <div class="vocabulary-manager">
             <div class="vocabulary-buttons">
-                <button id="reloadDefaultWords_desktop" class="vocab-btn">Загрузить стандартный словарь</button>
-                <button id="importWords_desktop" class="vocab-btn">Импорт</button>
-                <input type="file" id="fileInput_desktop" class="hidden-input" accept=".json">
-                <button id="exportWords_desktop" class="vocab-btn">Экспорт</button>
+                <span class="block-label"><svg class="icon">
+                        <use xlink:href="#icon-book"></use>
+                    </svg>Словари</span>
+                <button class="vocab-btn" id="reloadDefaultWords_desktop">🔄 Обновить словарь</button><button
+                    class="vocab-btn" id="exportWords_desktop">Экспорт</button><button class="vocab-btn"
+                    id="importWords_desktop">Импорт файла</button><input type="file" id="fileInput_desktop"
+                    class="hidden-input" accept=".json" />
             </div>
         </div>
-
     </div>
 
-    <!-- Управление плеером (мобильное) -->
+    <!-- Mobile Controls -->
     <div class="player-controls-mobile">
-        <button id="prevButton_mobile" class="player-btn"></button>
-        <button id="toggleButton_mobile" class="player-btn play-pause"></button>
-        <button id="nextButton_mobile" class="player-btn"></button>
-        <button id="settingsButton" class="player-btn"></button>
+        <button class="player-btn" id="prevButton_mobile" title="Предыдущее слово"></button>
+        <button class="player-btn play-pause" id="toggleButton_mobile" title="Остановить/Запустить"></button>
+        <button class="player-btn" id="nextButton_mobile" title="Следующее слово"></button>
+        <button id="settingsButton" title="Настройки"></button>
     </div>
 
-    <!-- Панель настроек (мобильная) -->
-    <div id="settings-overlay" class="settings-overlay"></div>
-    <div id="settings-panel" class="settings-panel">
+    <!-- Mobile Settings Panel -->
+    <div class="settings-overlay" id="settings-overlay"></div>
+    <div class="settings-panel" id="settings-panel">
         <div class="settings-header">
-            <h2>Настройки</h2>
-            <button id="closeSettingsButton" class="close-btn">&times;</button>
+            <h2>Настройки</h2><button class="close-btn" id="closeSettingsButton">&times;</button>
         </div>
-
-        <div class="settings-section">
-            <h3>Звук</h3>
-            <div class="options-grid">
-                <div class="control-group"><span class="control-label">Основной звук</span><button
-                        id="soundToggle_mobile" class="option-btn"></button></div>
-                <div class="control-group"><span class="control-label">Звук перевода</span><button
-                        id="translationSoundToggle_mobile" class="option-btn"></button></div>
-                <div class="control-group"><span class="control-label">Звук примера</span><button
-                        id="sentenceSoundToggle_mobile" class="option-btn"></button></div>
+        <div class="settings-content">
+            <div class="settings-section">
+                <h3>Процесс</h3>
+                <div class="options-grid">
+                    <div class="control-group"><span class="control-label">Повторений:</span>
+                        <div class="player-buttons"><button class="option-btn" data-mode="1">1</button><button
+                                class="option-btn" data-mode="2">2</button><button class="option-btn"
+                                data-mode="3">3</button><button class="option-btn" data-mode="random">∞</button></div>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>Отображение</h3>
-            <div class="options-grid">
-                <div class="control-group"><span class="control-label">Артикли</span><button id="toggleArticles_mobile"
-                        class="option-btn"></button></div>
-                <div class="control-group"><span class="control-label">Морфемы</span><button id="toggleMorphemes_mobile"
-                        class="option-btn"></button></div>
-                <div class="control-group"><span class="control-label">Перевод морфем</span><button
-                        id="toggleMorphemeTranslations_mobile" class="option-btn"></button></div>
-                <div class="control-group"><span class="control-label">Примеры</span><button id="toggleSentences_mobile"
-                        class="option-btn"></button></div>
+            <div class="settings-section">
+                <h3>Отображение</h3>
+                <div class="options-grid">
+                    <div class="control-group"><span class="control-label">Артикли</span><button class="option-btn"
+                            id="toggleArticles_mobile"></button></div>
+                    <div class="control-group"><span class="control-label">Морфемы</span><button class="option-btn"
+                            id="toggleMorphemes_mobile"></button></div>
+                    <div class="control-group"><span class="control-label">Перевод морфем</span><button
+                            class="option-btn" id="toggleMorphemeTranslations_mobile"></button></div>
+                    <div class="control-group"><span class="control-label">Пример использования</span><button
+                            class="option-btn" id="toggleSentences_mobile"></button></div>
+                </div>
             </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>Словарь</h3>
-            <div class="vocab-buttons-mobile">
-                <button id="reloadDefaultWords_mobile" class="vocab-btn">Сбросить</button>
-                <button id="importWords_mobile" class="vocab-btn">Импорт</button>
-                <input type="file" id="fileInput_mobile" class="hidden-input" accept=".json">
-                <button id="exportWords_mobile" class="vocab-btn">Экспорт</button>
+            <div class="settings-section">
+                <h3>Звук</h3>
+                <div class="options-grid">
+                    <div class="control-group"><span class="control-label">Звук слова</span><button class="option-btn"
+                            id="soundToggle_mobile"></button></div>
+                    <div class="control-group"><span class="control-label">Звук перевода</span><button
+                            class="option-btn" id="translationSoundToggle_mobile"></button></div>
+                    <div class="control-group"><span class="control-label">Звук примера</span><button class="option-btn"
+                            id="sentenceSoundToggle_mobile"></button></div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h3>Словарь</h3>
+                <div class="vocab-buttons-mobile">
+                    <button class="option-btn" id="reloadDefaultWords_mobile">🔄 Обновить</button><button
+                        class="option-btn" id="exportWords_mobile">Экспорт</button><button class="option-btn"
+                        id="importWords_mobile">Импорт</button><input type="file" id="fileInput_mobile"
+                        class="hidden-input" accept=".json" />
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- SVG иконки -->
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <symbol id="icon-play" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+            </symbol>
+            <symbol id="icon-pause" viewBox="0 0 24 24">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+            </symbol>
+            <symbol id="icon-prev" viewBox="0 0 24 24">
+                <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+            </symbol>
+            <symbol id="icon-next" viewBox="0 0 24 24">
+                <path d="M16 6h2v12h-2zm-3.5 6-8.5 6V6z" />
+            </symbol>
+            <symbol id="icon-sound-on" viewBox="0 0 24 24">
+                <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            </symbol>
+            <symbol id="icon-sound-off" viewBox="0 0 24 24">
+                <path
+                    d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+            </symbol>
+            <symbol id="icon-chat-on" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+            </symbol>
+            <symbol id="icon-chat-off" viewBox="0 0 24 24">
+                <path
+                    d="m2.27 1.73 1.28-1.28L22 18.95l-1.27 1.28L18.95 20H4l-4 4V4c0-.28.06-.55.15-.8L2.27 1.73zM20 2H4.05L22 20.03V4c0-1.1-.9-2-2-2z" />
+            </symbol>
+            <symbol id="icon-sentence-on" viewBox="0 0 24 24">
+                <path
+                    d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM16 18H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+            </symbol>
+            <symbol id="icon-sentence-off" viewBox="0 0 24 24">
+                <path
+                    d="M20.49 20.49L3.51 3.51 2.24 4.78l2.75 2.75H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c.28 0 .55-.07.8-.18l2.44 2.44 1.27-1.27zM8 18v-2h3.17l2 2H8zm4.83-4H8v-2h1.17l4 4H16v-1.17l-2-2-1.17-1.17zM14 2H6c-1.1 0-2 .9-2 2v.17l2 2V4h7v5h5v5.17l2 2V8l-6-6z" />
+            </symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24">
+                <path
+                    d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49-1c.23-.09.49 0 .61-.22l2 3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+            </symbol>
+            <symbol id="icon-levels" viewBox="0 0 24 24">
+                <path d="M3 13h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V7H3v2z" />
+            </symbol>
+            <symbol id="icon-category" viewBox="0 0 24 24">
+                <path
+                    d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z" />
+            </symbol>
+            <symbol id="icon-book" viewBox="0 0 24 24">
+                <path
+                    d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-0.75L9 9V4zm6 12H9v-2h6v2zm3-4H9v-2h9v2zm0-4H9V8h9v2z" />
+            </symbol>
+        </defs>
+    </svg>
 
-    <!-- Скрытый аудиоплеер -->
-    <audio id="audioPlayer"></audio>
-
-    <!-- Вот так подключается ваш скрипт -->
+    <!-- Ссылка на внешний файл скрипта -->
     <script src="app.js"></script>
-
 </body>
 
 </html>
