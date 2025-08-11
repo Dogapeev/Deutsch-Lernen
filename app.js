@@ -12,6 +12,7 @@ class VocabularyApp {
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
+        this.audioUnlocked = false; // Флаг для однократной разблокировки аудио
 
         // Адрес вашего рабочего сервера
         this.ttsApiBaseUrl = 'https://deutsch-lernen-je9l.onrender.com';
@@ -19,11 +20,7 @@ class VocabularyApp {
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
-
-        // --- ИСПРАВЛЕНИЕ ---
         // Принудительно выключаем автопроигрывание при каждой загрузке страницы.
-        // Это гарантирует, что пользователь сам инициирует воспроизведение,
-        // что необходимо для корректной работы звука в браузерах.
         this.isAutoPlaying = false;
 
         this.runMigrations();
@@ -83,6 +80,18 @@ class VocabularyApp {
 
     startAutoPlay() {
         if (this.isAutoPlaying && this.sequenceController && !this.sequenceController.signal.aborted) return;
+
+        // --- ИСПРАВЛЕНИЕ: "Разблокировка" аудиоконтекста ---
+        // При первом запуске воспроизведения мы "пингуем" аудиоплеер.
+        // Это нужно, чтобы браузер понял, что пользователь разрешил звук.
+        // Без этого, звук после задержки (delay) может быть заблокирован.
+        if (!this.audioUnlocked) {
+            this.audioPlayer.play().catch(() => { }); // Пытаемся играть, игнорируем ошибку (т.к. источника еще нет)
+            this.audioPlayer.pause();
+            this.audioUnlocked = true;
+            console.log('🔊 Аудиоконтекст разблокирован действием пользователя.');
+        }
+
         this.isAutoPlaying = true;
         this.saveStateToLocalStorage();
         this.updateToggleButton();
@@ -280,8 +289,6 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
-        // isAutoPlaying будет перезаписано в конструкторе, так что его загрузка здесь не имеет решающего значения
-        // но мы оставляем ее для целостности (вдруг понадобится для других целей)
         this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
