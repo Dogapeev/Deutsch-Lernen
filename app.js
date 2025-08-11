@@ -1,4 +1,4 @@
-// app.js
+// app.js - Финальная рабочая версия
 
 const APP_VERSION = '1.2';
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -67,14 +67,10 @@ class VocabularyApp {
         }
     }
 
-    // --- НАДЕЖНЫЙ МЕТОД РАЗБЛОКИРОВКИ АУДИО ---
     async unlockAudio() {
         if (this.audioUnlocked) return;
-
-        // Встраиваем крошечный беззвучный WAV файл
         const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
         this.audioPlayer.src = silentWav;
-
         try {
             await this.audioPlayer.play();
             this.audioPlayer.pause();
@@ -82,20 +78,16 @@ class VocabularyApp {
             this.audioUnlocked = true;
         } catch (error) {
             console.error('⚠️ Ошибка разблокировки аудиоконтекста:', error);
-            // Даже если не удалось, приложение не сломается.
         } finally {
-            // Очищаем плеер для настоящих аудиофайлов
             this.audioPlayer.src = '';
         }
     }
 
     startAutoPlay() {
         if (this.isAutoPlaying) return;
-
         this.isAutoPlaying = true;
         this.saveStateToLocalStorage();
         this.updateToggleButton();
-
         const wordToShow = this.currentWord || this.getNextWord();
         if (wordToShow) {
             this.runDisplaySequence(wordToShow);
@@ -118,7 +110,6 @@ class VocabularyApp {
         if (this.isAutoPlaying) {
             this.stopAutoPlay();
         } else {
-            // Сначала разблокируем аудио, затем запускаем
             await this.unlockAudio();
             this.isFirstPlay = true;
             this.startAutoPlay();
@@ -150,7 +141,6 @@ class VocabularyApp {
 
             if (!this.isAutoPlaying) return;
 
-            // --- Основная последовательность автоплея ---
             const firstRepeatDelay = this.isFirstPlay ? 200 : 500;
             if (this.isFirstPlay) this.isFirstPlay = false;
 
@@ -186,7 +176,9 @@ class VocabularyApp {
         }
     }
 
-    // --- РАБОЧАЯ ВЕРСИЯ ФУНКЦИИ ВОСПРОИЗВЕДЕНИЯ ---
+    // --- ПРАВИЛЬНАЯ, РАБОЧАЯ ВЕРСИЯ ФУНКЦИИ SPEAK ---
+    // Эта версия работает, потому что вызывает .play() немедленно после
+    // установки .src, что соответствует требованиям безопасности браузеров.
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -200,9 +192,20 @@ class VocabularyApp {
                 signal.removeEventListener('abort', abortHandler);
             };
 
-            const abortHandler = () => { this.audioPlayer.pause(); this.audioPlayer.src = ''; cleanUp(); reject(new DOMException('Sequence aborted', 'AbortError')); };
-            const endedHandler = () => { cleanUp(); resolve(); };
-            const errorHandler = (e) => { cleanUp(); reject(new Error(`Audio playback error: ${this.audioPlayer.error?.message || 'Unknown Error'}`)); };
+            const abortHandler = () => {
+                this.audioPlayer.pause();
+                this.audioPlayer.src = '';
+                cleanUp();
+                reject(new DOMException('Sequence aborted', 'AbortError'));
+            };
+            const endedHandler = () => {
+                cleanUp();
+                resolve();
+            };
+            const errorHandler = (e) => {
+                cleanUp();
+                reject(new Error(`Audio playback error: ${this.audioPlayer.error?.message || 'Unknown Error'}`));
+            };
 
             this.audioPlayer.addEventListener('ended', endedHandler, { once: true });
             this.audioPlayer.addEventListener('error', errorHandler, { once: true });
