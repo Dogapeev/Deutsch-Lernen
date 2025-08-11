@@ -1,4 +1,4 @@
-// app.js - Финальная рабочая версия
+// app.js - Финальная рабочая версия (с обходом CORS)
 
 const APP_VERSION = '1.2';
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -15,7 +15,8 @@ class VocabularyApp {
         this.audioUnlocked = false;
         this.isFirstPlay = true;
 
-        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9l.onrender.com';
+        // Оригинальный URL сервера мы сохраним, но использовать не будем напрямую
+        this.originalTtsApiBaseUrl = 'https://deutsch-lernen-je9l.onrender.com';
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
@@ -176,10 +177,7 @@ class VocabularyApp {
         }
     }
 
-    // --- ИСПРАВЛЕННАЯ ВЕРСИЯ ФУНКЦИИ SPEAK ---
-    // Эта версия работает более надежно, так как явно вызывает .load()
-    // после смены источника звука, что решает проблемы с состоянием плеера
-    // в асинхронных операциях и соответствует требованиям браузеров.
+    // --- ИСПРАВЛЕННАЯ ВЕРСИЯ ФУНКЦИИ SPEAK С ОБХОДОМ CORS ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -213,21 +211,29 @@ class VocabularyApp {
             signal.addEventListener('abort', abortHandler, { once: true });
 
             try {
-                const apiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
-                const response = await fetch(apiUrl, { signal });
+                // --- НАЧАЛО ИЗМЕНЕНИЙ ДЛЯ ОБХОДА CORS ---
+                const PROXY_URL = 'https://corsproxy.io/?';
+
+                // 1. Формируем целевой URL для API
+                const targetApiUrl = `${this.originalTtsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
+                // 2. Пропускаем его через прокси
+                const proxiedApiUrl = PROXY_URL + encodeURIComponent(targetApiUrl);
+
+                const response = await fetch(proxiedApiUrl, { signal });
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
                 if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
                 const data = await response.json();
                 if (signal.aborted) return;
 
-                this.audioPlayer.src = `${this.ttsApiBaseUrl}${data.url}`;
+                // --- ВАЖНО: URL аудиофайла тоже нужно пропустить через прокси ---
+                const targetAudioUrl = `${this.originalTtsApiBaseUrl}${data.url}`;
+                this.audioPlayer.src = PROXY_URL + encodeURIComponent(targetAudioUrl);
 
-                // --- ВОТ ИСПРАВЛЕНИЕ ---
-                // Явно говорим плееру загрузить новый источник. Это ключ к стабильной работе.
                 this.audioPlayer.load();
-
                 await this.audioPlayer.play();
+
             } catch (error) {
-                // Отклоняем промис, чтобы внешний try/catch мог его поймать
                 reject(error);
             }
         });
