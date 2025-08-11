@@ -1,6 +1,6 @@
-// app.js - Финальная рабочая версия (с надежным прокси)
+// app.js - Финальная рабочая версия (с правильным URL и надежным прокси)
 
-const APP_VERSION = '1.3'; // Обновим версию
+const APP_VERSION = '1.4'; // Обновим версию
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 class VocabularyApp {
@@ -15,7 +15,8 @@ class VocabularyApp {
         this.audioUnlocked = false;
         this.isFirstPlay = true;
 
-        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9l.onrender.com';
+        // --- ИСПРАВЛЕНО: Правильный адрес сервера синтеза речи ---
+        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com';
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
@@ -176,7 +177,6 @@ class VocabularyApp {
         }
     }
 
-    // --- ОКОНЧАТЕЛЬНАЯ ВЕРСИЯ ФУНКЦИИ SPEAK С НАДЕЖНЫМ ПРОКСИ ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -207,7 +207,6 @@ class VocabularyApp {
             signal.addEventListener('abort', abortHandler, { once: true });
 
             try {
-                // Используем новый, надежный прокси-сервер
                 const PROXY_URL = 'https://simple-cors-proxy-alpha.vercel.app/api?url=';
 
                 const targetApiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
