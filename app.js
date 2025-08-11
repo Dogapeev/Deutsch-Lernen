@@ -56,6 +56,9 @@ class VocabularyApp {
         this.bindEvents();
         this.updateUI();
 
+        // --- ИЗМЕНЕНИЕ: Убираем анимацию загрузки ---
+        document.querySelectorAll('.play-pause.loading').forEach(btn => btn.classList.remove('loading'));
+
         if (this.getActiveWords().length === 0) {
             this.showNoWordsMessage();
             this.stopAutoPlay();
@@ -477,7 +480,20 @@ class VocabularyApp {
         document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(btn => btn.disabled = !this.showMorphemes);
     }
 
-    updateToggleButton() { document.querySelectorAll('[id^=toggleButton]').forEach(btn => { btn.innerHTML = `<svg class="icon"><use xlink:href="${this.isAutoPlaying ? '#icon-pause' : '#icon-play'}"></use></svg>`; if (btn.classList.contains('play-pause')) btn.classList.toggle('playing', this.isAutoPlaying); }); const card = document.getElementById('wordCard'); if (card) card.classList.toggle('is-clickable', !this.isAutoPlaying); }
+    updateToggleButton() {
+        const hasWords = this.getActiveWords().length > 0;
+        document.querySelectorAll('[id^=toggleButton]').forEach(btn => {
+            btn.disabled = !hasWords; // <-- Вот наше главное изменение
+            btn.innerHTML = `<svg class="icon"><use xlink:href="${this.isAutoPlaying ? '#icon-pause' : '#icon-play'}"></use></svg>`;
+            if (btn.classList.contains('play-pause')) {
+                btn.classList.toggle('playing', this.isAutoPlaying);
+            }
+        });
+        const card = document.getElementById('wordCard');
+        if (card) {
+            card.classList.toggle('is-clickable', !this.isAutoPlaying);
+        }
+    }
 
     updateNavigationButtons() {
         document.querySelectorAll('[id^=prevButton]').forEach(btn => btn.disabled = this.currentHistoryIndex <= 0);

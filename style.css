@@ -944,3 +944,58 @@ body {
         font-size: 0.8rem;
     }
 }
+
+/* --- LOADING SPINNER STYLES --- */
+.play-pause {
+    position: relative;
+    /* Необходимо для позиционирования псевдоэлемента */
+}
+
+/* Скрываем иконку внутри кнопки во время загрузки */
+.play-pause.loading svg {
+    opacity: 0;
+}
+
+/* Создаем вращающийся спиннер с помощью псевдоэлемента */
+.play-pause.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 32px;
+    /* Размер спиннера */
+    height: 32px;
+    margin-top: -16px;
+    /* Центрирование (половина высоты) */
+    margin-left: -16px;
+    /* Центрирование (половина ширины) */
+
+    border-radius: 50%;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    /* Прозрачный "трек" для спиннера */
+    border-top-color: #333;
+    /* Цвет активной части спиннера */
+
+    animation: spin 0.8s linear infinite;
+}
+
+/* Анимация вращения */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Адаптация для мобильной версии */
+@media (max-width: 768px) {
+    .play-pause.loading::before {
+        width: 36px;
+        height: 36px;
+        margin-top: -18px;
+        margin-left: -18px;
+    }
+}
