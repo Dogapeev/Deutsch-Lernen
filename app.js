@@ -19,6 +19,13 @@ class VocabularyApp {
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
+
+        // --- ИСПРАВЛЕНИЕ ---
+        // Принудительно выключаем автопроигрывание при каждой загрузке страницы.
+        // Это гарантирует, что пользователь сам инициирует воспроизведение,
+        // что необходимо для корректной работы звука в браузерах.
+        this.isAutoPlaying = false;
+
         this.runMigrations();
 
         const today = new Date().toDateString();
@@ -109,7 +116,7 @@ class VocabularyApp {
             return;
         }
 
-        // --- ИСПРАВЛЕНИЕ: Ключевая логика ---
+        // --- Ключевая логика ---
         // Если автопроигрывание выключено, мы просто отображаем карточку и выходим.
         // Это срабатывает при первой загрузке и при ручном переключении слов.
         if (!this.isAutoPlaying) {
@@ -273,6 +280,8 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
+        // isAutoPlaying будет перезаписано в конструкторе, так что его загрузка здесь не имеет решающего значения
+        // но мы оставляем ее для целостности (вдруг понадобится для других целей)
         this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
