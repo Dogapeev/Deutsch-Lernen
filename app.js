@@ -8,15 +8,15 @@ class VocabularyApp {
         this.appVersion = APP_VERSION;
         this.allWords = [];
         this.currentWord = null;
-        this.isAutoPlaying = true;
+        // --- ИЗМЕНЕНИЕ №1: Автопроигрывание по умолчанию выключено ---
+        this.isAutoPlaying = false;
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
 
         // Адрес вашего рабочего сервера
-        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com';
+        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9l.onrender.com'; // У вас может быть je9i, проверьте!
 
-        // --- НОВОЕ СВОЙСТВО: Ссылка на глобальный аудиоплеер из index.html ---
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
@@ -68,6 +68,7 @@ class VocabularyApp {
             if (this.isAutoPlaying) {
                 this.startAutoPlay();
             } else {
+                // Просто показываем первое слово, не запуская проигрывание
                 this.runDisplaySequence(this.currentWord);
             }
         }
@@ -105,6 +106,13 @@ class VocabularyApp {
         if (!word) {
             this.showNoWordsMessage();
             this.stopAutoPlay();
+            return;
+        }
+
+        // Если это не автопроигрывание, а просто показ слова, останавливаемся здесь
+        if (!this.isAutoPlaying && this.sequenceController && this.sequenceController.signal.aborted) {
+            this.renderInitialCard(word);
+            this.addToHistory(word);
             return;
         }
 
@@ -166,7 +174,6 @@ class VocabularyApp {
         }
     }
 
-    // --- ИЗМЕНЕНИЕ: Полностью заменена функция speak для работы на мобильных ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -262,7 +269,8 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
-        this.isAutoPlaying = safeJsonParse('isAutoPlaying', true);
+        // --- ИЗМЕНЕНИЕ №2: Значение по умолчанию для isAutoPlaying теперь false ---
+        this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
         this.accuracy = safeJsonParse('accuracy', { correct: 0, total: 0 });
@@ -305,7 +313,8 @@ class VocabularyApp {
         this.updateUI();
         setTimeout(() => {
             this.currentWord = this.getNextWord();
-            this.startAutoPlay();
+            // После смены фильтров просто показываем слово, не запуская autoplay
+            this.runDisplaySequence(this.currentWord);
         }, 100);
     }
 
