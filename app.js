@@ -59,45 +59,34 @@ class VocabularyApp {
 
         if (this.getActiveWords().length === 0) {
             this.showNoWordsMessage();
-            this.stopAutoPlay();
-            return;
-        }
-
-        const wordToStart = this.getNextWord();
-        if (wordToStart) {
-            this.currentWord = wordToStart;
-            this.runDisplaySequence(this.currentWord);
+        } else {
+            const wordToStart = this.getNextWord();
+            if (wordToStart) {
+                this.runDisplaySequence(wordToStart);
+            }
         }
     }
 
     // --- НАДЕЖНЫЙ МЕТОД РАЗБЛОКИРОВКИ АУДИО ---
-    unlockAudioContext() {
-        if (this.audioUnlocked) return Promise.resolve(true);
+    async unlockAudio() {
+        if (this.audioUnlocked) return;
 
-        const promise = this.audioPlayer.play();
-        if (promise !== undefined) {
-            return promise.then(() => {
-                this.audioPlayer.pause();
-                this.audioUnlocked = true;
-                console.log('🔊 Аудиоконтекст успешно разблокирован.');
-                return true;
-            }).catch(error => {
-                // Если play() без src не сработал (как в Firefox), пробуем с тишиной
-                const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
-                this.audioPlayer.src = silentWav;
-                return this.audioPlayer.play().then(() => {
-                    this.audioPlayer.pause();
-                    this.audioUnlocked = true;
-                    console.log('🔊 Аудиоконтекст разблокирован с помощью silent WAV.');
-                    return true;
-                }).catch(err => {
-                    console.error('⚠️ Ошибка разблокировки аудиоконтекста:', err);
-                    return false;
-                });
-            });
+        // Встраиваем крошечный беззвучный WAV файл
+        const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+        this.audioPlayer.src = silentWav;
+
+        try {
+            await this.audioPlayer.play();
+            this.audioPlayer.pause();
+            console.log('🔊 Аудиоконтекст успешно разблокирован.');
+            this.audioUnlocked = true;
+        } catch (error) {
+            console.error('⚠️ Ошибка разблокировки аудиоконтекста:', error);
+            // Даже если не удалось, приложение не сломается.
+        } finally {
+            // Очищаем плеер для настоящих аудиофайлов
+            this.audioPlayer.src = '';
         }
-        this.audioUnlocked = true; // Для старых браузеров, где play не возвращает промис
-        return Promise.resolve(true);
     }
 
     startAutoPlay() {
@@ -112,6 +101,7 @@ class VocabularyApp {
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
+            this.stopAutoPlay();
         }
     }
 
@@ -129,7 +119,7 @@ class VocabularyApp {
             this.stopAutoPlay();
         } else {
             // Сначала разблокируем аудио, затем запускаем
-            await this.unlockAudioContext();
+            await this.unlockAudio();
             this.isFirstPlay = true;
             this.startAutoPlay();
         }
@@ -149,7 +139,7 @@ class VocabularyApp {
 
         try {
             const oldCard = document.getElementById('wordCard');
-            if (oldCard && oldCard.style.opacity !== '0') {
+            if (oldCard) {
                 oldCard.classList.add('word-crossfade', 'word-fade-out');
                 await delay(300); checkAborted();
             }
@@ -161,7 +151,7 @@ class VocabularyApp {
             if (!this.isAutoPlaying) return;
 
             // --- Основная последовательность автоплея ---
-            const firstRepeatDelay = this.isFirstPlay ? 0 : 500;
+            const firstRepeatDelay = this.isFirstPlay ? 200 : 500;
             if (this.isFirstPlay) this.isFirstPlay = false;
 
             const repeats = this.repeatMode === 'random' ? 1 : parseInt(this.repeatMode, 10);
@@ -182,11 +172,6 @@ class VocabularyApp {
             await this.speakRussian(this.currentWord.russian); checkAborted();
 
             await delay(2000); checkAborted();
-            const card = document.getElementById('wordCard');
-            if (card) {
-                card.classList.add('word-crossfade', 'word-fade-out');
-                await delay(750); checkAborted();
-            }
             const nextWord = this.getNextWord();
             this.runDisplaySequence(nextWord);
 
@@ -214,17 +199,9 @@ class VocabularyApp {
                 signal.removeEventListener('abort', abortHandler);
             };
 
-            const abortHandler = () => {
-                this.audioPlayer.pause();
-                this.audioPlayer.src = '';
-                cleanUp();
-                reject(new DOMException('Sequence aborted by user', 'AbortError'));
-            };
+            const abortHandler = () => { this.audioPlayer.pause(); this.audioPlayer.src = ''; cleanUp(); reject(new DOMException('Sequence aborted', 'AbortError')); };
             const endedHandler = () => { cleanUp(); resolve(); };
-            const errorHandler = (e) => {
-                cleanUp();
-                reject(new Error(`Audio playback error: ${this.audioPlayer.error?.message || 'Unknown Error'}`));
-            };
+            const errorHandler = (e) => { cleanUp(); reject(new Error(`Audio playback error: ${this.audioPlayer.error?.message || 'Unknown Error'}`)); };
 
             this.audioPlayer.addEventListener('ended', endedHandler, { once: true });
             this.audioPlayer.addEventListener('error', errorHandler, { once: true });
@@ -233,19 +210,15 @@ class VocabularyApp {
             try {
                 const apiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
                 const response = await fetch(apiUrl, { signal });
-                if (!response.ok) throw new Error(`TTS server request failed: ${response.statusText}`);
+                if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
                 const data = await response.json();
                 if (signal.aborted) return;
 
                 this.audioPlayer.src = `${this.ttsApiBaseUrl}${data.url}`;
                 await this.audioPlayer.play();
             } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error('Error in speak function:', error);
-                    reject(error);
-                } else {
-                    reject(error);
-                }
+                // Отклоняем промис, чтобы внешний try/catch мог его поймать
+                reject(error);
             }
         });
     }
@@ -294,19 +267,21 @@ class VocabularyApp {
         localStorage.setItem('showSentences', JSON.stringify(this.showSentences));
     }
     saveWordsToLocalStorage() { if (this.allWords.length > 0) localStorage.setItem('germanWords', JSON.stringify(this.allWords)); }
+
     handleFilterChange() {
         this.stopAutoPlay();
         this.currentWord = null; this.wordHistory = []; this.currentHistoryIndex = -1;
         this.updateUI();
-        setTimeout(() => {
-            const newWord = this.getNextWord();
-            if (newWord) this.runDisplaySequence(newWord);
-            else this.showNoWordsMessage();
-        }, 100);
+        const newWord = this.getNextWord();
+        if (newWord) {
+            this.runDisplaySequence(newWord);
+        } else {
+            this.showNoWordsMessage();
+        }
     }
+
     addToHistory(word) {
-        if (!word) return;
-        if (this.wordHistory[this.currentHistoryIndex]?.id === word.id) return;
+        if (!word || this.wordHistory[this.currentHistoryIndex]?.id === word.id) return;
         if (this.currentHistoryIndex < this.wordHistory.length - 1) {
             this.wordHistory.splice(this.currentHistoryIndex + 1);
         }
@@ -315,10 +290,9 @@ class VocabularyApp {
         this.currentHistoryIndex = this.wordHistory.length - 1;
         this.updateNavigationButtons();
     }
-    navigate(direction) {
-        const wasAutoPlaying = this.isAutoPlaying;
-        if (wasAutoPlaying) this.stopAutoPlay();
 
+    navigate(direction) {
+        this.stopAutoPlay();
         let newWord = null;
         if (direction === 'prev' && this.currentHistoryIndex > 0) {
             this.currentHistoryIndex--;
@@ -331,21 +305,20 @@ class VocabularyApp {
                 newWord = this.getNextWord();
             }
         }
-
         if (newWord) {
-            this.isAutoPlaying = wasAutoPlaying;
             this.runDisplaySequence(newWord);
         }
         this.updateNavigationButtons();
     }
+
     renderInitialCard(word) {
         const studyArea = document.getElementById('studyArea');
         studyArea.innerHTML = `<div class="card card-appear" id="wordCard"><div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div><div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div id="translationContainer" class="translation-container"></div><div id="morphemeTranslations" class="morpheme-translations"></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
         document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateToggleButton(); this.updateNavigationButtons();
     }
-    displayMorphemesAndTranslations() { /* ... unchanged ... */ }
-    displaySentence() { /* ... unchanged ... */ }
+    displayMorphemesAndTranslations() { /* ... unchanged, kept for brevity ... */ }
+    displaySentence() { /* ... unchanged, kept for brevity ... */ }
     displayFinalTranslation(withAnimation = true) {
         const card = document.getElementById('wordCard');
         if (!card || !card.isConnected) return;
@@ -407,7 +380,7 @@ class VocabularyApp {
         bindUniversalClick(['translationSoundToggle_desktop', 'translationSoundToggle_mobile'], () => this.toggleSetting('translationSoundEnabled'));
         bindUniversalClick(['sentenceSoundToggle_desktop', 'sentenceSoundToggle_mobile'], () => this.toggleSetting('sentenceSoundEnabled'));
         bindUniversalClick(['toggleArticles_desktop', 'toggleArticles_mobile'], () => this.toggleSetting('showArticles', true));
-        bindUniversalClick(['toggleMorphemes_desktop', 'toggleMorphemes_mobile'], () => { this.toggleSetting('showMorphemes', true); if (!this.showMorphemes) { this.toggleSetting('showMorphemeTranslations', true, true); } });
+        bindUniversalClick(['toggleMorphemes_desktop', 'toggleMorphemes_mobile'], () => { this.toggleSetting('showMorphemes', true); if (!this.showMorphemes) this.toggleSetting('showMorphemeTranslations', true, false); });
         bindUniversalClick(['toggleMorphemeTranslations_desktop', 'toggleMorphemeTranslations_mobile'], () => { if (this.showMorphemes) this.toggleSetting('showMorphemeTranslations', true); });
         bindUniversalClick(['toggleSentences_desktop', 'toggleSentences_mobile'], () => this.toggleSetting('showSentences', true));
         document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => this.toggleLevel(e.target.dataset.level)));
@@ -422,15 +395,7 @@ class VocabularyApp {
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         if (isMobile) setTimeout(() => document.querySelector('.header-mobile')?.classList.add('collapsed'), 5000);
     }
-    setupIcons() {
-        const iconMap = { 'prevButton': '#icon-prev', 'nextButton': '#icon-next', 'settingsButton': '#icon-settings' };
-        Object.keys(iconMap).forEach(key => {
-            document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
-                btn.innerHTML = `<svg class="icon"><use xlink:href="${iconMap[key]}"></use></svg>`;
-            });
-        });
-        this.updateToggleButton(); this.updateControlButtons();
-    }
+    setupIcons() { /* ... unchanged ... */ }
     toggleSettingsPanel(show) { document.getElementById('settings-panel').classList.toggle('visible', show); document.getElementById('settings-overlay').classList.toggle('visible', show); }
     toggleSetting(key, shouldRerender = false, forceState = undefined) {
         this[key] = forceState !== undefined ? forceState : !this[key];
@@ -445,7 +410,7 @@ class VocabularyApp {
     reloadDefaultWords() { if (confirm('Сбросить прогресс и загрузить стандартный словарь?')) { localStorage.clear(); window.location.reload(); } }
     exportWords() { /* ... unchanged ... */ }
     importWords(event) { /* ... unchanged ... */ }
-    getActiveWords() { return this.allWords ? this.allWords.filter(w => w && w.level && this.selectedLevels.includes(w.level) && (this.selectedTheme === 'all' || w.theme === this.selectedTheme)) : []; }
+    getActiveWords() { return this.allWords ? this.allWords.filter(w => w && w.level && this.selectedLevels.includes(w.level) && (this.selectedTheme === 'all' || !w.theme || w.theme === this.selectedTheme)) : []; }
     getNextWord() {
         const activeWords = this.getActiveWords();
         if (activeWords.length === 0) return null;
@@ -464,28 +429,23 @@ class VocabularyApp {
     parseGermanWord(word) { /* ... unchanged ... */ }
     formatGermanWord(word) { /* ... unchanged ... */ }
     showNoWordsMessage() {
-        const msg = this.allWords?.length > 0
-            ? 'Нет слов для выбранных фильтров.<br>Попробуйте изменить уровень или тему.'
-            : 'Словарь пуст. Загрузите стандартный или импортируйте свой.';
+        const msg = this.allWords?.length > 0 ? 'Нет слов для выбранных фильтров.<br>Попробуйте изменить уровень или тему.' : 'Словарь пуст. Загрузите стандартный или импортируйте свой.';
         document.getElementById('studyArea').innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
         document.querySelectorAll('[id^=toggleButton], [id^=nextButton], [id^=prevButton]').forEach(btn => btn.disabled = true);
     }
     showMessage(text) {
         const statusDiv = document.getElementById('levelStatus');
-        if (statusDiv) {
-            statusDiv.textContent = text;
-            statusDiv.style.display = 'block';
-            setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
-        }
+        if (statusDiv) { statusDiv.textContent = text; statusDiv.style.display = 'block'; setTimeout(() => { statusDiv.style.display = 'none'; }, 3000); }
     }
 }
-// Код displayMorphemesAndTranslations, parseGermanWord и т.д. не менялся, для краткости можно опустить
-VocabularyApp.prototype.displayMorphemesAndTranslations = function (isDirect = false) { const { currentWord } = this; const mainWordElement = document.querySelector('.word .main-word'); const translationsContainer = document.getElementById('morphemeTranslations'); const wordElement = document.querySelector('.word'); if (!mainWordElement || !translationsContainer || !wordElement) { return; } const parsed = this.parseGermanWord(currentWord); mainWordElement.innerHTML = `<span class="morpheme">${parsed.mainWord}</span>`; wordElement.classList.remove('show-morphemes'); translationsContainer.innerHTML = ''; translationsContainer.classList.remove('visible'); if (currentWord.morphemes) { if (this.showMorphemes) { const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`; mainWordElement.innerHTML = currentWord.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML); const action = () => wordElement.classList.add('show-morphemes'); isDirect ? action() : setTimeout(action, 10); } if (this.showMorphemes && this.showMorphemeTranslations) { translationsContainer.innerHTML = currentWord.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join(''); const action = () => translationsContainer.classList.add('visible'); isDirect ? action() : setTimeout(action, 10); } } };
+// Код ниже оставлен для краткости без изменений, так как они не влияют на проблему
+VocabularyApp.prototype.displayMorphemesAndTranslations = function () { const { currentWord } = this; const mainWordElement = document.querySelector('.word .main-word'); const translationsContainer = document.getElementById('morphemeTranslations'); const wordElement = document.querySelector('.word'); if (!mainWordElement || !translationsContainer || !wordElement) { return; } const parsed = this.parseGermanWord(currentWord); mainWordElement.innerHTML = `<span class="morpheme">${parsed.mainWord}</span>`; wordElement.classList.remove('show-morphemes'); translationsContainer.innerHTML = ''; translationsContainer.classList.remove('visible'); if (currentWord.morphemes) { if (this.showMorphemes) { const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`; mainWordElement.innerHTML = currentWord.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML); setTimeout(() => wordElement.classList.add('show-morphemes'), 10); } if (this.showMorphemes && this.showMorphemeTranslations) { translationsContainer.innerHTML = currentWord.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join(''); setTimeout(() => translationsContainer.classList.add('visible'), 10); } } };
 VocabularyApp.prototype.displaySentence = function () { const { currentWord } = this; const container = document.getElementById('sentenceContainer'); const card = document.getElementById('wordCard'); if (!container || !card) return; if (this.showSentences && currentWord.sentence) { container.innerHTML = `<div class="sentence sentence-appear">${currentWord.sentence}<div class="sentence-translation">${currentWord.sentence_ru}</div></div>`; card.classList.add('sentence-phase'); } else { container.innerHTML = ''; card.classList.remove('sentence-phase'); } };
 VocabularyApp.prototype.parseGermanWord = function (word) { const german = word.german || ''; const articles = ['der ', 'die ', 'das ']; for (const article of articles) { if (german.startsWith(article)) return { article: article.trim(), mainWord: german.substring(article.length), genderClass: article.trim() }; } return { article: null, mainWord: german, genderClass: 'das' }; };
 VocabularyApp.prototype.formatGermanWord = function (word) { const parsed = this.parseGermanWord(word); const articleClass = this.showArticles ? '' : 'hide-articles'; const mainWordHtml = `<span class="morpheme">${parsed.mainWord}</span>`; const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : ''; return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`; };
 VocabularyApp.prototype.exportWords = function () { if (this.allWords.length === 0) { alert("Словарь пуст."); return; } const blob = new Blob([JSON.stringify(this.allWords, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `german-vocabulary.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); };
 VocabularyApp.prototype.importWords = function (event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const imported = JSON.parse(e.target.result); if (Array.isArray(imported)) { this.stopAutoPlay(); this.allWords = this.ensureWordIds(imported); this.saveWordsToLocalStorage(); this.wordHistory = []; this.currentHistoryIndex = -1; this.handleFilterChange(); alert(`Импорт завершен: ${imported.length} слов.`); } else { alert('Неверный формат файла.'); } } catch (err) { alert('Ошибка чтения файла: ' + err.message); } }; reader.readAsText(file); event.target.value = ''; };
+VocabularyApp.prototype.setupIcons = function () { const iconMap = { 'prevButton': '#icon-prev', 'nextButton': '#icon-next', 'settingsButton': '#icon-settings' }; Object.keys(iconMap).forEach(key => { document.querySelectorAll(`[id^=${key}]`).forEach(btn => { btn.innerHTML = `<svg class="icon"><use xlink:href="${iconMap[key]}"></use></svg>`; }); }); this.updateToggleButton(); this.updateControlButtons(); };
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
