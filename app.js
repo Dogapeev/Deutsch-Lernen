@@ -15,12 +15,11 @@ class VocabularyApp {
         this.audioUnlocked = false;
         this.isFirstPlay = true;
 
-        // Оригинальный URL сервера мы сохраним, но использовать не будем напрямую
         this.originalTtsApiBaseUrl = 'https://deutsch-lernen-je9l.onrender.com';
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
-        this.isAutoPlaying = false; // Всегда начинаем с выключенным автоплеем
+        this.isAutoPlaying = false;
 
         this.runMigrations();
 
@@ -177,7 +176,6 @@ class VocabularyApp {
         }
     }
 
-    // --- ИСПРАВЛЕННАЯ ВЕРСИЯ ФУНКЦИИ SPEAK С ОБХОДОМ CORS ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -211,22 +209,16 @@ class VocabularyApp {
             signal.addEventListener('abort', abortHandler, { once: true });
 
             try {
-                // --- НАЧАЛО ИЗМЕНЕНИЙ ДЛЯ ОБХОДА CORS ---
                 const PROXY_URL = 'https://corsproxy.io/?';
-
-                // 1. Формируем целевой URL для API
                 const targetApiUrl = `${this.originalTtsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
-                // 2. Пропускаем его через прокси
                 const proxiedApiUrl = PROXY_URL + encodeURIComponent(targetApiUrl);
 
                 const response = await fetch(proxiedApiUrl, { signal });
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
                 if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
+
                 const data = await response.json();
                 if (signal.aborted) return;
 
-                // --- ВАЖНО: URL аудиофайла тоже нужно пропустить через прокси ---
                 const targetAudioUrl = `${this.originalTtsApiBaseUrl}${data.url}`;
                 this.audioPlayer.src = PROXY_URL + encodeURIComponent(targetAudioUrl);
 
