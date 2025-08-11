@@ -1,5 +1,4 @@
-// app.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
-// Проблема со звуком решена путем возврата к стабильной реализации функции 'speak'.
+// app.js
 
 const APP_VERSION = '1.2';
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -68,10 +67,14 @@ class VocabularyApp {
         }
     }
 
+    // --- НАДЕЖНЫЙ МЕТОД РАЗБЛОКИРОВКИ АУДИО ---
     async unlockAudio() {
         if (this.audioUnlocked) return;
+
+        // Встраиваем крошечный беззвучный WAV файл
         const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
         this.audioPlayer.src = silentWav;
+
         try {
             await this.audioPlayer.play();
             this.audioPlayer.pause();
@@ -79,16 +82,20 @@ class VocabularyApp {
             this.audioUnlocked = true;
         } catch (error) {
             console.error('⚠️ Ошибка разблокировки аудиоконтекста:', error);
+            // Даже если не удалось, приложение не сломается.
         } finally {
+            // Очищаем плеер для настоящих аудиофайлов
             this.audioPlayer.src = '';
         }
     }
 
     startAutoPlay() {
         if (this.isAutoPlaying) return;
+
         this.isAutoPlaying = true;
         this.saveStateToLocalStorage();
         this.updateToggleButton();
+
         const wordToShow = this.currentWord || this.getNextWord();
         if (wordToShow) {
             this.runDisplaySequence(wordToShow);
@@ -111,6 +118,7 @@ class VocabularyApp {
         if (this.isAutoPlaying) {
             this.stopAutoPlay();
         } else {
+            // Сначала разблокируем аудио, затем запускаем
             await this.unlockAudio();
             this.isFirstPlay = true;
             this.startAutoPlay();
@@ -142,6 +150,7 @@ class VocabularyApp {
 
             if (!this.isAutoPlaying) return;
 
+            // --- Основная последовательность автоплея ---
             const firstRepeatDelay = this.isFirstPlay ? 200 : 500;
             if (this.isFirstPlay) this.isFirstPlay = false;
 
@@ -177,7 +186,7 @@ class VocabularyApp {
         }
     }
 
-    // --- СТАБИЛЬНАЯ РАБОЧАЯ ВЕРСИЯ ФУНКЦИИ ВОСПРОИЗВЕДЕНИЯ ---
+    // --- РАБОЧАЯ ВЕРСИЯ ФУНКЦИИ ВОСПРОИЗВЕДЕНИЯ ---
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
             if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -315,46 +324,6 @@ class VocabularyApp {
         this.updateToggleButton(); this.updateNavigationButtons();
     }
 
-    displayMorphemesAndTranslations() {
-        const { currentWord } = this;
-        const mainWordElement = document.querySelector('.word .main-word');
-        const translationsContainer = document.getElementById('morphemeTranslations');
-        const wordElement = document.querySelector('.word');
-        if (!mainWordElement || !translationsContainer || !wordElement) {
-            return;
-        }
-        const parsed = this.parseGermanWord(currentWord);
-        mainWordElement.innerHTML = `<span class="morpheme">${parsed.mainWord}</span>`;
-        wordElement.classList.remove('show-morphemes');
-        translationsContainer.innerHTML = '';
-        translationsContainer.classList.remove('visible');
-        if (currentWord.morphemes) {
-            if (this.showMorphemes) {
-                const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`;
-                mainWordElement.innerHTML = currentWord.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML);
-                setTimeout(() => wordElement.classList.add('show-morphemes'), 10);
-            }
-            if (this.showMorphemes && this.showMorphemeTranslations) {
-                translationsContainer.innerHTML = currentWord.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join('');
-                setTimeout(() => translationsContainer.classList.add('visible'), 10);
-            }
-        }
-    }
-
-    displaySentence() {
-        const { currentWord } = this;
-        const container = document.getElementById('sentenceContainer');
-        const card = document.getElementById('wordCard');
-        if (!container || !card) return;
-        if (this.showSentences && currentWord.sentence) {
-            container.innerHTML = `<div class="sentence sentence-appear">${currentWord.sentence}<div class="sentence-translation">${currentWord.sentence_ru}</div></div>`;
-            card.classList.add('sentence-phase');
-        } else {
-            container.innerHTML = '';
-            card.classList.remove('sentence-phase');
-        }
-    }
-
     displayFinalTranslation(withAnimation = true) {
         const card = document.getElementById('wordCard');
         if (!card || !card.isConnected) return;
@@ -389,7 +358,7 @@ class VocabularyApp {
                 if (controls[key].icons && (btn.classList.contains('player-btn') || btn.classList.contains('sound-btn'))) {
                     btn.innerHTML = `<svg class="icon"><use xlink:href="${controls[key].state ? controls[key].icons[0] : controls[key].icons[1]}"></use></svg>`;
                 }
-                if (btn.classList.contains('option-btn') || (btn.classList.contains('repeat-selector') && !btn.dataset.mode)) {
+                if (btn.classList.contains('option-btn')) {
                     btn.textContent = controls[key].state ? 'Вкл' : 'Выкл';
                 }
             });
@@ -464,47 +433,6 @@ class VocabularyApp {
     setRepeatMode(mode) { this.repeatMode = mode; this.saveStateToLocalStorage(); this.updateUI(); }
     reloadDefaultWords() { if (confirm('Сбросить прогресс и загрузить стандартный словарь?')) { localStorage.clear(); window.location.reload(); } }
 
-    exportWords() {
-        if (this.allWords.length === 0) {
-            alert("Словарь пуст.");
-            return;
-        }
-        const blob = new Blob([JSON.stringify(this.allWords, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `german-vocabulary.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-    }
-
-    importWords(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const imported = JSON.parse(e.target.result);
-                if (Array.isArray(imported)) {
-                    this.stopAutoPlay();
-                    this.allWords = this.ensureWordIds(imported);
-                    this.saveWordsToLocalStorage();
-                    this.wordHistory = [];
-                    this.currentHistoryIndex = -1;
-                    this.handleFilterChange();
-                    alert(`Импорт завершен: ${imported.length} слов.`);
-                } else {
-                    alert('Неверный формат файла.');
-                }
-            } catch (err) {
-                alert('Ошибка чтения файла: ' + err.message);
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
-    }
-
     getActiveWords() { return this.allWords ? this.allWords.filter(w => w && w.level && this.selectedLevels.includes(w.level) && (this.selectedTheme === 'all' || !w.theme || w.theme === this.selectedTheme)) : []; }
 
     getNextWord() {
@@ -523,23 +451,6 @@ class VocabularyApp {
         return activeWords[nextIndex];
     }
 
-    parseGermanWord(word) {
-        const german = word.german || '';
-        const articles = ['der ', 'die ', 'das '];
-        for (const article of articles) {
-            if (german.startsWith(article)) return { article: article.trim(), mainWord: german.substring(article.length), genderClass: article.trim() };
-        }
-        return { article: null, mainWord: german, genderClass: 'das' };
-    }
-
-    formatGermanWord(word) {
-        const parsed = this.parseGermanWord(word);
-        const articleClass = this.showArticles ? '' : 'hide-articles';
-        const mainWordHtml = `<span class="morpheme">${parsed.mainWord}</span>`;
-        const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : '';
-        return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`;
-    }
-
     showNoWordsMessage() {
         const msg = this.allWords?.length > 0 ? 'Нет слов для выбранных фильтров.<br>Попробуйте изменить уровень или тему.' : 'Словарь пуст. Загрузите стандартный или импортируйте свой.';
         document.getElementById('studyArea').innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
@@ -550,6 +461,13 @@ class VocabularyApp {
         const statusDiv = document.getElementById('levelStatus');
         if (statusDiv) { statusDiv.textContent = text; statusDiv.style.display = 'block'; setTimeout(() => { statusDiv.style.display = 'none'; }, 3000); }
     }
+
+    displayMorphemesAndTranslations() { const { currentWord } = this; const mainWordElement = document.querySelector('.word .main-word'); const translationsContainer = document.getElementById('morphemeTranslations'); const wordElement = document.querySelector('.word'); if (!mainWordElement || !translationsContainer || !wordElement) { return; } const parsed = this.parseGermanWord(currentWord); mainWordElement.innerHTML = `<span class="morpheme">${parsed.mainWord}</span>`; wordElement.classList.remove('show-morphemes'); translationsContainer.innerHTML = ''; translationsContainer.classList.remove('visible'); if (currentWord.morphemes) { if (this.showMorphemes) { const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`; mainWordElement.innerHTML = currentWord.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML); setTimeout(() => wordElement.classList.add('show-morphemes'), 10); } if (this.showMorphemes && this.showMorphemeTranslations) { translationsContainer.innerHTML = currentWord.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join(''); setTimeout(() => translationsContainer.classList.add('visible'), 10); } } }
+    displaySentence() { const { currentWord } = this; const container = document.getElementById('sentenceContainer'); const card = document.getElementById('wordCard'); if (!container || !card) return; if (this.showSentences && currentWord.sentence) { container.innerHTML = `<div class="sentence sentence-appear">${currentWord.sentence}<div class="sentence-translation">${currentWord.sentence_ru}</div></div>`; card.classList.add('sentence-phase'); } else { container.innerHTML = ''; card.classList.remove('sentence-phase'); } }
+    parseGermanWord(word) { const german = word.german || ''; const articles = ['der ', 'die ', 'das ']; for (const article of articles) { if (german.startsWith(article)) return { article: article.trim(), mainWord: german.substring(article.length), genderClass: article.trim() }; } return { article: null, mainWord: german, genderClass: 'das' }; }
+    formatGermanWord(word) { const parsed = this.parseGermanWord(word); const articleClass = this.showArticles ? '' : 'hide-articles'; const mainWordHtml = `<span class="morpheme">${parsed.mainWord}</span>`; const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : ''; return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`; }
+    exportWords() { if (this.allWords.length === 0) { alert("Словарь пуст."); return; } const blob = new Blob([JSON.stringify(this.allWords, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `german-vocabulary.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); }
+    importWords(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const imported = JSON.parse(e.target.result); if (Array.isArray(imported)) { this.stopAutoPlay(); this.allWords = this.ensureWordIds(imported); this.saveWordsToLocalStorage(); this.wordHistory = []; this.currentHistoryIndex = -1; this.handleFilterChange(); alert(`Импорт завершен: ${imported.length} слов.`); } else { alert('Неверный формат файла.'); } } catch (err) { alert('Ошибка чтения файла: ' + err.message); } }; reader.readAsText(file); event.target.value = ''; }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
