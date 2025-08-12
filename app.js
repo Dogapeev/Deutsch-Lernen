@@ -67,7 +67,6 @@ class VocabularyApp {
             this.currentWord = wordToStart;
 
             // --- ИЗМЕНЕНИЕ: Убираем автозапуск при загрузке ---
-            // Теперь приложение всегда стартует в режиме паузы, ожидая действия пользователя.
             this.isAutoPlaying = false; // Принудительно ставим на паузу
             this.updateToggleButton();  // Обновляем иконку на "Play"
             // Показываем первое слово, но не запускаем цикл автопроигрывания
@@ -82,7 +81,6 @@ class VocabularyApp {
         this.updateToggleButton();
         const wordToShow = this.currentWord || this.getNextWord();
         if (wordToShow) {
-            // Если последовательность была прервана, запускаем её заново для текущего слова
             if (this.sequenceController && this.sequenceController.signal.aborted) {
                 this.runDisplaySequence(wordToShow);
             }
@@ -135,8 +133,6 @@ class VocabularyApp {
 
             this.renderInitialCard(word);
 
-            // Если автопроигрывание выключено, мы просто показываем карточку и выходим.
-            // Последовательность звуков запустится, только когда пользователь нажмет Play.
             if (!this.isAutoPlaying) {
                 return;
             }
@@ -272,7 +268,6 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
-        // ИЗМЕНЕНИЕ: По умолчанию автопроигрывание выключено для новых пользователей
         this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
@@ -318,7 +313,6 @@ class VocabularyApp {
             const nextWord = this.getNextWord();
             if (nextWord) {
                 this.currentWord = nextWord;
-                // Просто показываем первое слово, не запуская автоплей
                 this.runDisplaySequence(this.currentWord);
             }
         }, 100);
@@ -360,7 +354,6 @@ class VocabularyApp {
             this.currentWord = newWord;
             this.runDisplaySequence(newWord);
             if (wasAutoPlaying) {
-                // Если было автопроигрывание, запускаем его снова после показа слова
                 setTimeout(() => this.startAutoPlay(), 50);
             }
         } else {
@@ -523,14 +516,35 @@ class VocabularyApp {
         if (isMobile) setTimeout(() => document.querySelector('.header-mobile')?.classList.add('collapsed'), 5000);
     }
 
+    // --- ИЗМЕНЕНИЕ: Самый надежный способ вставки иконок ---
     setupIcons() {
-        const iconMap = { 'prevButton': '#icon-prev', 'nextButton': '#icon-next', 'settingsButton': '#icon-settings' };
+        const iconMap = {
+            'prevButton': { href: '#icon-prev', viewBox: '0 0 24 24' },
+            'nextButton': { href: '#icon-next', viewBox: '0 0 24 24' },
+            'settingsButton': { href: '#icon-settings', viewBox: '0 0 24 24' }
+        };
+
         Object.keys(iconMap).forEach(key => {
+            const iconData = iconMap[key];
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
-                btn.innerHTML = `<svg class="icon"><use xlink:href="${iconMap[key]}"></use></svg>`;
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("class", "icon");
+                svg.setAttribute("viewBox", iconData.viewBox);
+                svg.setAttribute("fill", "currentColor");
+                svg.setAttribute("width", "1em");
+                svg.setAttribute("height", "1em");
+
+                const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+                use.setAttributeNS("http://www.w3.org/1999/xlink", "href", iconData.href);
+
+                svg.appendChild(use);
+                btn.innerHTML = '';
+                btn.appendChild(svg);
             });
         });
-        this.updateToggleButton(); this.updateControlButtons();
+
+        this.updateToggleButton();
+        this.updateControlButtons();
     }
 
     toggleSettingsPanel(show) { document.getElementById('settings-panel').classList.toggle('visible', show); document.getElementById('settings-overlay').classList.toggle('visible', show); }
