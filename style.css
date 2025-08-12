@@ -771,10 +771,40 @@ body {
         -webkit-backdrop-filter: blur(10px);
         border-top: 1px solid #e9ecef;
         padding: 15px;
-        justify-content: center;
+        justify-content: space-between;
+        /* <-- ИЗМЕНЕНИЕ: Распределяет пространство */
         align-items: center;
         z-index: 1000;
         gap: 20px;
+    }
+
+    /* --- НОВЫЕ СТИЛИ --- */
+    .player-controls-mobile .main-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        flex-grow: 1;
+        /* <-- Занимает все доступное пространство в центре */
+        padding-left: 52px;
+        /* <-- Компенсирует ширину кнопки настроек, чтобы Play был идеально по центру */
+    }
+
+    .player-controls-mobile .settings-control {
+        width: 52px;
+        /* <-- Фиксируем ширину для компенсации */
+    }
+
+    /* --- СТАРЫЙ СЕЛЕКТОР, ПЕРЕНЕСЕННЫЙ ДЛЯ ЛОГИЧНОСТИ --- */
+    #settingsButton {
+        display: flex;
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        width: 52px;
+        height: 52px;
+        align-items: center;
+        justify-content: center;
     }
 
     #settingsButton {
