@@ -1,5 +1,6 @@
 Flask
-gTTS
-python-dotenv
 Flask-Cors
+gTTS
+watchdog
+Flask-Limiter
 gunicorn
