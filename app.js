@@ -270,7 +270,7 @@ class VocabularyApp {
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
         // --- ИЗМЕНЕНИЕ №2: Значение по умолчанию для isAutoPlaying теперь false ---
-        this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
+        this.isAutoPlaying = false;
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
         this.accuracy = safeJsonParse('accuracy', { correct: 0, total: 0 });
