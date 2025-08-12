@@ -15,7 +15,7 @@ class VocabularyApp {
         this.sequenceController = null;
 
         // Адрес вашего рабочего сервера
-        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com'; // У вас может быть je9i, проверьте!
+        this.ttsApiBaseUrl = 'https://deutsch-lernen-0qxe.onrender.com'; // У вас может быть 0qxe, проверьте!
 
         this.audioPlayer = document.getElementById('audioPlayer');
 
