@@ -8,16 +8,16 @@ class VocabularyApp {
         this.appVersion = APP_VERSION;
         this.allWords = [];
         this.currentWord = null;
-        this.isAutoPlaying = true;
+        // --- ИЗМЕНЕНИЕ №1: Автопроигрывание по умолчанию выключено ---
+        this.isAutoPlaying = false;
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
-        this.speechSynth = window.speechSynthesis;
-        this.isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        this.speechReady = false;
-        this.germanVoice = null;
-        this.russianVoice = null;
-        this.voicesLoading = false;
         this.sequenceController = null;
+
+        // Адрес вашего рабочего сервера
+        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com'; // У вас может быть je9i, проверьте!
+
+        this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
         this.runMigrations();
@@ -51,7 +51,6 @@ class VocabularyApp {
     }
 
     async init() {
-        this.initSpeechSynthesis();
         await this.loadVocabulary();
         this.setupIcons();
         this.bindEvents();
@@ -59,17 +58,17 @@ class VocabularyApp {
 
         if (this.getActiveWords().length === 0) {
             this.showNoWordsMessage();
-            this.stopAutoPlay(); // Stop just in case
+            this.stopAutoPlay();
             return;
         }
 
         const wordToStart = this.getNextWord();
         if (wordToStart) {
-            this.currentWord = wordToStart; // Set initial word
+            this.currentWord = wordToStart;
             if (this.isAutoPlaying) {
                 this.startAutoPlay();
             } else {
-                // Show the first word without starting the loop
+                // Просто показываем первое слово, не запуская проигрывание
                 this.runDisplaySequence(this.currentWord);
             }
         }
@@ -92,9 +91,6 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        if (this.speechSynth.speaking) {
-            this.speechSynth.cancel();
-        }
         this.updateToggleButton();
     }
 
@@ -113,7 +109,13 @@ class VocabularyApp {
             return;
         }
 
-        // Always abort previous sequence before starting a new one
+        // Если это не автопроигрывание, а просто показ слова, останавливаемся здесь
+        if (!this.isAutoPlaying && this.sequenceController && this.sequenceController.signal.aborted) {
+            this.renderInitialCard(word);
+            this.addToHistory(word);
+            return;
+        }
+
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
@@ -128,7 +130,7 @@ class VocabularyApp {
 
             const oldCard = document.getElementById('wordCard');
             if (oldCard && oldCard.innerHTML.includes(this.formatGermanWord(word))) {
-                // Do nothing if the same word is already displayed
+                // Do nothing
             } else if (oldCard) {
                 oldCard.classList.add('word-crossfade', 'word-fade-out');
                 await delay(300); checkAborted();
@@ -136,7 +138,6 @@ class VocabularyApp {
 
             this.renderInitialCard(word);
 
-            // Auto-play sequence
             const repeats = this.repeatMode === 'random' ? 1 : parseInt(this.repeatMode, 10);
             for (let i = 0; i < repeats; i++) {
                 await delay(i === 0 ? 500 : 1500); checkAborted();
@@ -153,7 +154,6 @@ class VocabularyApp {
             this.displayFinalTranslation();
             await this.speakRussian(this.currentWord.russian); checkAborted();
 
-            // Check if we should continue to the next word
             if (this.isAutoPlaying) {
                 await delay(2000); checkAborted();
                 const card = document.getElementById('wordCard');
@@ -174,66 +174,85 @@ class VocabularyApp {
         }
     }
 
-    initSpeechSynthesis() {
-        if (!('speechSynthesis' in window)) { console.warn('Speech Synthesis не поддерживается'); return; }
-        const initSpeech = () => {
-            if (this.speechReady) return;
-            if (this.isMobile) this.speechSynth.speak(new SpeechSynthesisUtterance(''));
-            this.speechReady = true;
-            this.loadVoices();
-            console.log('✅ Speech готов к работе');
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                setInterval(() => { if (this.speechSynth.paused && this.speechSynth.speaking) this.speechSynth.resume(); }, 500);
-            }
-        };
-        document.addEventListener('click', initSpeech, { once: true });
-        document.addEventListener('touchstart', initSpeech, { once: true });
-        if (!this.isMobile) setTimeout(initSpeech, 100);
-    }
-
-    loadVoices() {
-        const voices = this.speechSynth.getVoices();
-        if (voices.length === 0) {
-            if (!this.voicesLoading) { this.voicesLoading = true; this.speechSynth.onvoiceschanged = () => { this.voicesLoading = false; this.loadVoices(); }; }
-            return;
-        }
-        this.germanVoice = voices.find(v => v.lang === 'de-DE') || voices.find(v => v.lang.startsWith('de'));
-        this.russianVoice = voices.find(v => v.lang === 'ru-RU') || voices.find(v => v.lang.startsWith('ru'));
-        if (this.germanVoice) console.log('✅ Немецкий голос:', this.germanVoice.name); else console.warn('⚠️ Немецкий голос не найден');
-        if (this.russianVoice) console.log('✅ Русский голос:', this.russianVoice.name); else console.warn('⚠️ Русский голос не найден');
-    }
-
-    speak(text, lang, rate) {
-        return new Promise((resolve) => {
-            if (!this.speechReady || !text || !this.speechSynth || (this.sequenceController && this.sequenceController.signal.aborted)) {
+    speak(text, lang) {
+        return new Promise(async (resolve, reject) => {
+            if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
                 return resolve();
             }
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = lang;
-            utterance.rate = rate;
-            if (lang.startsWith('de') && this.germanVoice) utterance.voice = this.germanVoice;
-            if (lang.startsWith('ru') && this.russianVoice) utterance.voice = this.russianVoice;
+            try {
+                const apiUrl = `${this.ttsApiBaseUrl}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
+                const response = await fetch(apiUrl, { signal: this.sequenceController.signal });
 
-            utterance.onend = () => resolve();
-            utterance.onerror = (e) => { console.error('Ошибка синтеза речи:', e.error); resolve(); };
+                if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
 
-            if (this.speechSynth.speaking) {
-                this.speechSynth.cancel();
-            }
-            setTimeout(() => {
-                if (this.sequenceController && this.sequenceController.signal.aborted) {
-                    resolve();
-                    return;
+                const data = await response.json();
+                const audioUrl = `${this.ttsApiBaseUrl}${data.url}`;
+
+                if (this.sequenceController.signal.aborted) return resolve();
+
+                this.audioPlayer.src = audioUrl;
+
+                const playPromise = this.audioPlayer.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        if (error.name === "NotAllowedError") {
+                            console.warn("Воспроизведение заблокировано браузером. Требуется действие пользователя.");
+                            resolve();
+                        } else {
+                            console.error('Ошибка воспроизведения аудио:', error);
+                            resolve();
+                        }
+                    });
                 }
-                this.speechSynth.speak(utterance);
-            }, 50);
+
+                const abortHandler = () => {
+                    this.audioPlayer.pause();
+                    this.audioPlayer.src = '';
+                    cleanUp();
+                    reject(new DOMException('Sequence aborted', 'AbortError'));
+                };
+
+                const endedHandler = () => {
+                    cleanUp();
+                    resolve();
+                };
+
+                const errorHandler = (e) => {
+                    console.error('Ошибка аудио элемента:', e);
+                    cleanUp();
+                    resolve();
+                };
+
+                const cleanUp = () => {
+                    this.sequenceController.signal.removeEventListener('abort', abortHandler);
+                    this.audioPlayer.removeEventListener('ended', endedHandler);
+                    this.audioPlayer.removeEventListener('error', errorHandler);
+                };
+
+                this.sequenceController.signal.addEventListener('abort', abortHandler, { once: true });
+                this.audioPlayer.addEventListener('ended', endedHandler, { once: true });
+                this.audioPlayer.addEventListener('error', errorHandler, { once: true });
+
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Ошибка получения аудио с сервера:', error);
+                }
+                resolve();
+            }
         });
     }
 
-    async speakGerman(text) { if (this.soundEnabled) await this.speak(text, 'de-DE', 0.85); }
-    async speakRussian(text) { if (this.translationSoundEnabled) await this.speak(text, 'ru-RU', 0.9); }
-    async speakSentence(text) { if (this.sentenceSoundEnabled) await this.speak(text, 'de-DE', 0.9); }
+    async speakGerman(text) {
+        if (this.soundEnabled) await this.speak(text, 'de');
+    }
+    async speakRussian(text) {
+        if (this.translationSoundEnabled) await this.speak(text, 'ru');
+    }
+    async speakSentence(text) {
+        if (this.sentenceSoundEnabled) await this.speak(text, 'de');
+    }
 
     ensureWordIds(words) { words.forEach((w, i) => { if (!w.id) w.id = `word_${Date.now()}_${i}`; }); return words; }
 
@@ -250,7 +269,8 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
-        this.isAutoPlaying = safeJsonParse('isAutoPlaying', true);
+        // --- ИЗМЕНЕНИЕ №2: Значение по умолчанию для isAutoPlaying теперь false ---
+        this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
         this.accuracy = safeJsonParse('accuracy', { correct: 0, total: 0 });
@@ -293,7 +313,8 @@ class VocabularyApp {
         this.updateUI();
         setTimeout(() => {
             this.currentWord = this.getNextWord();
-            this.startAutoPlay();
+            // После смены фильтров просто показываем слово, не запуская autoplay
+            this.runDisplaySequence(this.currentWord);
         }, 100);
     }
 
@@ -302,17 +323,14 @@ class VocabularyApp {
         const wordId = word.id || word.german;
         const historyIds = this.wordHistory.map(w => w.id || w.german);
 
-        // Prevent adding duplicates to the very end of history
         if (historyIds.length > 0 && historyIds[historyIds.length - 1] === wordId) {
             return;
         }
 
-        // If we are navigating back and then forward, don't add duplicates
         if (this.currentHistoryIndex < this.wordHistory.length - 1 &&
             (this.wordHistory[this.currentHistoryIndex + 1]?.id || this.wordHistory[this.currentHistoryIndex + 1]?.german) === wordId) {
             this.currentHistoryIndex++;
         } else {
-            // Trim history if we're branching off
             if (this.currentHistoryIndex < this.wordHistory.length - 1) {
                 this.wordHistory.splice(this.currentHistoryIndex + 1);
             }
@@ -334,7 +352,7 @@ class VocabularyApp {
 
         if (newWord) {
             if (wasAutoPlaying) {
-                this.isAutoPlaying = true; // Restore state
+                this.isAutoPlaying = true;
                 this.currentWord = newWord;
                 this.runDisplaySequence(newWord);
             } else {
@@ -342,7 +360,6 @@ class VocabularyApp {
                 this.runDisplaySequence(newWord);
             }
         } else {
-            // If no new word, restore play state if it was on
             if (wasAutoPlaying) this.startAutoPlay();
         }
     }
@@ -364,8 +381,7 @@ class VocabularyApp {
                 return this.wordHistory[this.currentHistoryIndex];
             }
             const nextWord = this.getNextWord();
-            // This prevents adding the same word again if it's the last in the sequence
-            if (nextWord && nextWord.id !== this.currentWord.id) {
+            if (nextWord && (!this.currentWord || nextWord.id !== this.currentWord.id)) {
                 return nextWord;
             }
             return null;
@@ -498,7 +514,9 @@ class VocabularyApp {
         document.getElementById('fileInput_desktop')?.addEventListener('change', e => this.importWords(e));
         document.getElementById('importWords_mobile')?.addEventListener('click', () => document.getElementById('fileInput_mobile').click());
         document.getElementById('fileInput_mobile')?.addEventListener('change', e => { this.importWords(e); this.toggleSettingsPanel(false); });
-        if (this.isMobile) setTimeout(() => document.querySelector('.header-mobile')?.classList.add('collapsed'), 5000);
+
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) setTimeout(() => document.querySelector('.header-mobile')?.classList.add('collapsed'), 5000);
     }
 
     setupIcons() {
@@ -566,7 +584,6 @@ class VocabularyApp {
         const currentId = this.currentWord ? (this.currentWord.id || this.currentWord.german) : -1;
         let currentIndex = activeWords.findIndex(w => (w.id || w.german) === currentId);
 
-        // Move to the next index, wrap around if at the end
         let nextIndex = (currentIndex + 1) % activeWords.length;
 
         return activeWords[nextIndex];

@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# macOS
+.DS_Store
+
+# TTS Server Cache & Venv
+# Эти правила говорят Git не отслеживать папки с кэшем и виртуальным окружением
+tts-server/audio_cache/
+tts-server/venv/
