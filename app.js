@@ -520,7 +520,11 @@ class VocabularyApp {
     }
 
     setupIcons() {
-        const iconMap = { 'prevButton': '#icon-prev', 'nextButton': '#icon-next', 'settingsButton': '#icon-settings' };
+        const iconMap = {
+            'prevButton': '#icon-prev',
+            'nextButton': '#icon-next',
+            'settingsButton': '#icon-settings'
+        };
         Object.keys(iconMap).forEach(key => {
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
                 btn.innerHTML = `<svg class="icon"><use xlink:href="${iconMap[key]}"></use></svg>`;

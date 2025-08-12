@@ -781,13 +781,21 @@ body {
         display: flex;
         position: absolute;
         right: 15px;
-        border: none;
-        background: transparent;
-        color: #6c757d;
         width: 52px;
         height: 52px;
+        border: 2px solid #dee2e6;
+        border-radius: 50%;
+        background: white;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.2s ease;
         align-items: center;
         justify-content: center;
+    }
+
+    #settingsButton:hover {
+        border-color: #999;
+        background: #f8f8f8;
     }
 
     .player-controls-mobile .player-btn {
