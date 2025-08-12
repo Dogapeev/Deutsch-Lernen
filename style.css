@@ -23,7 +23,608 @@ body {
     overflow: hidden;
 }
 
-/* ... все остальные стили без изменений ... */
+.header {
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+    font-weight: 300;
+    color: #333;
+}
+
+.header p {
+    color: #666;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px;
+    background: #e5e5e5;
+    padding: 0;
+}
+
+.stat {
+    background: white;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.level-selector {
+    background: #fff;
+    padding: 25px;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.level-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.level-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.level-btn:hover {
+    border-color: #999;
+}
+
+.level-btn.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.block-selector {
+    background: white;
+    padding: 25px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.block-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.block-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.block-btn:hover {
+    border-color: #999;
+}
+
+.block-btn.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.block-label {
+    font-weight: 500;
+    color: #333;
+    margin-right: 15px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.block-label .icon {
+    margin-right: 8px;
+}
+
+.main-content {
+    padding: 40px;
+    height: 450px;
+    /* FIXED HEIGHT TO PREVENT JITTER */
+    background: white;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+}
+
+#studyArea {
+    display: flex;
+    flex-grow: 1;
+    width: 100%;
+}
+
+.card {
+    background: white;
+    border-radius: 4px;
+    padding: 50px 40px;
+    text-align: center;
+    margin-bottom: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    width: 100%;
+    flex-grow: 1;
+}
+
+.card.is-clickable {
+    cursor: pointer;
+}
+
+.word-container {
+    position: relative;
+    transition: all 1.2s ease-in-out;
+}
+
+.word {
+    font-size: 2.8rem;
+    font-weight: 300;
+    margin-bottom: 20px;
+    transition: color 0.5s ease;
+    color: #333;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.3em;
+}
+
+.word .article {
+    font-size: 0.5em;
+    opacity: 0.6;
+    font-weight: 400;
+    transition: opacity 0.3s ease;
+}
+
+.word .main-word {
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    transition: all 1.2s ease-in-out;
+}
+
+.word .morpheme {
+    transition: all 1.2s ease-in-out;
+}
+
+.word .morpheme-separator {
+    opacity: 0;
+    transform: scaleX(0);
+    transition: all 1.2s ease-in-out;
+    color: #999;
+    font-weight: 400;
+    margin: 0 0.1em;
+}
+
+.morpheme-separator-mobile {
+    display: none;
+    font-weight: 300;
+    color: #ccc;
+    vertical-align: middle;
+}
+
+.morpheme-separator-desktop {
+    display: inline;
+}
+
+.word.show-morphemes .morpheme {
+    margin: 0 0.15em;
+}
+
+.word.show-morphemes .morpheme-separator {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+.word.hide-articles .article {
+    opacity: 0;
+}
+
+.word .article.der {
+    color: #0066cc;
+}
+
+.word .article.die {
+    color: #cc0066;
+}
+
+.word .article.das {
+    color: #666;
+}
+
+.word.der .main-word {
+    color: #0066cc;
+}
+
+.word.die .main-word {
+    color: #cc0066;
+}
+
+.word.das .main-word {
+    color: #333;
+}
+
+.morpheme-translations {
+    margin-top: 15px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.5em;
+    min-height: 40px;
+}
+
+.morpheme-translations.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.morpheme-translation-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+}
+
+.morpheme-translation-item .morpheme-part {
+    font-weight: 500;
+    font-size: 1rem;
+    color: #555;
+}
+
+.morpheme-translation-item .translation-part {
+    font-size: 0.85rem;
+    color: #888;
+    font-style: italic;
+}
+
+.level-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.level-indicator.a1 {
+    background: #666;
+}
+
+.level-indicator.a2 {
+    background: #888;
+}
+
+.level-indicator.b1 {
+    background: #333;
+}
+
+.level-indicator.b2 {
+    background: #000;
+}
+
+.card.final-phase .word-container {
+    transform: translateY(0) scale(1.0);
+}
+
+.word-crossfade {
+    transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out;
+}
+
+.word-fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-appear {
+    animation: slideInFromBottom 0.6s ease-out;
+}
+
+.translation-appear,
+.sentence-appear {
+    animation: slideInFromBottom 0.6s ease-out;
+}
+
+.translation-container,
+.sentence-container {
+    min-height: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.translation {
+    font-size: 1.6rem;
+    color: #666;
+    margin-bottom: 12px;
+    font-weight: 400;
+}
+
+.pronunciation {
+    font-size: 1.1rem;
+    color: #999;
+    font-style: italic;
+    font-weight: 300;
+}
+
+.sentence {
+    font-size: 1.4rem;
+    color: #4a90e2;
+    margin: 20px 0 12px 0;
+    font-weight: 400;
+    font-style: italic;
+    padding: 15px;
+    border-left: 3px solid #4a90e2;
+    background: rgba(74, 144, 226, 0.05);
+    width: 100%;
+    text-align: center;
+}
+
+.sentence-translation {
+    font-size: 1.1rem;
+    color: #888;
+    margin-top: 8px;
+    font-style: normal;
+}
+
+.player-controls-desktop {
+    background: white;
+    padding: 25px;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+}
+
+.player-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.player-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.player-btn svg {
+    transition: transform 0.2s ease;
+}
+
+.player-btn:hover {
+    border-color: #999;
+    background: #f8f8f8;
+}
+
+.player-btn:active svg {
+    transform: scale(0.9);
+}
+
+.player-btn:disabled {
+    border-color: #ddd;
+    background: #f5f5f5;
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.play-pause {
+    width: 60px;
+    height: 60px;
+    border-width: 3px;
+}
+
+.play-pause.playing {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.sound-btn,
+.translation-sound-btn,
+.sentence-sound-btn {
+    width: 44px;
+    height: 44px;
+    border-width: 1px;
+}
+
+.sound-btn.active,
+.translation-sound-btn.active,
+.sentence-sound-btn.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.player-options {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.option-btn,
+.repeat-selector {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #666;
+    font-size: 0.85rem;
+    min-width: 50px;
+    text-align: center;
+}
+
+.option-btn:hover,
+.repeat-selector:hover {
+    border-color: #999;
+}
+
+.option-btn.active,
+.repeat-selector.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.option-btn:disabled,
+.repeat-selector:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+.vocabulary-manager {
+    background: white;
+    padding: 25px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.vocabulary-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.vocab-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.vocab-btn:hover {
+    border-color: #999;
+}
+
+.vocab-btn.load {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.no-words {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #999;
+    font-size: 1.1rem;
+    padding: 60px 20px;
+    font-weight: 300;
+}
+
+.status-message {
+    background: #f8f8f8;
+    color: #333;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 12px 0;
+    border: 1px solid #e5e5e5;
+    font-size: 0.85rem;
+}
 
 .icon {
     display: inline-block;
@@ -35,10 +636,129 @@ body {
 }
 
 /* --- MOBILE-SPECIFIC STYLES --- */
-/* ... все остальные стили без изменений ... */
+.header-mobile,
+.player-controls-mobile,
+#settingsButton,
+.settings-overlay,
+.settings-panel {
+    display: none;
+}
 
 @media (max-width: 768px) {
-    /* ... все остальные стили без изменений ... */
+    body {
+        padding: 0 0 120px;
+        /* Space for fixed controls */
+    }
+
+    .container {
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .main-content {
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    .card {
+        padding: 40px 20px;
+        border: none;
+        margin-bottom: 0;
+    }
+
+    .word {
+        font-size: 3rem;
+    }
+
+    .translation {
+        font-size: 1.5rem;
+    }
+
+    /* Hide Desktop Elements */
+    .header,
+    .stats,
+    .player-controls-desktop,
+    .vocabulary-manager,
+    .status-message,
+    .block-label {
+        display: none;
+    }
+
+    .header-mobile {
+        display: block;
+        padding: 20px;
+        text-align: center;
+        border-bottom: 1px solid #e9ecef;
+        overflow: hidden;
+        max-height: 100px;
+        /* Initial height */
+        transition: max-height 0.6s ease-out, padding 0.6s ease-out, border-color 0.6s;
+        background: white;
+    }
+
+    .header-mobile.collapsed {
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-color: transparent;
+    }
+
+    .level-selector {
+        margin-top: 0;
+    }
+
+    .level-selector,
+    .block-selector {
+        display: block;
+        padding: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .level-buttons,
+    .block-buttons {
+        justify-content: center;
+        gap: 4px 10px;
+    }
+
+    .level-btn,
+    .block-btn {
+        border: none;
+        background: none;
+        padding: 6px 8px;
+        font-size: 0.9rem;
+        font-weight: 400;
+        color: #6c757d;
+    }
+
+    .level-btn.active,
+    .block-btn.active {
+        color: #212529;
+        font-weight: 600;
+        background: none;
+    }
+
+    .morpheme-separator-desktop {
+        display: none;
+    }
+
+    .morpheme-separator-mobile {
+        display: inline;
+    }
+
+    .card.sentence-phase {
+        transform: scale(1.02);
+    }
+
+    .card.sentence-phase .word-container {
+        transform: translateY(-35px) scale(1.1);
+        transition: all 1.2s ease-in-out;
+    }
+
+    .card.sentence-phase .level-indicator {
+        opacity: 0;
+        transition: opacity 0.4s ease-in-out;
+    }
 
     .player-controls-mobile {
         display: flex;
@@ -52,20 +772,175 @@ body {
         border-top: 1px solid #e9ecef;
         padding: 15px;
         justify-content: center;
-        /* <-- ВЕРНУЛИ КАК БЫЛО */
         align-items: center;
         z-index: 1000;
         gap: 20px;
-        /* <-- ОСТАВИЛИ ДЛЯ КОМПАКТНОСТИ */
     }
 
     #settingsButton {
-        /* Этот селектор может быть пустым, так как все стили идут от .player-btn */
         display: flex;
-        /* <-- убедимся, что flex включен, чтобы выровнять иконку внутри */
+        position: absolute;
+        right: 15px;
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        width: 52px;
+        height: 52px;
         align-items: center;
         justify-content: center;
     }
 
-    /* ... все остальные стили без изменений ... */
+    .player-controls-mobile .player-btn {
+        width: 52px;
+        height: 52px;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+
+    .player-controls-mobile .play-pause {
+        width: 64px;
+        height: 64px;
+        border: 2px solid #adb5bd;
+        color: #6c757d;
+    }
+
+    .player-controls-mobile .player-btn .icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .player-controls-mobile .play-pause .icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    #settingsButton .icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    .player-controls-mobile .play-pause.playing {
+        background: #343a40;
+        border-color: #343a40;
+        color: white;
+    }
+
+    .settings-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1001;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0s 0.3s;
+    }
+
+    .settings-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease;
+    }
+
+    .settings-panel {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        padding: 20px;
+        z-index: 1002;
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .settings-panel.visible {
+        transform: translateY(0);
+    }
+
+    .settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .settings-header h2 {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    .close-btn {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+        background: none;
+        border: none;
+    }
+
+    .settings-section {
+        margin-bottom: 25px;
+    }
+
+    .settings-section h3 {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #adb5bd;
+        margin-bottom: 15px;
+        font-weight: 500;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 8px;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .settings-panel .control-group {
+        justify-content: space-between;
+    }
+
+    .settings-panel .option-btn {
+        border-radius: 20px;
+        background: #f8f9fa;
+        border-color: #dee2e6;
+    }
+
+    .settings-panel .option-btn.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .vocab-buttons-mobile {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .word {
+        font-size: 2.5rem;
+    }
+
+    .block-buttons {
+        gap: 6px;
+    }
+
+    .block-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
 }

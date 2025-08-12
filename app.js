@@ -8,15 +8,15 @@ class VocabularyApp {
         this.appVersion = APP_VERSION;
         this.allWords = [];
         this.currentWord = null;
-        this.isAutoPlaying = true;
+        // --- ИЗМЕНЕНИЕ №1: Автопроигрывание по умолчанию выключено ---
+        this.isAutoPlaying = false;
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
 
-        // ВАЖНО: Используем правильный рабочий URL вашего сервера на Render
-        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com';
+        // Адрес вашего рабочего сервера
+        this.ttsApiBaseUrl = 'https://deutsch-lernen-je9i.onrender.com'; // У вас может быть je9i, проверьте!
 
-        // Ссылка на глобальный аудиоплеер из index.html
         this.audioPlayer = document.getElementById('audioPlayer');
 
         this.loadStateFromLocalStorage();
@@ -65,12 +65,12 @@ class VocabularyApp {
         const wordToStart = this.getNextWord();
         if (wordToStart) {
             this.currentWord = wordToStart;
-
-            // --- ИЗМЕНЕНИЕ: Убираем автозапуск при загрузке ---
-            this.isAutoPlaying = false; // Принудительно ставим на паузу
-            this.updateToggleButton();  // Обновляем иконку на "Play"
-            // Показываем первое слово, но не запускаем цикл автопроигрывания
-            this.runDisplaySequence(this.currentWord);
+            if (this.isAutoPlaying) {
+                this.startAutoPlay();
+            } else {
+                // Просто показываем первое слово, не запуская проигрывание
+                this.runDisplaySequence(this.currentWord);
+            }
         }
     }
 
@@ -81,9 +81,7 @@ class VocabularyApp {
         this.updateToggleButton();
         const wordToShow = this.currentWord || this.getNextWord();
         if (wordToShow) {
-            if (this.sequenceController && this.sequenceController.signal.aborted) {
-                this.runDisplaySequence(wordToShow);
-            }
+            this.runDisplaySequence(wordToShow);
         }
     }
 
@@ -111,7 +109,14 @@ class VocabularyApp {
             return;
         }
 
-        if (this.sequenceController && !this.sequenceController.signal.aborted) {
+        // Если это не автопроигрывание, а просто показ слова, останавливаемся здесь
+        if (!this.isAutoPlaying && this.sequenceController && this.sequenceController.signal.aborted) {
+            this.renderInitialCard(word);
+            this.addToHistory(word);
+            return;
+        }
+
+        if (this.sequenceController) {
             this.sequenceController.abort();
         }
 
@@ -132,10 +137,6 @@ class VocabularyApp {
             }
 
             this.renderInitialCard(word);
-
-            if (!this.isAutoPlaying) {
-                return;
-            }
 
             const repeats = this.repeatMode === 'random' ? 1 : parseInt(this.repeatMode, 10);
             for (let i = 0; i < repeats; i++) {
@@ -268,6 +269,7 @@ class VocabularyApp {
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
+        // --- ИЗМЕНЕНИЕ №2: Значение по умолчанию для isAutoPlaying теперь false ---
         this.isAutoPlaying = safeJsonParse('isAutoPlaying', false);
         this.studiedToday = parseInt(localStorage.getItem('studiedToday')) || 0;
         this.lastStudyDate = localStorage.getItem('lastStudyDate');
@@ -310,11 +312,9 @@ class VocabularyApp {
         this.currentHistoryIndex = -1;
         this.updateUI();
         setTimeout(() => {
-            const nextWord = this.getNextWord();
-            if (nextWord) {
-                this.currentWord = nextWord;
-                this.runDisplaySequence(this.currentWord);
-            }
+            this.currentWord = this.getNextWord();
+            // После смены фильтров просто показываем слово, не запуская autoplay
+            this.runDisplaySequence(this.currentWord);
         }, 100);
     }
 
@@ -351,10 +351,13 @@ class VocabularyApp {
         const newWord = getNewWord();
 
         if (newWord) {
-            this.currentWord = newWord;
-            this.runDisplaySequence(newWord);
             if (wasAutoPlaying) {
-                setTimeout(() => this.startAutoPlay(), 50);
+                this.isAutoPlaying = true;
+                this.currentWord = newWord;
+                this.runDisplaySequence(newWord);
+            } else {
+                this.currentWord = newWord;
+                this.runDisplaySequence(newWord);
             }
         } else {
             if (wasAutoPlaying) this.startAutoPlay();
@@ -516,35 +519,14 @@ class VocabularyApp {
         if (isMobile) setTimeout(() => document.querySelector('.header-mobile')?.classList.add('collapsed'), 5000);
     }
 
-    // --- ИЗМЕНЕНИЕ: Самый надежный способ вставки иконок ---
     setupIcons() {
-        const iconMap = {
-            'prevButton': { href: '#icon-prev', viewBox: '0 0 24 24' },
-            'nextButton': { href: '#icon-next', viewBox: '0 0 24 24' },
-            'settingsButton': { href: '#icon-settings', viewBox: '0 0 24 24' }
-        };
-
+        const iconMap = { 'prevButton': '#icon-prev', 'nextButton': '#icon-next', 'settingsButton': '#icon-settings' };
         Object.keys(iconMap).forEach(key => {
-            const iconData = iconMap[key];
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
-                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                svg.setAttribute("class", "icon");
-                svg.setAttribute("viewBox", iconData.viewBox);
-                svg.setAttribute("fill", "currentColor");
-                svg.setAttribute("width", "1em");
-                svg.setAttribute("height", "1em");
-
-                const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-                use.setAttributeNS("http://www.w3.org/1999/xlink", "href", iconData.href);
-
-                svg.appendChild(use);
-                btn.innerHTML = '';
-                btn.appendChild(svg);
+                btn.innerHTML = `<svg class="icon"><use xlink:href="${iconMap[key]}"></use></svg>`;
             });
         });
-
-        this.updateToggleButton();
-        this.updateControlButtons();
+        this.updateToggleButton(); this.updateControlButtons();
     }
 
     toggleSettingsPanel(show) { document.getElementById('settings-panel').classList.toggle('visible', show); document.getElementById('settings-overlay').classList.toggle('visible', show); }
