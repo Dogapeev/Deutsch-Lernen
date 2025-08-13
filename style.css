@@ -72,22 +72,6 @@ body {
     font-weight: 500;
 }
 
-/* НОВЫЕ СТИЛИ: Отображение активного словаря */
-.current-vocabulary-display {
-    background: #f8f9fa;
-    padding: 15px 25px;
-    border-bottom: 1px solid #e5e5e5;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-}
-
-#activeVocabularyName {
-    font-weight: 600;
-    color: #007bff;
-}
-
 .level-selector {
     background: #fff;
     padding: 25px;
@@ -128,15 +112,6 @@ body {
     border-color: #333;
 }
 
-/* НОВЫЙ СТИЛЬ: Неактивные кнопки */
-.level-btn:disabled {
-    background-color: #f8f9fa;
-    border-color: #e9ecef;
-    color: #adb5bd;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
 .block-selector {
     background: white;
     padding: 25px;
@@ -148,8 +123,7 @@ body {
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;
-    justify-content: flex-start;
-    /* Изменено для лучшего вида */
+    justify-content: center;
 }
 
 .block-btn {
@@ -190,6 +164,7 @@ body {
 .main-content {
     padding: 40px;
     height: 450px;
+    /* FIXED HEIGHT TO PREVENT JITTER */
     background: white;
     display: flex;
     align-items: stretch;
@@ -221,41 +196,39 @@ body {
     cursor: pointer;
 }
 
-/* ... (остальные стили карточек, слов, анимаций без изменений) ... */
-
 .word-container {
     position: relative;
-    transition: all 1.2s ease-in-out
+    transition: all 1.2s ease-in-out;
 }
 
 .word {
     font-size: 2.8rem;
     font-weight: 300;
     margin-bottom: 20px;
-    transition: color .5s ease;
+    transition: color 0.5s ease;
     color: #333;
     display: flex;
     align-items: baseline;
     justify-content: center;
-    gap: .3em
+    gap: 0.3em;
 }
 
 .word .article {
-    font-size: .5em;
-    opacity: .6;
+    font-size: 0.5em;
+    opacity: 0.6;
     font-weight: 400;
-    transition: opacity .3s ease
+    transition: opacity 0.3s ease;
 }
 
 .word .main-word {
     font-weight: 300;
     display: flex;
     align-items: center;
-    transition: all 1.2s ease-in-out
+    transition: all 1.2s ease-in-out;
 }
 
 .word .morpheme {
-    transition: all 1.2s ease-in-out
+    transition: all 1.2s ease-in-out;
 }
 
 .word .morpheme-separator {
@@ -264,91 +237,91 @@ body {
     transition: all 1.2s ease-in-out;
     color: #999;
     font-weight: 400;
-    margin: 0 .1em
+    margin: 0 0.1em;
 }
 
 .morpheme-separator-mobile {
     display: none;
     font-weight: 300;
     color: #ccc;
-    vertical-align: middle
+    vertical-align: middle;
 }
 
 .morpheme-separator-desktop {
-    display: inline
+    display: inline;
 }
 
 .word.show-morphemes .morpheme {
-    margin: 0 .15em
+    margin: 0 0.15em;
 }
 
 .word.show-morphemes .morpheme-separator {
     opacity: 1;
-    transform: scaleX(1)
+    transform: scaleX(1);
 }
 
 .word.hide-articles .article {
-    opacity: 0
+    opacity: 0;
 }
 
 .word .article.der {
-    color: #0066cc
+    color: #0066cc;
 }
 
 .word .article.die {
-    color: #cc0066
+    color: #cc0066;
 }
 
 .word .article.das {
-    color: #666
+    color: #666;
 }
 
 .word.der .main-word {
-    color: #0066cc
+    color: #0066cc;
 }
 
 .word.die .main-word {
-    color: #cc0066
+    color: #cc0066;
 }
 
 .word.das .main-word {
-    color: #333
+    color: #333;
 }
 
 .morpheme-translations {
     margin-top: 15px;
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity .8s ease-out .2s, transform .8s ease-out .2s;
+    transition: opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s;
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
     gap: 1.5em;
-    min-height: 40px
+    min-height: 40px;
 }
 
 .morpheme-translations.visible {
     opacity: 1;
-    transform: translateY(0)
+    transform: translateY(0);
 }
 
 .morpheme-translation-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    line-height: 1.2
+    line-height: 1.2;
 }
 
 .morpheme-translation-item .morpheme-part {
     font-weight: 500;
     font-size: 1rem;
-    color: #555
+    color: #555;
 }
 
 .morpheme-translation-item .translation-part {
-    font-size: .85rem;
+    font-size: 0.85rem;
     color: #888;
-    font-style: italic
+    font-style: italic;
 }
 
 .level-indicator {
@@ -357,62 +330,62 @@ body {
     right: 15px;
     padding: 4px 8px;
     border-radius: 3px;
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 500;
-    color: #fff;
+    color: white;
     text-transform: uppercase;
-    letter-spacing: .5px;
-    transition: opacity .4s ease-in-out
+    letter-spacing: 0.5px;
+    transition: opacity 0.4s ease-in-out;
 }
 
 .level-indicator.a1 {
-    background: #666
+    background: #666;
 }
 
 .level-indicator.a2 {
-    background: #888
+    background: #888;
 }
 
 .level-indicator.b1 {
-    background: #333
+    background: #333;
 }
 
 .level-indicator.b2 {
-    background: #000
+    background: #000;
 }
 
 .card.final-phase .word-container {
-    transform: translateY(0) scale(1)
+    transform: translateY(0) scale(1.0);
 }
 
 .word-crossfade {
-    transition: opacity .7s ease-in-out, transform .7s ease-in-out
+    transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out;
 }
 
 .word-fade-out {
     opacity: 0;
-    transform: scale(.95)
+    transform: scale(0.95);
 }
 
 @keyframes slideInFromBottom {
     from {
         opacity: 0;
-        transform: translateY(20px)
+        transform: translateY(20px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0)
+        transform: translateY(0);
     }
 }
 
 .card-appear {
-    animation: slideInFromBottom .6s ease-out
+    animation: slideInFromBottom 0.6s ease-out;
 }
 
 .translation-appear,
 .sentence-appear {
-    animation: slideInFromBottom .6s ease-out
+    animation: slideInFromBottom 0.6s ease-out;
 }
 
 .translation-container,
@@ -421,41 +394,41 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center
+    align-items: center;
 }
 
 .translation {
     font-size: 1.6rem;
     color: #666;
     margin-bottom: 12px;
-    font-weight: 400
+    font-weight: 400;
 }
 
 .pronunciation {
     font-size: 1.1rem;
     color: #999;
     font-style: italic;
-    font-weight: 300
+    font-weight: 300;
 }
 
 .sentence {
     font-size: 1.4rem;
     color: #4a90e2;
-    margin: 20px 0 12px;
+    margin: 20px 0 12px 0;
     font-weight: 400;
     font-style: italic;
     padding: 15px;
     border-left: 3px solid #4a90e2;
-    background: rgba(74, 144, 226, .05);
+    background: rgba(74, 144, 226, 0.05);
     width: 100%;
-    text-align: center
+    text-align: center;
 }
 
 .sentence-translation {
     font-size: 1.1rem;
     color: #888;
     margin-top: 8px;
-    font-style: normal
+    font-style: normal;
 }
 
 .player-controls-desktop {
@@ -592,29 +565,18 @@ body {
     background: #f5f5f5;
 }
 
-/* ИЗМЕНЕННЫЕ СТИЛИ: Менеджер словарей */
 .vocabulary-manager {
     background: white;
     padding: 25px;
     border-top: 1px solid #e5e5e5;
 }
 
-.vocabulary-selector {
+.vocabulary-buttons {
     display: flex;
     gap: 12px;
     align-items: center;
     flex-wrap: wrap;
     justify-content: center;
-}
-
-.vocab-select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    font-weight: 500;
-    font-size: 0.9rem;
-    min-width: 200px;
 }
 
 .vocab-btn {
@@ -633,7 +595,16 @@ body {
     border-color: #999;
 }
 
-/* ... (остальные стили без изменений) ... */
+.vocab-btn.load {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.hidden-input {
+    display: none;
+}
+
 .no-words {
     width: 100%;
     display: flex;
@@ -643,7 +614,7 @@ body {
     color: #999;
     font-size: 1.1rem;
     padding: 60px 20px;
-    font-weight: 300
+    font-weight: 300;
 }
 
 .status-message {
@@ -653,7 +624,7 @@ body {
     border-radius: 4px;
     margin: 12px 0;
     border: 1px solid #e5e5e5;
-    font-size: .85rem
+    font-size: 0.85rem;
 }
 
 .icon {
@@ -662,7 +633,7 @@ body {
     height: 1em;
     stroke-width: 0;
     stroke: currentColor;
-    fill: currentColor
+    fill: currentColor;
 }
 
 /* --- MOBILE-SPECIFIC STYLES --- */
@@ -677,6 +648,7 @@ body {
 @media (max-width: 768px) {
     body {
         padding: 0 0 120px;
+        /* Space for fixed controls */
     }
 
     .container {
@@ -704,17 +676,14 @@ body {
         font-size: 1.5rem;
     }
 
+    /* Hide Desktop Elements */
     .header,
     .stats,
     .player-controls-desktop,
     .vocabulary-manager,
-    .status-message {
+    .status-message,
+    .block-label {
         display: none;
-    }
-
-    .current-vocabulary-display {
-        padding: 10px;
-        justify-content: center;
     }
 
     .header-mobile {
@@ -724,6 +693,7 @@ body {
         border-bottom: 1px solid #e9ecef;
         overflow: hidden;
         max-height: 100px;
+        /* Initial height */
         transition: max-height 0.6s ease-out, padding 0.6s ease-out, border-color 0.6s;
         background: white;
     }
@@ -733,6 +703,10 @@ body {
         padding-top: 0;
         padding-bottom: 0;
         border-color: transparent;
+    }
+
+    .level-selector {
+        margin-top: 0;
     }
 
     .level-selector,
@@ -765,16 +739,26 @@ body {
         background: none;
     }
 
-    .block-label {
-        display: none;
-    }
-
     .morpheme-separator-desktop {
         display: none;
     }
 
     .morpheme-separator-mobile {
         display: inline;
+    }
+
+    .card.sentence-phase {
+        transform: scale(1.02);
+    }
+
+    .card.sentence-phase .word-container {
+        transform: translateY(-35px) scale(1.1);
+        transition: all 1.2s ease-in-out;
+    }
+
+    .card.sentence-phase .level-indicator {
+        opacity: 0;
+        transition: opacity 0.4s ease-in-out;
     }
 
     .player-controls-mobile {
@@ -940,18 +924,24 @@ body {
         border-color: #007bff;
     }
 
-    /* НОВЫЕ СТИЛИ: Мобильный селектор словарей */
-    .vocabulary-selector-mobile {
+    .vocab-buttons-mobile {
         display: flex;
-        flex-direction: column;
+        flex-wrap: wrap;
         gap: 10px;
     }
+}
 
-    .vocabulary-selector-mobile .vocab-select {
-        width: 100%;
+@media (max-width: 480px) {
+    .word {
+        font-size: 2.5rem;
     }
 
-    .vocabulary-selector-mobile .option-btn {
-        width: 100%;
+    .block-buttons {
+        gap: 6px;
+    }
+
+    .block-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
     }
 }
