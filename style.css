@@ -571,36 +571,6 @@ body {
     border-top: 1px solid #e5e5e5;
 }
 
-.vocabulary-buttons {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.vocab-btn {
-    padding: 8px 16px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.85rem;
-    color: #666;
-}
-
-.vocab-btn:hover {
-    border-color: #999;
-}
-
-.vocab-btn.load {
-    background: #333;
-    color: white;
-    border-color: #333;
-}
-
 .hidden-input {
     display: none;
 }
@@ -923,12 +893,6 @@ body {
         color: white;
         border-color: #007bff;
     }
-
-    .vocab-buttons-mobile {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -944,4 +908,54 @@ body {
         padding: 6px 10px;
         font-size: 0.8rem;
     }
+}
+
+/* --- Стили для нового селектора словарей --- */
+.vocabulary-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.active-vocabulary-display,
+.vocabulary-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.active-vocabulary-name {
+    font-weight: 600;
+    color: #007bff;
+    /* синий акцент */
+    font-size: 0.9rem;
+}
+
+.vocabulary-selector {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    min-width: 200px;
+}
+
+/* Стили для мобильной версии в настройках */
+.settings-panel .active-vocabulary-name {
+    text-align: right;
+    flex-grow: 1;
+}
+
+.settings-panel .vocabulary-selector {
+    flex-grow: 1;
+    min-width: 150px;
+}
+
+.settings-panel .control-group>.vocabulary-selector {
+    padding: 6px 10px;
 }

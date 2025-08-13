@@ -107,15 +107,23 @@
                 </div>
             </div>
         </div>
+
+        <!-- ИЗМЕНЕНИЕ: Новый менеджер словарей -->
         <div class="vocabulary-manager">
-            <div class="vocabulary-buttons">
-                <span class="block-label"><svg class="icon">
-                        <use xlink:href="#icon-book"></use>
-                    </svg>Словари</span>
-                <button class="vocab-btn" id="reloadDefaultWords_desktop">🔄 Обновить словарь</button><button
-                    class="vocab-btn" id="exportWords_desktop">Экспорт</button><button class="vocab-btn"
-                    id="importWords_desktop">Импорт файла</button><input type="file" id="fileInput_desktop"
-                    class="hidden-input" accept=".json" />
+            <div class="vocabulary-controls">
+                <div class="active-vocabulary-display">
+                    <span class="block-label">
+                        <svg class="icon">
+                            <use xlink:href="#icon-book"></use>
+                        </svg>
+                        Активный словарь:
+                    </span>
+                    <span id="activeVocabularyName_desktop" class="active-vocabulary-name">Загрузка...</span>
+                </div>
+                <div class="vocabulary-selector-container">
+                    <label for="vocabularySelector_desktop" class="block-label">Выбрать другой:</label>
+                    <select id="vocabularySelector_desktop" class="vocabulary-selector"></select>
+                </div>
             </div>
         </div>
     </div>
@@ -169,13 +177,19 @@
                             id="sentenceSoundToggle_mobile"></button></div>
                 </div>
             </div>
+
+            <!-- ИЗМЕНЕНИЕ: Новый раздел настроек словаря для мобильных -->
             <div class="settings-section">
                 <h3>Словарь</h3>
-                <div class="vocab-buttons-mobile">
-                    <button class="option-btn" id="reloadDefaultWords_mobile">🔄 Обновить</button><button
-                        class="option-btn" id="exportWords_mobile">Экспорт</button><button class="option-btn"
-                        id="importWords_mobile">Импорт</button><input type="file" id="fileInput_mobile"
-                        class="hidden-input" accept=".json" />
+                <div class="options-grid">
+                    <div class="control-group">
+                        <span class="control-label">Активный:</span>
+                        <span id="activeVocabularyName_mobile" class="active-vocabulary-name">Загрузка...</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="vocabularySelector_mobile" class="control-label">Выбрать:</label>
+                        <select id="vocabularySelector_mobile" class="vocabulary-selector"></select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -221,7 +235,7 @@
             </symbol>
             <symbol id="icon-settings" viewBox="0 0 24 24">
                 <path
-                    d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+                    d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
             </symbol>
             <symbol id="icon-levels" viewBox="0 0 24 24">
                 <path d="M3 13h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V7H3v2z" />
