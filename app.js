@@ -425,11 +425,38 @@ class VocabularyApp {
 
     async loadVocabulary() {
         const loadFromLocalStorage = () => { try { const d = localStorage.getItem('germanWords'); return d ? JSON.parse(d) : null; } catch { return null; } };
-        const loadFromJSON = async () => { try { const r = await fetch('vocabulary.json'); if (!r.ok) throw new Error(`Network response was not ok`); return await r.json(); } catch (e) { console.error('Ошибка загрузки словаря:', e); return []; } };
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        const loadFromJSON = async () => {
+            try {
+                // Используем константу с адресом вашего сервера + новый маршрут
+                const apiUrl = `${TTS_API_BASE_URL}/api/vocabulary`;
+
+                console.log(`Загружаю словарь с сервера: ${apiUrl}`);
+                const r = await fetch(apiUrl);
+                if (!r.ok) {
+                    throw new Error(`Ошибка сервера при загрузке словаря: ${r.status} ${r.statusText}`);
+                }
+                return await r.json();
+            } catch (e) {
+                console.error('Критическая ошибка загрузки словаря:', e);
+                // Показываем сообщение об ошибке пользователю
+                if (this.elements.studyArea) {
+                    this.elements.studyArea.innerHTML = `<div class="no-words"><p>Не удалось загрузить словарь.<br>Проверьте консоль разработчика для деталей.</p></div>`;
+                }
+                return [];
+            }
+        };
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         let data = loadFromLocalStorage();
-        if (!data || data.length === 0) { data = await loadFromJSON(); }
+        if (!data || data.length === 0) {
+            data = await loadFromJSON();
+        }
         this.allWords = data.map((w, i) => ({ ...w, id: w.id || `word_${Date.now()}_${i}` }));
-        if (this.allWords.length > 0) localStorage.setItem('germanWords', JSON.stringify(this.allWords));
+        if (this.allWords.length > 0) {
+            localStorage.setItem('germanWords', JSON.stringify(this.allWords));
+        }
     }
 
     handleFilterChange() {
