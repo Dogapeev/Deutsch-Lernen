@@ -1,9 +1,9 @@
-// app.js - Final Version 2.5 (Smart Resume Playback)
+// app.js - Final Version 2.6 (Correct Navigation & State)
 
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '1.8'; // Обновляем версию
+const APP_VERSION = '1.9'; // Обновляем версию
 const TTS_API_BASE_URL = 'https://deutsch-lernen-0qxe.onrender.com';
 
 const DELAYS = {
@@ -31,7 +31,6 @@ class VocabularyApp {
         this.state = {
             isAutoPlaying: false,
             currentWord: null,
-            // ИЗМЕНЕНИЕ: Добавлено состояние для отслеживания фазы показа карточки
             currentPhase: 'initial', // 'initial', 'german', 'morphemes', 'sentence', 'translation'
             studiedToday: 0,
             lastStudyDate: null,
@@ -77,7 +76,6 @@ class VocabularyApp {
 
         const wordToStart = this.getNextWord();
         if (wordToStart) {
-            // ИЗМЕНЕНИЕ: Сбрасываем фазу при инициализации
             this.setState({ currentWord: wordToStart, currentPhase: 'initial' });
             this.renderInitialCard(this.state.currentWord);
             this.addToHistory(this.state.currentWord);
@@ -88,7 +86,6 @@ class VocabularyApp {
         if (this.state.isAutoPlaying) return;
         let wordToShow = this.state.currentWord;
 
-        // Если текущее слово "завершено", берем следующее
         if (!wordToShow || this.state.currentPhase === 'translation') {
             wordToShow = this.getNextWord();
             this.setState({ currentWord: wordToShow, currentPhase: 'initial' });
@@ -97,6 +94,8 @@ class VocabularyApp {
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
             this.runDisplaySequence(wordToShow);
+        } else {
+            this.showNoWordsMessage();
         }
     }
 
@@ -108,9 +107,6 @@ class VocabularyApp {
         this.setState({ isAutoPlaying: false });
     }
 
-    /**
-     * ✅ ИСПРАВЛЕНО: Теперь корректно продолжает, а не начинает заново.
-     */
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
             this.stopAutoPlay();
@@ -137,17 +133,15 @@ class VocabularyApp {
 
             let phase = this.state.currentPhase;
 
-            // Фаза 1: Появление карточки и озвучка немецкого слова
             if (phase === 'initial') {
                 await this._fadeInNewCard(word, checkAborted);
-                if (!this.state.isAutoPlaying) return; // Если включили и выключили, не продолжать
+                if (!this.state.isAutoPlaying) return;
                 await this._playGermanPhase(checkAborted);
                 this.setState({ currentPhase: 'german' });
                 phase = 'german';
             }
             checkAborted();
 
-            // Фаза 2: Показ морфем
             if (phase === 'german') {
                 await this._revealMorphemesPhase(checkAborted);
                 this.setState({ currentPhase: 'morphemes' });
@@ -155,7 +149,6 @@ class VocabularyApp {
             }
             checkAborted();
 
-            // Фаза 3: Показ и озвучка примера
             if (phase === 'morphemes') {
                 await this._playSentencePhase(checkAborted);
                 this.setState({ currentPhase: 'sentence' });
@@ -163,7 +156,6 @@ class VocabularyApp {
             }
             checkAborted();
 
-            // Фаза 4: Показ и озвучка перевода
             if (phase === 'sentence') {
                 await this._revealTranslationPhase(checkAborted);
                 this.setState({ currentPhase: 'translation' });
@@ -171,7 +163,6 @@ class VocabularyApp {
             }
             checkAborted();
 
-            // Фаза 5: Подготовка к следующему слову
             if (this.state.isAutoPlaying) {
                 await this._prepareNextWord(checkAborted);
                 const nextWord = this.getNextWord();
@@ -233,7 +224,6 @@ class VocabularyApp {
         this.displayFinalTranslation();
         await this.speakRussian(this.state.currentWord.russian);
         checkAborted();
-        // Увеличиваем счетчик только один раз за слово, в конце
         if (this.state.isAutoPlaying) {
             this.setState({ studiedToday: this.state.studiedToday + 1 });
         }
@@ -444,7 +434,6 @@ class VocabularyApp {
         const nextWord = this.getNextWord();
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
-        // ИЗМЕНЕНИЕ: Сбрасываем фазу при смене фильтра
         this.setState({ currentWord: nextWord, currentPhase: 'initial' });
         if (nextWord) {
             this.renderInitialCard(nextWord);
@@ -465,38 +454,56 @@ class VocabularyApp {
         this.updateNavigationButtons();
     }
 
+    // ИЗМЕНЕНИЕ: Упрощенная и корректная логика
     showPreviousWord() {
         if (this.currentHistoryIndex <= 0) return;
+
         const wasAutoPlaying = this.state.isAutoPlaying;
-        this.stopAutoPlay();
+        this.stopAutoPlay(); // 1. Всегда останавливаем текущую последовательность
+
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
-        // ИЗМЕНЕНИЕ: Сбрасываем фазу при переходе к предыдущему слову
-        this.setState({ currentWord: word, currentPhase: 'initial' });
-        // Запускаем показ с самого начала, т.к. это ручное действие
-        this.runDisplaySequence(word);
-        // Если до этого играло, не возобновляем, т.к. это ручное переключение
+
+        this.setState({ currentWord: word, currentPhase: 'initial' }); // 2. Устанавливаем новое слово и сбрасываем фазу
+
+        // 3. Решаем, что делать дальше, исходя из прошлого состояния
         if (wasAutoPlaying) {
-            this.stopAutoPlay();
+            this.startAutoPlay(); // Если играло - запускаем проигрывание нового слова
+        } else {
+            this.runDisplaySequence(word); // Если была пауза - просто показываем карточку
         }
     }
 
+    // ИЗМЕНЕНИЕ: Упрощенная и корректная логика
     showNextWordManually() {
         const wasAutoPlaying = this.state.isAutoPlaying;
-        this.stopAutoPlay();
+        this.stopAutoPlay(); // 1. Всегда останавливаем текущую последовательность
+
         let nextWord;
         if (this.currentHistoryIndex < this.wordHistory.length - 1) {
             this.currentHistoryIndex++;
             nextWord = this.wordHistory[this.currentHistoryIndex];
         } else {
             nextWord = this.getNextWord();
-            if (nextWord) this.addToHistory(nextWord);
+            if (nextWord) {
+                this.addToHistory(nextWord);
+            }
         }
-        // ИЗМЕНЕНИЕ: Сбрасываем фазу при переходе к следующему слову
-        this.setState({ currentWord: nextWord, currentPhase: 'initial' });
-        this.runDisplaySequence(nextWord);
+
+        // Исправлена ошибка "пустого экрана"
+        if (!nextWord) {
+            this.showNoWordsMessage();
+            this.updateNavigationButtons(); // Обновляем кнопки, чтобы "далее" стала неактивной
+            return;
+        }
+
+        this.setState({ currentWord: nextWord, currentPhase: 'initial' }); // 2. Устанавливаем новое слово и сбрасываем фазу
+
+        // 3. Решаем, что делать дальше, исходя из прошлого состояния
         if (wasAutoPlaying) {
-            this.stopAutoPlay();
+            this.startAutoPlay(); // Если играло - запускаем проигрывание нового слова
+        } else {
+            this.runDisplaySequence(nextWord); // Если была пауза - просто показываем карточку
         }
     }
 
@@ -560,7 +567,12 @@ class VocabularyApp {
 
     updateNavigationButtons() {
         document.querySelectorAll('[id^=prevButton]').forEach(btn => btn.disabled = this.currentHistoryIndex <= 0);
-        const hasNext = this.currentHistoryIndex < this.wordHistory.length - 1 || this.getActiveWords().length > this.wordHistory.length;
+        // Проверяем, есть ли следующее слово в истории ИЛИ можно ли сгенерировать новое
+        const activeWords = this.getActiveWords();
+        const currentIndexInActive = activeWords.findIndex(w => w.id === this.state.currentWord?.id);
+        const canGenerateNext = activeWords.length > 0 && (this.state.repeatMode === 'random' || currentIndexInActive < activeWords.length - 1);
+
+        const hasNext = this.currentHistoryIndex < this.wordHistory.length - 1 || canGenerateNext;
         document.querySelectorAll('[id^=nextButton]').forEach(btn => btn.disabled = !hasNext);
     }
 
@@ -662,7 +674,10 @@ class VocabularyApp {
         }
         const currentId = this.state.currentWord?.id;
         const currentIndex = activeWords.findIndex(w => w.id === currentId);
-        return activeWords[(currentIndex + 1) % activeWords.length];
+        if (currentIndex === -1 || currentIndex === activeWords.length - 1) {
+            return activeWords.length > 0 ? activeWords[0] : null;
+        }
+        return activeWords[currentIndex + 1];
     }
 
     parseGermanWord(word) {
