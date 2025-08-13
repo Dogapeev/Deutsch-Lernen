@@ -1,9 +1,9 @@
-// app.js - Final Version 3.0 (Multi-Vocabulary Support)
+// app.js - Final Version 2.7 (Stable Navigation & Playback)
 
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '3.0'; // Новая мажорная версия!
+const APP_VERSION = '2.0'; // Обновляем версию
 const TTS_API_BASE_URL = 'https://deutsch-lernen-0qxe.onrender.com';
 
 const DELAYS = {
@@ -31,7 +31,7 @@ class VocabularyApp {
         this.state = {
             isAutoPlaying: false,
             currentWord: null,
-            currentPhase: 'initial',
+            currentPhase: 'initial', // 'initial', 'german', 'morphemes', 'sentence', 'translation'
             studiedToday: 0,
             lastStudyDate: null,
             soundEnabled: true,
@@ -44,9 +44,6 @@ class VocabularyApp {
             showMorphemes: true,
             showMorphemeTranslations: true,
             showSentences: true,
-            // --- НОВЫЕ СВОЙСТВА СОСТОЯНИЯ ---
-            availableVocabularies: [], // Список словарей с сервера
-            selectedVocabularyName: 'vocabulary', // Имя словаря по умолчанию
         };
 
         this.elements = {
@@ -62,13 +59,13 @@ class VocabularyApp {
     }
 
     setState(newState) {
-        Object.assign(this.state, newState);
+        this.state = { ...this.state, ...newState };
         this.updateUI();
         this.saveStateToLocalStorage();
     }
 
     async init() {
-        await this.loadVocabulary(); // Эта функция теперь делает всё: грузит список и слова
+        await this.loadVocabulary();
         this.bindEvents();
         this.updateUI();
 
@@ -135,6 +132,7 @@ class VocabularyApp {
         try {
             const checkAborted = () => { if (signal.aborted) throw new DOMException('Aborted', 'AbortError'); };
 
+            // Если мы передали в функцию новое слово, его нужно сначала отобразить
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
             }
@@ -143,6 +141,7 @@ class VocabularyApp {
 
             if (phase === 'initial') {
                 await this._fadeInNewCard(word, checkAborted);
+                // Если автопроигрывание выключено, мы просто показываем карточку и на этом всё.
                 if (!this.state.isAutoPlaying) return;
                 await this._playGermanPhase(word, checkAborted);
                 this.setState({ currentPhase: 'german' });
@@ -187,6 +186,7 @@ class VocabularyApp {
         }
     }
 
+    // ИЗМЕНЕНИЕ: Все вспомогательные функции теперь принимают 'word' для надежности
     async _fadeInNewCard(word, checkAborted) {
         const oldCard = document.getElementById('wordCard');
         if (oldCard) {
@@ -308,6 +308,7 @@ class VocabularyApp {
         const card = document.getElementById('wordCard');
         if (!card) return;
 
+        // Re-render the relevant part of the card with the new setting
         const currentWord = this.state.currentWord;
         if (currentWord) {
             this.runDisplaySequence(currentWord);
@@ -326,26 +327,6 @@ class VocabularyApp {
         this.updateLevelButtons();
         this.updateThemeButtons();
         this.updateRepeatControlsState();
-        this.updateVocabularyControls();
-    }
-
-    updateVocabularyControls() {
-        document.querySelectorAll('[id^=activeVocabularyName]').forEach(el => {
-            el.textContent = this.state.selectedVocabularyName;
-        });
-
-        document.querySelectorAll('[id^=vocabularySelector]').forEach(select => {
-            select.innerHTML = '';
-
-            this.state.availableVocabularies.forEach(vocab => {
-                const option = document.createElement('option');
-                option.value = vocab.name;
-                option.textContent = `${vocab.name} (${vocab.word_count} слов)`;
-                select.appendChild(option);
-            });
-
-            select.value = this.state.selectedVocabularyName;
-        });
     }
 
     setupIcons() {
@@ -401,8 +382,6 @@ class VocabularyApp {
     }
 
     loadStateFromLocalStorage() {
-        this.state.selectedVocabularyName = localStorage.getItem('selectedVocabularyName') || 'vocabulary';
-
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
         const today = new Date().toDateString();
         const lastStudyDate = localStorage.getItem('lastStudyDate');
@@ -422,7 +401,6 @@ class VocabularyApp {
 
     saveStateToLocalStorage() {
         localStorage.setItem('appVersion', this.appVersion);
-        localStorage.setItem('selectedVocabularyName', this.state.selectedVocabularyName);
         localStorage.setItem('lastStudyDate', this.state.lastStudyDate);
         localStorage.setItem('studiedToday', this.state.studiedToday);
         localStorage.setItem('soundEnabled', JSON.stringify(this.state.soundEnabled));
@@ -439,65 +417,45 @@ class VocabularyApp {
 
     runMigrations() {
         const savedVersion = localStorage.getItem('appVersion') || '1.0';
-        if (parseFloat(savedVersion) < 3.0) {
+        if (parseFloat(savedVersion) < 2.0) {
+            // Migration for version 2.0 can be added here if needed
             localStorage.setItem('appVersion', this.appVersion);
         }
     }
 
     async loadVocabulary() {
+        const loadFromLocalStorage = () => { try { const d = localStorage.getItem('germanWords'); return d ? JSON.parse(d) : null; } catch { return null; } };
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         const loadFromJSON = async () => {
             try {
-                // 1. Загружаем список всех доступных словарей
-                const listUrl = `${TTS_API_BASE_URL}/api/vocabularies/list`;
-                const listResponse = await fetch(listUrl);
-                if (!listResponse.ok) throw new Error(`Ошибка получения списка словарей: ${listResponse.status}`);
-                const vocabList = await listResponse.json();
+                // Используем константу с адресом вашего сервера + новый маршрут
+                const apiUrl = `${TTS_API_BASE_URL}/api/vocabulary`;
 
-                if (!vocabList || vocabList.length === 0) {
-                    throw new Error('Сервер не вернул доступных словарей.');
+                console.log(`Загружаю словарь с сервера: ${apiUrl}`);
+                const r = await fetch(apiUrl);
+                if (!r.ok) {
+                    throw new Error(`Ошибка сервера при загрузке словаря: ${r.status} ${r.statusText}`);
                 }
-
-                this.setState({ availableVocabularies: vocabList });
-
-                // 2. Определяем, какой словарь загружать
-                let vocabToLoad = vocabList.find(v => v.name === this.state.selectedVocabularyName);
-                if (!vocabToLoad) {
-                    vocabToLoad = vocabList[0];
-                    this.setState({ selectedVocabularyName: vocabToLoad.name });
-                }
-
-                // 3. Загружаем данные конкретного словаря
-                const vocabularyUrl = `${TTS_API_BASE_URL}${vocabToLoad.url}`;
-                console.log(`Загружаю словарь: ${vocabToLoad.name} с ${vocabularyUrl}`);
-                const vocabularyResponse = await fetch(vocabularyUrl);
-                if (!vocabularyResponse.ok) throw new Error(`Ошибка загрузки словаря: ${vocabularyResponse.status}`);
-
-                return await vocabularyResponse.json();
-
+                return await r.json();
             } catch (e) {
                 console.error('Критическая ошибка загрузки словаря:', e);
-                this.elements.studyArea.innerHTML = `<div class="no-words"><p>Не удалось загрузить словарь.<br>Проверьте консоль для деталей.</p></div>`;
+                // Показываем сообщение об ошибке пользователю
+                if (this.elements.studyArea) {
+                    this.elements.studyArea.innerHTML = `<div class="no-words"><p>Не удалось загрузить словарь.<br>Проверьте консоль разработчика для деталей.</p></div>`;
+                }
                 return [];
             }
         };
-
-        const localStorageKey = `germanWords_${this.state.selectedVocabularyName}`;
-        const loadFromLocalStorage = () => {
-            try {
-                const data = localStorage.getItem(localStorageKey);
-                return data ? JSON.parse(data) : null;
-            } catch { return null; }
-        };
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         let data = loadFromLocalStorage();
         if (!data || data.length === 0) {
             data = await loadFromJSON();
         }
-
         this.allWords = data.map((w, i) => ({ ...w, id: w.id || `word_${Date.now()}_${i}` }));
-
         if (this.allWords.length > 0) {
-            localStorage.setItem(localStorageKey, JSON.stringify(this.allWords));
+            localStorage.setItem('germanWords', JSON.stringify(this.allWords));
         }
     }
 
@@ -525,6 +483,7 @@ class VocabularyApp {
         this.updateNavigationButtons();
     }
 
+    // ✅ ИСПРАВЛЕНО: Простая и надежная логика
     showPreviousWord() {
         if (this.currentHistoryIndex <= 0) return;
 
@@ -542,6 +501,7 @@ class VocabularyApp {
         }
     }
 
+    // ✅ ИСПРАВЛЕНО: Простая и надежная логика
     showNextWordManually() {
         const wasAutoPlaying = this.state.isAutoPlaying;
         this.stopAutoPlay();
@@ -649,9 +609,6 @@ class VocabularyApp {
         document.getElementById('settingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(true));
         document.getElementById('closeSettingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(false));
         this.elements.settingsOverlay.addEventListener('click', () => this.toggleSettingsPanel(false));
-
-        document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.switchVocabulary(e)));
-
         document.querySelectorAll('[id^=toggleButton]').forEach(b => b.addEventListener('click', () => this.toggleAutoPlay()));
         document.querySelectorAll('[id^=prevButton]').forEach(b => b.addEventListener('click', () => this.showPreviousWord()));
         document.querySelectorAll('[id^=nextButton]').forEach(b => b.addEventListener('click', () => this.showNextWordManually()));
@@ -665,20 +622,10 @@ class VocabularyApp {
         document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => this.toggleLevel(e.target.dataset.level)));
         document.querySelectorAll('.block-btn[data-theme]').forEach(btn => btn.addEventListener('click', e => this.setTheme(e.target.dataset.theme)));
         document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', e => this.setRepeatMode(e.target.dataset.mode)));
-    }
-
-    switchVocabulary(event) {
-        const newVocabName = event.target.value;
-        if (newVocabName === this.state.selectedVocabularyName) return;
-
-        console.log(`Переключаюсь на словарь: ${newVocabName}`);
-
-        localStorage.setItem('selectedVocabularyName', newVocabName);
-
-        const oldLocalStorageKey = `germanWords_${this.state.selectedVocabularyName}`;
-        localStorage.removeItem(oldLocalStorageKey);
-
-        window.location.reload();
+        document.querySelectorAll('[id^=reloadDefaultWords]').forEach(b => b.addEventListener('click', () => this.reloadDefaultWords()));
+        document.querySelectorAll('[id^=exportWords]').forEach(b => b.addEventListener('click', () => this.exportWords()));
+        document.querySelectorAll('[id^=importWords]').forEach(b => b.addEventListener('click', () => b.nextElementSibling.click()));
+        document.querySelectorAll('input[type=file]').forEach(i => i.addEventListener('change', e => this.importWords(e)));
     }
 
     toggleSettingsPanel(show) {
@@ -701,6 +648,34 @@ class VocabularyApp {
 
     setRepeatMode(mode) { this.setState({ repeatMode: mode }); }
 
+    reloadDefaultWords() { if (confirm('Сбросить прогресс и загрузить стандартный словарь?')) { localStorage.clear(); window.location.reload(); } }
+
+    exportWords() {
+        if (this.allWords.length === 0) return alert("Словарь пуст.");
+        const blob = new Blob([JSON.stringify(this.allWords, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `german-vocabulary.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    importWords(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (!Array.isArray(imported)) throw new Error('Неверный формат файла.');
+                this.stopAutoPlay();
+                this.allWords = imported.map((w, i) => ({ ...w, id: w.id || `word_${Date.now()}_${i}` }));
+                localStorage.setItem('germanWords', JSON.stringify(this.allWords));
+                this.handleFilterChange();
+                alert(`Импорт завершен: ${imported.length} слов.`);
+            } catch (err) { alert('Ошибка чтения файла: ' + err.message); }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
     getActiveWords() {
         const { selectedLevels, selectedTheme } = this.state;
         if (!this.allWords) return [];
@@ -716,14 +691,15 @@ class VocabularyApp {
         }
 
         const currentId = this.state.currentWord?.id;
-        if (!currentId) return activeWords[0];
+        if (!currentId) return activeWords[0]; // Если нет текущего слова, возвращаем первое
 
         const currentIndex = activeWords.findIndex(w => w.id === currentId);
-        if (currentIndex === -1) return activeWords[0];
+        if (currentIndex === -1) return activeWords[0]; // Если текущее не найдено в фильтрах, начинаем сначала
 
-        const nextIndex = (currentIndex + 1) % activeWords.length;
+        const nextIndex = (currentIndex + 1) % activeWords.length; // Зацикливаем список
         return activeWords[nextIndex];
     }
+
 
     parseGermanWord(word) {
         const german = word.german || '';
