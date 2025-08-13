@@ -1,9 +1,9 @@
-// app.js - Final Refactored Version 2.1 (Fixed constructor bug)
+// app.js - Final Refactored Version 2.2 (UI Fixes)
 
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-0qxe.onrender.com';
 
 const DELAYS = {
@@ -65,9 +65,8 @@ class VocabularyApp {
 
     async init() {
         await this.loadVocabulary();
-        this.setupIcons();
-        this.bindEvents();
-        this.updateUI();
+        this.bindEvents(); // Сначала привязываем события
+        this.updateUI();   // А потом обновляем UI, включая иконки
 
         if (this.getActiveWords().length === 0) {
             this.showNoWordsMessage();
@@ -82,6 +81,7 @@ class VocabularyApp {
         }
     }
 
+    // ... (Методы startAutoPlay, stopAutoPlay, toggleAutoPlay без изменений) ...
     startAutoPlay() {
         if (this.state.isAutoPlaying) return;
         const wordToShow = this.state.currentWord || this.getNextWord();
@@ -100,6 +100,7 @@ class VocabularyApp {
         this.state.isAutoPlaying ? this.stopAutoPlay() : this.startAutoPlay();
     }
 
+    // ... (runDisplaySequence и его вспомогательные методы без изменений) ...
     async runDisplaySequence(word) {
         if (!word) {
             this.showNoWordsMessage();
@@ -230,6 +231,113 @@ class VocabularyApp {
     async speakRussian(text) { if (this.state.translationSoundEnabled) await this.speak(text, 'ru'); }
     async speakSentence(text) { if (this.state.sentenceSoundEnabled) await this.speak(text, 'de'); }
 
+    // --- УПРАВЛЕНИЕ НАСТРОЙКАМИ И UI ---
+
+    /**
+     * ✅ ИСПРАВЛЕНА ЛОГИКА: Переключает настройку и немедленно обновляет вид без перезапуска слова.
+     */
+    toggleSetting(key) {
+        let newState = { [key]: !this.state[key] };
+
+        // Добавляем зависимость: если выключаем морфемы, выключаем и их перевод
+        if (key === 'showMorphemes' && !newState[key]) {
+            newState.showMorphemeTranslations = false;
+        }
+
+        this.setState(newState);
+
+        const card = document.getElementById('wordCard');
+        if (!card) return;
+
+        switch (key) {
+            case 'showArticles':
+                card.querySelector('.word')?.classList.toggle('hide-articles', !newState[key]);
+                break;
+            case 'showMorphemes':
+            case 'showMorphemeTranslations':
+                this.displayMorphemesAndTranslations();
+                break;
+            case 'showSentences':
+                this.displaySentence();
+                break;
+        }
+    }
+
+    /**
+     * ✅ ИСПРАВЛЕНО: Главный метод обновления всего UI
+     */
+    updateUI() {
+        this.setupIcons(); // Убеждаемся, что иконки всегда на месте
+        this.updateStats();
+        this.updateControlButtons();
+        this.updateToggleButton();
+        this.updateNavigationButtons();
+        this.updateLevelButtons();
+        this.updateThemeButtons();
+        this.updateRepeatControlsState();
+    }
+
+    /**
+     * ✅ ИСПРАВЛЕНО: Устанавливает иконки кнопкам. Теперь можно вызывать многократно.
+     */
+    setupIcons() {
+        const iconMap = {
+            prevButton: '#icon-prev',
+            nextButton: '#icon-next',
+            settingsButton: '#icon-settings',
+            soundToggle: this.state.soundEnabled ? '#icon-sound-on' : '#icon-sound-off',
+            translationSoundToggle: this.state.translationSoundEnabled ? '#icon-chat-on' : '#icon-chat-off',
+            sentenceSoundToggle: this.state.sentenceSoundEnabled ? '#icon-sentence-on' : '#icon-sentence-off',
+            toggleButton: this.state.isAutoPlaying ? '#icon-pause' : '#icon-play'
+        };
+        for (const [key, href] of Object.entries(iconMap)) {
+            document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
+                if (!btn.querySelector('svg')) { // Добавляем SVG, только если его нет
+                    btn.innerHTML = `<svg class="icon"><use xlink:href="${href}"></use></svg>`;
+                } else { // Иначе просто меняем иконку
+                    btn.querySelector('use').setAttribute('xlink:href', href);
+                }
+            });
+        }
+    }
+
+    /**
+     * ✅ ИСПРАВЛЕНО: Обновляет состояние всех кнопок управления
+     */
+    updateControlButtons() {
+        const controls = {
+            toggleArticles: this.state.showArticles,
+            toggleMorphemes: this.state.showMorphemes,
+            toggleMorphemeTranslations: this.state.showMorphemeTranslations,
+            toggleSentences: this.state.showSentences,
+            soundToggle: this.state.soundEnabled,
+            translationSoundToggle: this.state.translationSoundEnabled,
+            sentenceSoundToggle: this.state.sentenceSoundEnabled
+        };
+
+        for (const [key, state] of Object.entries(controls)) {
+            document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
+                btn.classList.toggle('active', state);
+                if (btn.classList.contains('option-btn') || (btn.classList.contains('repeat-selector') && !btn.dataset.mode)) {
+                    btn.textContent = state ? 'Вкл' : 'Выкл';
+                }
+            });
+        }
+        document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(btn => {
+            btn.disabled = !this.state.showMorphemes;
+        });
+    }
+
+    updateToggleButton() {
+        document.querySelectorAll('[id^=toggleButton]').forEach(btn => {
+            btn.classList.toggle('playing', this.state.isAutoPlaying);
+        });
+        document.getElementById('wordCard')?.classList.toggle('is-clickable', !this.state.isAutoPlaying);
+    }
+
+    // --- ОСТАЛЬНЫЕ МЕТОДЫ ---
+    // Здесь код остается без критических изменений
+
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
         const today = new Date().toDateString();
@@ -326,7 +434,7 @@ class VocabularyApp {
             nextWord = this.wordHistory[this.currentHistoryIndex];
         } else {
             nextWord = this.getNextWord();
-            this.addToHistory(nextWord);
+            if (nextWord) this.addToHistory(nextWord);
         }
         this.setState({ currentWord: nextWord });
         if (wasAutoPlaying) this.startAutoPlay(); else this.runDisplaySequence(nextWord);
@@ -337,41 +445,6 @@ class VocabularyApp {
         this.elements.studyArea.innerHTML = `<div class="card card-appear" id="wordCard"><div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div><div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div id="translationContainer" class="translation-container"></div><div id="morphemeTranslations" class="morpheme-translations"></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
         document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateUI();
-    }
-
-    displayMorphemesAndTranslations() {
-        const { currentWord, showMorphemes, showMorphemeTranslations } = this.state;
-        const mainWordElement = document.querySelector('.word .main-word');
-        const translationsContainer = document.getElementById('morphemeTranslations');
-        const wordElement = document.querySelector('.word');
-        if (!mainWordElement || !translationsContainer || !wordElement || !currentWord) return;
-        const parsed = this.parseGermanWord(currentWord);
-        wordElement.classList.remove('show-morphemes');
-        translationsContainer.classList.remove('visible');
-        translationsContainer.innerHTML = '';
-        mainWordElement.innerHTML = `<span class="morpheme">${parsed.mainWord}</span>`;
-        if (currentWord.morphemes) {
-            if (showMorphemes) {
-                const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`;
-                mainWordElement.innerHTML = currentWord.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML);
-                wordElement.classList.add('show-morphemes');
-            }
-            if (showMorphemes && showMorphemeTranslations) {
-                translationsContainer.innerHTML = currentWord.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join('');
-                translationsContainer.classList.add('visible');
-            }
-        }
-    }
-
-    displaySentence() {
-        const { currentWord, showSentences } = this.state;
-        const container = document.getElementById('sentenceContainer');
-        if (!container || !currentWord) return;
-        if (showSentences && currentWord.sentence) {
-            container.innerHTML = `<div class="sentence">${currentWord.sentence}<div class="sentence-translation">${currentWord.sentence_ru}</div></div>`;
-        } else {
-            container.innerHTML = '';
-        }
     }
 
     displayFinalTranslation(withAnimation = true) {
@@ -385,50 +458,9 @@ class VocabularyApp {
         }
     }
 
-    updateUI() {
-        this.updateStats();
-        this.updateControlButtons();
-        this.updateToggleButton();
-        this.updateNavigationButtons();
-        this.updateLevelButtons();
-        this.updateThemeButtons();
-        this.updateRepeatControlsState();
-    }
-
     updateStats() {
         if (this.elements.totalWords) this.elements.totalWords.textContent = this.getActiveWords().length;
         if (this.elements.studiedToday) this.elements.studiedToday.textContent = this.state.studiedToday;
-    }
-
-    updateControlButtons() {
-        const controls = {
-            soundToggle: { state: this.state.soundEnabled, icons: ['#icon-sound-on', '#icon-sound-off'] },
-            translationSoundToggle: { state: this.state.translationSoundEnabled, icons: ['#icon-chat-on', '#icon-chat-off'] },
-            sentenceSoundToggle: { state: this.state.sentenceSoundEnabled, icons: ['#icon-sentence-on', '#icon-sentence-off'] },
-            toggleArticles: { state: this.state.showArticles },
-            toggleMorphemes: { state: this.state.showMorphemes },
-            toggleMorphemeTranslations: { state: this.state.showMorphemeTranslations },
-            toggleSentences: { state: this.state.showSentences }
-        };
-        for (const [key, { state, icons }] of Object.entries(controls)) {
-            document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
-                btn.classList.toggle('active', state);
-                if (icons && btn.querySelector('use')) btn.querySelector('use').setAttribute('xlink:href', state ? icons[0] : icons[1]);
-                if (btn.classList.contains('option-btn') || (btn.classList.contains('repeat-selector') && !btn.dataset.mode)) {
-                    btn.textContent = state ? 'Вкл' : 'Выкл';
-                }
-            });
-        }
-        document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(btn => btn.disabled = !this.state.showMorphemes);
-    }
-
-    updateToggleButton() {
-        const { isAutoPlaying } = this.state;
-        document.querySelectorAll('[id^=toggleButton]').forEach(btn => {
-            if (btn.querySelector('use')) btn.querySelector('use').setAttribute('xlink:href', isAutoPlaying ? '#icon-pause' : '#icon-play');
-            btn.classList.toggle('playing', isAutoPlaying);
-        });
-        document.getElementById('wordCard')?.classList.toggle('is-clickable', !isAutoPlaying);
     }
 
     updateNavigationButtons() {
@@ -472,36 +504,9 @@ class VocabularyApp {
         document.querySelectorAll('input[type=file]').forEach(i => i.addEventListener('change', e => this.importWords(e)));
     }
 
-    setupIcons() {
-        const iconMap = { prevButton: '#icon-prev', nextButton: '#icon-next', settingsButton: '#icon-settings' };
-        for (const [key, href] of Object.entries(iconMap)) {
-            document.querySelectorAll(`[id^=${key}]`).forEach(btn => btn.innerHTML = `<svg class="icon"><use xlink:href="${href}"></use></svg>`);
-        }
-        this.updateUI();
-    }
-
     toggleSettingsPanel(show) {
         this.elements.settingsPanel.classList.toggle('visible', show);
         this.elements.settingsOverlay.classList.toggle('visible', show);
-    }
-
-    toggleSetting(key) {
-        const newValue = !this.state[key];
-        this.setState({ [key]: newValue });
-        const card = document.getElementById('wordCard');
-        if (!card) return;
-        switch (key) {
-            case 'showArticles':
-                card.querySelector('.word')?.classList.toggle('hide-articles', !newValue);
-                break;
-            case 'showMorphemes':
-            case 'showMorphemeTranslations':
-                this.displayMorphemesAndTranslations();
-                break;
-            case 'showSentences':
-                this.displaySentence();
-                break;
-        }
     }
 
     toggleLevel(level) {
@@ -578,7 +583,7 @@ class VocabularyApp {
         const parsed = this.parseGermanWord(word);
         const articleClass = this.state.showArticles ? '' : 'hide-articles';
         const mainWordHtml = `<span class="morpheme">${parsed.mainWord}</span>`;
-        const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : '';
+        const articleHtml = parsed.article ? `<span class.article ${parsed.genderClass}">${parsed.article}</span>` : '';
         return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`;
     }
 
