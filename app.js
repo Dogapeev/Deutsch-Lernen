@@ -1,4 +1,4 @@
-// app.js - Final Refactored Version 2.2 (UI Fixes)
+// app.js - Final Version 2.3 (Robust playback logic)
 
 "use strict";
 
@@ -65,8 +65,8 @@ class VocabularyApp {
 
     async init() {
         await this.loadVocabulary();
-        this.bindEvents(); // Сначала привязываем события
-        this.updateUI();   // А потом обновляем UI, включая иконки
+        this.bindEvents();
+        this.updateUI();
 
         if (this.getActiveWords().length === 0) {
             this.showNoWordsMessage();
@@ -81,7 +81,6 @@ class VocabularyApp {
         }
     }
 
-    // ... (Методы startAutoPlay, stopAutoPlay, toggleAutoPlay без изменений) ...
     startAutoPlay() {
         if (this.state.isAutoPlaying) return;
         const wordToShow = this.state.currentWord || this.getNextWord();
@@ -100,7 +99,6 @@ class VocabularyApp {
         this.state.isAutoPlaying ? this.stopAutoPlay() : this.startAutoPlay();
     }
 
-    // ... (runDisplaySequence и его вспомогательные методы без изменений) ...
     async runDisplaySequence(word) {
         if (!word) {
             this.showNoWordsMessage();
@@ -193,36 +191,61 @@ class VocabularyApp {
         }
     }
 
+    /**
+     * ✅ ИСПРАВЛЕНО: Полностью переработанный метод озвучивания для надежности.
+     */
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
-            if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) return resolve();
+            if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
+                return resolve();
+            }
+
+            let resolved = false;
+            const cleanupAndResolve = () => {
+                if (resolved) return;
+                resolved = true;
+                this.audioPlayer.removeEventListener('ended', cleanupAndResolve);
+                this.audioPlayer.removeEventListener('error', cleanupAndResolve);
+                if (this.sequenceController) {
+                    this.sequenceController.signal.removeEventListener('abort', cleanupAndReject);
+                }
+                resolve();
+            };
+
+            const cleanupAndReject = () => {
+                if (resolved) return;
+                resolved = true;
+                this.audioPlayer.removeEventListener('ended', cleanupAndResolve);
+                this.audioPlayer.removeEventListener('error', cleanupAndResolve);
+                if (this.sequenceController) {
+                    this.sequenceController.signal.removeEventListener('abort', cleanupAndReject);
+                }
+                this.audioPlayer.pause();
+                this.audioPlayer.src = '';
+                reject(new DOMException('Aborted', 'AbortError'));
+            };
+
             try {
                 const apiUrl = `${TTS_API_BASE_URL}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
                 const response = await fetch(apiUrl, { signal: this.sequenceController?.signal });
                 if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
                 const data = await response.json();
                 if (!data.url) throw new Error('Invalid response from TTS server');
-                const audioUrl = `${TTS_API_BASE_URL}${data.url}`;
-                if (this.sequenceController?.signal.aborted) return resolve();
-                this.audioPlayer.src = audioUrl;
-                const onEnded = () => { cleanup(); resolve(); };
-                const onError = (e) => { console.error('Audio playback error:', e); cleanup(); resolve(); };
-                const onAbort = () => { this.audioPlayer.pause(); cleanup(); reject(new DOMException('Aborted', 'AbortError')); };
-                const cleanup = () => {
-                    this.audioPlayer.removeEventListener('ended', onEnded);
-                    this.audioPlayer.removeEventListener('error', onError);
-                    this.sequenceController?.signal.removeEventListener('abort', onAbort);
-                };
-                this.audioPlayer.addEventListener('ended', onEnded, { once: true });
-                this.audioPlayer.addEventListener('error', onError, { once: true });
-                this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
-                await this.audioPlayer.play().catch(err => {
-                    if (err.name === "NotAllowedError") { this.stopAutoPlay(); }
-                    cleanup(); resolve();
-                });
+                if (this.sequenceController?.signal.aborted) return cleanupAndReject();
+
+                this.audioPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
+                this.audioPlayer.addEventListener('ended', cleanupAndResolve, { once: true });
+                this.audioPlayer.addEventListener('error', cleanupAndResolve, { once: true });
+                this.sequenceController?.signal.addEventListener('abort', cleanupAndReject, { once: true });
+
+                await this.audioPlayer.play();
             } catch (error) {
-                if (error.name !== 'AbortError') console.error('Error fetching audio:', error);
-                resolve();
+                if (error.name === 'AbortError') {
+                    cleanupAndReject();
+                } else {
+                    console.error('Ошибка в методе speak:', error);
+                    cleanupAndResolve(); // Гарантируем, что приложение не зависнет
+                }
             }
         });
     }
@@ -231,24 +254,14 @@ class VocabularyApp {
     async speakRussian(text) { if (this.state.translationSoundEnabled) await this.speak(text, 'ru'); }
     async speakSentence(text) { if (this.state.sentenceSoundEnabled) await this.speak(text, 'de'); }
 
-    // --- УПРАВЛЕНИЕ НАСТРОЙКАМИ И UI ---
-
-    /**
-     * ✅ ИСПРАВЛЕНА ЛОГИКА: Переключает настройку и немедленно обновляет вид без перезапуска слова.
-     */
     toggleSetting(key) {
         let newState = { [key]: !this.state[key] };
-
-        // Добавляем зависимость: если выключаем морфемы, выключаем и их перевод
         if (key === 'showMorphemes' && !newState[key]) {
             newState.showMorphemeTranslations = false;
         }
-
         this.setState(newState);
-
         const card = document.getElementById('wordCard');
         if (!card) return;
-
         switch (key) {
             case 'showArticles':
                 card.querySelector('.word')?.classList.toggle('hide-articles', !newState[key]);
@@ -263,48 +276,34 @@ class VocabularyApp {
         }
     }
 
-    /**
-     * ✅ ИСПРАВЛЕНО: Главный метод обновления всего UI
-     */
     updateUI() {
-        this.setupIcons(); // Убеждаемся, что иконки всегда на месте
         this.updateStats();
         this.updateControlButtons();
-        this.updateToggleButton();
         this.updateNavigationButtons();
         this.updateLevelButtons();
         this.updateThemeButtons();
         this.updateRepeatControlsState();
     }
 
-    /**
-     * ✅ ИСПРАВЛЕНО: Устанавливает иконки кнопкам. Теперь можно вызывать многократно.
-     */
     setupIcons() {
         const iconMap = {
-            prevButton: '#icon-prev',
-            nextButton: '#icon-next',
-            settingsButton: '#icon-settings',
-            soundToggle: this.state.soundEnabled ? '#icon-sound-on' : '#icon-sound-off',
-            translationSoundToggle: this.state.translationSoundEnabled ? '#icon-chat-on' : '#icon-chat-off',
-            sentenceSoundToggle: this.state.sentenceSoundEnabled ? '#icon-sentence-on' : '#icon-sentence-off',
-            toggleButton: this.state.isAutoPlaying ? '#icon-pause' : '#icon-play'
+            prevButton: '#icon-prev', nextButton: '#icon-next', settingsButton: '#icon-settings',
+            soundToggle: '#icon-sound-on', translationSoundToggle: '#icon-chat-on',
+            sentenceSoundToggle: '#icon-sentence-on', toggleButton: '#icon-play'
         };
         for (const [key, href] of Object.entries(iconMap)) {
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
-                if (!btn.querySelector('svg')) { // Добавляем SVG, только если его нет
+                if (!btn.querySelector('svg')) {
                     btn.innerHTML = `<svg class="icon"><use xlink:href="${href}"></use></svg>`;
-                } else { // Иначе просто меняем иконку
-                    btn.querySelector('use').setAttribute('xlink:href', href);
                 }
             });
         }
     }
 
-    /**
-     * ✅ ИСПРАВЛЕНО: Обновляет состояние всех кнопок управления
-     */
     updateControlButtons() {
+        this.setupIcons(); // Перерисовываем иконки звука
+        this.updateToggleButton(); // Перерисовываем иконку play/pause
+
         const controls = {
             toggleArticles: this.state.showArticles,
             toggleMorphemes: this.state.showMorphemes,
@@ -336,7 +335,7 @@ class VocabularyApp {
     }
 
     // --- ОСТАЛЬНЫЕ МЕТОДЫ ---
-    // Здесь код остается без критических изменений
+    // Здесь код остается без критических изменений, он был корректен.
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
@@ -400,8 +399,12 @@ class VocabularyApp {
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
         this.setState({ currentWord: nextWord });
-        this.renderInitialCard(nextWord);
-        if (nextWord) this.addToHistory(nextWord);
+        if (nextWord) {
+            this.renderInitialCard(nextWord);
+            this.addToHistory(nextWord);
+        } else {
+            this.showNoWordsMessage();
+        }
     }
 
     addToHistory(word) {
@@ -445,6 +448,41 @@ class VocabularyApp {
         this.elements.studyArea.innerHTML = `<div class="card card-appear" id="wordCard"><div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div><div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div id="translationContainer" class="translation-container"></div><div id="morphemeTranslations" class="morpheme-translations"></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
         document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateUI();
+    }
+
+    displayMorphemesAndTranslations() {
+        const { currentWord, showMorphemes, showMorphemeTranslations } = this.state;
+        const mainWordElement = document.querySelector('.word .main-word');
+        const translationsContainer = document.getElementById('morphemeTranslations');
+        const wordElement = document.querySelector('.word');
+        if (!mainWordElement || !translationsContainer || !wordElement || !currentWord) return;
+        const parsed = this.parseGermanWord(currentWord);
+        wordElement.classList.remove('show-morphemes');
+        translationsContainer.classList.remove('visible');
+        translationsContainer.innerHTML = '';
+        mainWordElement.innerHTML = `<span class="morpheme">${parsed.mainWord}</span>`;
+        if (currentWord.morphemes) {
+            if (showMorphemes) {
+                const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`;
+                mainWordElement.innerHTML = currentWord.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML);
+                wordElement.classList.add('show-morphemes');
+            }
+            if (showMorphemes && showMorphemeTranslations) {
+                translationsContainer.innerHTML = currentWord.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join('');
+                translationsContainer.classList.add('visible');
+            }
+        }
+    }
+
+    displaySentence() {
+        const { currentWord, showSentences } = this.state;
+        const container = document.getElementById('sentenceContainer');
+        if (!container || !currentWord) return;
+        if (showSentences && currentWord.sentence) {
+            container.innerHTML = `<div class="sentence">${currentWord.sentence}<div class="sentence-translation">${currentWord.sentence_ru}</div></div>`;
+        } else {
+            container.innerHTML = '';
+        }
     }
 
     displayFinalTranslation(withAnimation = true) {
@@ -583,7 +621,7 @@ class VocabularyApp {
         const parsed = this.parseGermanWord(word);
         const articleClass = this.state.showArticles ? '' : 'hide-articles';
         const mainWordHtml = `<span class="morpheme">${parsed.mainWord}</span>`;
-        const articleHtml = parsed.article ? `<span class.article ${parsed.genderClass}">${parsed.article}</span>` : '';
+        const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : '';
         return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`;
     }
 
