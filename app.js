@@ -1,9 +1,9 @@
-// app.js - Final Version 2.3 (Robust playback logic)
+// app.js - Final Version 2.3 (Smart Pause/Resume Logic Included)
 
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.6';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-0qxe.onrender.com';
 
 const DELAYS = {
@@ -27,6 +27,7 @@ class VocabularyApp {
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
         this.audioPlayer = document.getElementById('audioPlayer');
+        this.isAudioPaused = false; // Флаг для умной паузы
 
         this.state = {
             isAutoPlaying: false,
@@ -83,6 +84,7 @@ class VocabularyApp {
 
     startAutoPlay() {
         if (this.state.isAutoPlaying) return;
+        this.isAudioPaused = false; // Сбрасываем флаг принудительно
         const wordToShow = this.state.currentWord || this.getNextWord();
         if (wordToShow) {
             this.setState({ isAutoPlaying: true, currentWord: wordToShow });
@@ -92,10 +94,28 @@ class VocabularyApp {
 
     stopAutoPlay() {
         if (this.sequenceController) this.sequenceController.abort();
+        this.isAudioPaused = false;
         this.setState({ isAutoPlaying: false });
     }
 
     toggleAutoPlay() {
+        // Если аудио сейчас на паузе, просто возобновляем его.
+        if (this.isAudioPaused) {
+            this.audioPlayer.play();
+            this.isAudioPaused = false;
+            this.setState({ isAutoPlaying: true });
+            return;
+        }
+
+        // Если аудио сейчас играет, ставим его на паузу.
+        if (this.state.isAutoPlaying && !this.audioPlayer.paused) {
+            this.audioPlayer.pause();
+            this.isAudioPaused = true;
+            this.setState({ isAutoPlaying: false });
+            return;
+        }
+
+        // В остальных случаях - обычное переключение.
         this.state.isAutoPlaying ? this.stopAutoPlay() : this.startAutoPlay();
     }
 
@@ -191,35 +211,28 @@ class VocabularyApp {
         }
     }
 
-    /**
-     * ✅ ИСПРАВЛЕНО: Полностью переработанный метод озвучивания для надежности.
-     */
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
-            if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
-                return resolve();
-            }
+            if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) return resolve();
 
             let resolved = false;
             const cleanupAndResolve = () => {
                 if (resolved) return;
                 resolved = true;
+                this.isAudioPaused = false;
                 this.audioPlayer.removeEventListener('ended', cleanupAndResolve);
                 this.audioPlayer.removeEventListener('error', cleanupAndResolve);
-                if (this.sequenceController) {
-                    this.sequenceController.signal.removeEventListener('abort', cleanupAndReject);
-                }
+                this.sequenceController?.signal.removeEventListener('abort', cleanupAndReject);
                 resolve();
             };
 
             const cleanupAndReject = () => {
                 if (resolved) return;
                 resolved = true;
+                this.isAudioPaused = false;
                 this.audioPlayer.removeEventListener('ended', cleanupAndResolve);
                 this.audioPlayer.removeEventListener('error', cleanupAndResolve);
-                if (this.sequenceController) {
-                    this.sequenceController.signal.removeEventListener('abort', cleanupAndReject);
-                }
+                this.sequenceController?.signal.removeEventListener('abort', cleanupAndReject);
                 this.audioPlayer.pause();
                 this.audioPlayer.src = '';
                 reject(new DOMException('Aborted', 'AbortError'));
@@ -244,7 +257,7 @@ class VocabularyApp {
                     cleanupAndReject();
                 } else {
                     console.error('Ошибка в методе speak:', error);
-                    cleanupAndResolve(); // Гарантируем, что приложение не зависнет
+                    cleanupAndResolve();
                 }
             }
         });
@@ -277,8 +290,10 @@ class VocabularyApp {
     }
 
     updateUI() {
+        this.setupIcons();
         this.updateStats();
         this.updateControlButtons();
+        this.updateToggleButton();
         this.updateNavigationButtons();
         this.updateLevelButtons();
         this.updateThemeButtons();
@@ -288,22 +303,25 @@ class VocabularyApp {
     setupIcons() {
         const iconMap = {
             prevButton: '#icon-prev', nextButton: '#icon-next', settingsButton: '#icon-settings',
-            soundToggle: '#icon-sound-on', translationSoundToggle: '#icon-chat-on',
-            sentenceSoundToggle: '#icon-sentence-on', toggleButton: '#icon-play'
+            soundToggle: this.state.soundEnabled ? '#icon-sound-on' : '#icon-sound-off',
+            translationSoundToggle: this.state.translationSoundEnabled ? '#icon-chat-on' : '#icon-chat-off',
+            sentenceSoundToggle: this.state.sentenceSoundEnabled ? '#icon-sentence-on' : '#icon-sentence-off',
+            toggleButton: this.state.isAutoPlaying ? '#icon-pause' : '#icon-play'
         };
         for (const [key, href] of Object.entries(iconMap)) {
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
                 if (!btn.querySelector('svg')) {
                     btn.innerHTML = `<svg class="icon"><use xlink:href="${href}"></use></svg>`;
+                } else {
+                    btn.querySelector('use').setAttribute('xlink:href', href);
                 }
             });
         }
     }
 
     updateControlButtons() {
-        this.setupIcons(); // Перерисовываем иконки звука
-        this.updateToggleButton(); // Перерисовываем иконку play/pause
-
+        this.setupIcons();
+        this.updateToggleButton();
         const controls = {
             toggleArticles: this.state.showArticles,
             toggleMorphemes: this.state.showMorphemes,
@@ -313,7 +331,6 @@ class VocabularyApp {
             translationSoundToggle: this.state.translationSoundEnabled,
             sentenceSoundToggle: this.state.sentenceSoundEnabled
         };
-
         for (const [key, state] of Object.entries(controls)) {
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
                 btn.classList.toggle('active', state);
@@ -333,9 +350,6 @@ class VocabularyApp {
         });
         document.getElementById('wordCard')?.classList.toggle('is-clickable', !this.state.isAutoPlaying);
     }
-
-    // --- ОСТАЛЬНЫЕ МЕТОДЫ ---
-    // Здесь код остается без критических изменений, он был корректен.
 
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
