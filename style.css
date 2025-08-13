@@ -112,15 +112,6 @@ body {
     border-color: #333;
 }
 
-.level-btn.disabled {
-    background: #f5f5f5;
-    color: #ccc;
-    border-color: #ddd;
-    cursor: not-allowed;
-    pointer-events: none;
-    opacity: 0.7;
-}
-
 .block-selector {
     background: white;
     padding: 25px;
@@ -602,7 +593,16 @@ body {
 
 .vocab-btn:hover {
     border-color: #999;
-    background: #f8f8f8;
+}
+
+.vocab-btn.load {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.hidden-input {
+    display: none;
 }
 
 .no-words {
@@ -617,6 +617,16 @@ body {
     font-weight: 300;
 }
 
+.status-message {
+    background: #f8f8f8;
+    color: #333;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 12px 0;
+    border: 1px solid #e5e5e5;
+    font-size: 0.85rem;
+}
+
 .icon {
     display: inline-block;
     width: 1em;
@@ -626,129 +636,19 @@ body {
     fill: currentColor;
 }
 
-/* --- MODAL & SETTINGS STYLES --- */
-.modal-overlay,
-.settings-overlay {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 1001;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0s 0.3s;
-}
-
-.modal-overlay.visible,
-.settings-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.3s ease;
-}
-
-.modal-panel,
-.settings-panel {
-    display: block;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: white;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    padding: 20px;
-    z-index: 1002;
-    transform: translateY(100%);
-    transition: transform 0.3s ease-in-out;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.modal-panel.visible,
-.settings-panel.visible {
-    transform: translateY(0);
-}
-
-.modal-header,
-.settings-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.modal-header h2,
-.settings-header h2 {
-    font-size: 1.2rem;
-    font-weight: 500;
-}
-
-.close-btn {
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #6c757d;
-    background: none;
-    border: none;
-}
-
-.vocabulary-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.vocabulary-item {
-    padding: 15px;
-    border-bottom: 1px solid #e9ecef;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.vocabulary-item:last-child {
-    border-bottom: none;
-}
-
-.vocabulary-item:hover {
-    background-color: #f8f9fa;
-}
-
-.vocabulary-item.active {
-    font-weight: 600;
-    color: #007bff;
-}
-
-.vocab-name {
-    font-size: 1rem;
-}
-
-.vocab-meta {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-
 /* --- MOBILE-SPECIFIC STYLES --- */
 .header-mobile,
 .player-controls-mobile,
-#settingsButton {
+#settingsButton,
+.settings-overlay,
+.settings-panel {
     display: none;
 }
-
-/* Hide desktop-only modals initially */
-.modal-overlay,
-.modal-panel {
-    display: none;
-}
-
 
 @media (max-width: 768px) {
     body {
         padding: 0 0 120px;
+        /* Space for fixed controls */
     }
 
     .container {
@@ -780,14 +680,10 @@ body {
     .header,
     .stats,
     .player-controls-desktop,
-    .vocabulary-manager {
+    .vocabulary-manager,
+    .status-message,
+    .block-label {
         display: none;
-    }
-
-    /* Show mobile-only modals */
-    .modal-overlay,
-    .modal-panel {
-        display: block;
     }
 
     .header-mobile {
@@ -795,13 +691,29 @@ body {
         padding: 20px;
         text-align: center;
         border-bottom: 1px solid #e9ecef;
+        overflow: hidden;
+        max-height: 100px;
+        /* Initial height */
+        transition: max-height 0.6s ease-out, padding 0.6s ease-out, border-color 0.6s;
         background: white;
+    }
+
+    .header-mobile.collapsed {
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-color: transparent;
+    }
+
+    .level-selector {
+        margin-top: 0;
     }
 
     .level-selector,
     .block-selector {
         display: block;
         padding: 10px;
+        border-bottom: 1px solid #e9ecef;
     }
 
     .level-buttons,
@@ -833,6 +745,20 @@ body {
 
     .morpheme-separator-mobile {
         display: inline;
+    }
+
+    .card.sentence-phase {
+        transform: scale(1.02);
+    }
+
+    .card.sentence-phase .word-container {
+        transform: translateY(-35px) scale(1.1);
+        transition: all 1.2s ease-in-out;
+    }
+
+    .card.sentence-phase .level-indicator {
+        opacity: 0;
+        transition: opacity 0.4s ease-in-out;
     }
 
     .player-controls-mobile {
@@ -898,6 +824,67 @@ body {
         background: #343a40;
         border-color: #343a40;
         color: white;
+    }
+
+    .settings-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1001;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0s 0.3s;
+    }
+
+    .settings-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease;
+    }
+
+    .settings-panel {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        padding: 20px;
+        z-index: 1002;
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .settings-panel.visible {
+        transform: translateY(0);
+    }
+
+    .settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .settings-header h2 {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    .close-btn {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+        background: none;
+        border: none;
     }
 
     .settings-section {

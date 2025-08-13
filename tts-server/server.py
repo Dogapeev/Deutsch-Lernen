@@ -105,14 +105,10 @@ class AutoVocabularySystem:
     def scan_vocabularies(self, auto_process=None):
         logger.info("🔍 Сканирование словарей...")
         if auto_process is None: auto_process = self.config.get('auto_process_on_startup', True)
-        
-        # Заменяем glob на простое перечисление файлов, чтобы включить файлы с точкой в имени
-        vocab_files = [p for p in self.vocabularies_dir.iterdir() if p.is_file() and any(p.name.endswith(ext) for ext in self.config['supported_extensions'])]
-
+        vocab_files = [p for ext in self.config['supported_extensions'] for p in self.vocabularies_dir.glob(f"*{ext}")]
         new_or_changed = []
         for vocab_file in vocab_files:
-            # Используем p.name для получения имени файла, а не p.stem
-            vocab_name = vocab_file.name
+            vocab_name = vocab_file.stem
             if any(vocab_name.startswith(p.strip('*._')) for p in self.config['exclude_patterns']): continue
             try:
                 current_mtime = vocab_file.stat().st_mtime
@@ -124,8 +120,6 @@ class AutoVocabularySystem:
             except Exception as e:
                 logger.error(f"Ошибка обработки словаря {vocab_file}: {e}", exc_info=not PRODUCTION)
         
-        if new_or_changed: self.save_manifest()
-
         if auto_process and new_or_changed:
             for vocab_name in new_or_changed:
                 if hasattr(self, 'loop') and self.loop.is_running():
@@ -138,6 +132,7 @@ class AutoVocabularySystem:
     def is_file_protected(self, filename: str) -> bool:
         return filename.replace('.mp3', '') in self.protected_hashes
 
+    # ✅ ВОССТАНОВЛЕНА ЛОГИКА
     def smart_cleanup(self, force: bool = False):
         audio_files = list(self.audio_dir.glob("*.mp3"))
         total_size_mb = sum(f.stat().st_size for f in audio_files) / (1024 * 1024) if audio_files else 0
@@ -149,6 +144,7 @@ class AutoVocabularySystem:
         logger.info(f"🧹 Начинаем умную очистку: {len(audio_files)} файлов, {total_size_mb:.1f} МБ")
         access_stats = self.load_access_stats()
         
+        # Удаляем orphan файлы
         all_protected_hashes = self.protected_hashes
         orphan_files = [f for f in audio_files if f.stem not in all_protected_hashes]
         deleted_orphans = 0
@@ -255,6 +251,7 @@ class AutoVocabularySystem:
             self.file_observer.join()
             logger.info("👁️ Слежение за файлами остановлено")
 
+    # ✅ ВОССТАНОВЛЕНА ЛОГИКА
     async def pregenerate_vocabulary_audio(self, vocab_name: str):
         if vocab_name not in self.vocabulary_registry: 
             raise ValueError(f"Словарь {vocab_name} не найден")
@@ -284,6 +281,7 @@ class AutoVocabularySystem:
             
         return {'generated': len(success_hashes), 'failed': len(results) - len(success_hashes)}
 
+    # ✅ ВОССТАНОВЛЕНА ЛОГИКА
     def get_vocabulary_hashes(self, vocab_data: List[Dict]) -> Set[str]:
         return {self._get_text_hash(l, e[f]) for e in vocab_data 
                 for f,l in [('german','de'),('russian','ru'),('sentence','de'),('sentence_ru','ru')] 
@@ -315,6 +313,7 @@ class AutoVocabularySystem:
 auto_system = AutoVocabularySystem()
 
 # --- API Endpoints ---
+# ✅ ВОССТАНОВЛЕНЫ ВСЕ ENDPOINTS
 @app.route('/synthesize', methods=['GET'])
 @limiter.limit("30 per minute")
 def synthesize_speech():
@@ -330,6 +329,8 @@ def synthesize_speech():
     
     if not filepath.exists():
         try:
+            # Используем run_in_executor для асинхронного вызова блокирующей функции
+            # Это предотвратит блокировку основного потока Flask
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             loop.run_until_complete(auto_system._generate_audio_file(hash_val, lang, text))
@@ -348,29 +349,6 @@ def serve_audio(filename):
     auto_system.record_file_access(filename)
     return send_from_directory(str(auto_system.audio_dir), filename)
 
-# --- НОВЫЕ ЭНДПОИНТЫ ДЛЯ РАБОТЫ СО СЛОВАРЯМИ ---
-
-@app.route('/vocabularies/list', methods=['GET'])
-def get_vocabularies_list():
-    """
-    Возвращает список обнаруженных словарей с их метаданными.
-    """
-    return jsonify(auto_system.vocabulary_registry)
-
-@app.route('/vocabularies/get/<vocab_name>', methods=['GET'])
-def get_vocabulary_file(vocab_name):
-    """
-    Отдает содержимое файла словаря по его имени.
-    """
-    if vocab_name in auto_system.vocabulary_registry:
-        logger.info(f"📖 Запрошен словарь: {vocab_name}")
-        return send_from_directory(VOCABULARIES_DIR, vocab_name)
-    else:
-        logger.warning(f"⚠️ Попытка доступа к несуществующему словарю: {vocab_name}")
-        return jsonify({"error": "Vocabulary not found"}), 404
-
-# --- СИСТЕМНЫЕ ЭНДПОИНТЫ ---
-
 @app.route('/health')
 def health_check():
     return jsonify({
@@ -384,7 +362,7 @@ def health_check():
 def system_status():
     return jsonify({
         "system": "AutoVocabularySystem",
-        "version": "1.2.0", # Версия с новыми эндпоинтами
+        "version": "1.1.0",
         "status": "running",
         "production_mode": PRODUCTION,
         "background_processor_active": auto_system.background_thread.is_alive(),
@@ -408,11 +386,13 @@ def graceful_shutdown():
     logger.info("🛑 Инициирована корректная остановка сервера...")
     auto_system.stop_file_watcher()
     if hasattr(auto_system, 'loop') and auto_system.loop.is_running():
+        # Отправляем задачу-маркер для завершения цикла
         future = asyncio.run_coroutine_threadsafe(auto_system.processing_queue.put(asyncio.CancelledError()), auto_system.loop)
         try:
             future.result(timeout=2)
         except asyncio.TimeoutError:
             logger.warning("Не удалось чисто остановить очередь задач.")
+        # Останавливаем сам цикл
         auto_system.loop.call_soon_threadsafe(auto_system.loop.stop)
     
     if auto_system.background_thread.is_alive():
@@ -435,5 +415,7 @@ if __name__ == '__main__':
     
     auto_system.scan_vocabularies()
     
+    # Этот режим используется только для локальной разработки
+    # На продакшене будет использоваться Gunicorn
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
