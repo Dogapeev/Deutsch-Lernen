@@ -1,9 +1,9 @@
-// app.js - Final Version 2.4 (Simple & Robust Play/Pause Logic)
+// app.js - Final Version 2.4 (Robust & Simple Playback)
 
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.7'; // Обновляем версию
 const TTS_API_BASE_URL = 'https://deutsch-lernen-0qxe.onrender.com';
 
 const DELAYS = {
@@ -81,9 +81,6 @@ class VocabularyApp {
         }
     }
 
-    /**
-     * ✅ НОВАЯ ЛОГИКА: Запускает последовательность для текущего слова.
-     */
     startAutoPlay() {
         if (this.state.isAutoPlaying) return;
         const wordToShow = this.state.currentWord || this.getNextWord();
@@ -93,20 +90,15 @@ class VocabularyApp {
         }
     }
 
-    /**
-     * ✅ НОВАЯ ЛОГИКА: Надежно останавливает все.
-     */
     stopAutoPlay() {
         if (this.sequenceController) {
-            this.sequenceController.abort(); // Отменяем все задержки и fetch
+            this.sequenceController.abort();
         }
-        this.audioPlayer.pause(); // На всякий случай останавливаем звук
-        this.audioPlayer.src = ''; // и сбрасываем источник
         this.setState({ isAutoPlaying: false });
     }
 
     /**
-     * ✅ НОВАЯ ЛОГИКА: Простое и понятное переключение.
+     * ✅ ИСПРАВЛЕНО: Простая и надежная логика переключения.
      */
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
@@ -123,7 +115,10 @@ class VocabularyApp {
             return;
         }
 
-        if (this.sequenceController) this.sequenceController.abort();
+        // Если уже есть активная последовательность, прерываем ее.
+        if (this.sequenceController) {
+            this.sequenceController.abort();
+        }
         this.sequenceController = new AbortController();
         const { signal } = this.sequenceController;
 
@@ -131,8 +126,11 @@ class VocabularyApp {
             const checkAborted = () => { if (signal.aborted) throw new DOMException('Aborted', 'AbortError'); };
 
             await this._fadeInNewCard(word, checkAborted);
+
+            // Если автопроигрывание выключено, мы просто показываем карточку и на этом всё.
             if (!this.state.isAutoPlaying) return;
 
+            // Если включено, продолжаем сценарий.
             await this._playGermanPhase(checkAborted);
             await this._revealMorphemesPhase(checkAborted);
             await this._playSentencePhase(checkAborted);
@@ -145,68 +143,117 @@ class VocabularyApp {
                 this.runDisplaySequence(nextWord);
             }
         } catch (error) {
-            if (error.name !== 'AbortError') console.error('Ошибка в последовательности воспроизведения:', error);
+            if (error.name === 'AbortError') {
+                console.log('▶️ Последовательность корректно прервана.');
+            } else {
+                console.error('Ошибка в последовательности воспроизведения:', error);
+            }
         }
     }
 
     async _fadeInNewCard(word, checkAborted) {
-        // ... (без изменений) ...
-    }
-    async _playGermanPhase(checkAborted) {
-        // ... (без изменений) ...
-    }
-    async _revealMorphemesPhase(checkAborted) {
-        // ... (без изменений) ...
-    }
-    async _playSentencePhase(checkAborted) {
-        // ... (без изменений) ...
-    }
-    async _revealTranslationPhase(checkAborted) {
-        // ... (без изменений) ...
-    }
-    async _prepareNextWord(checkAborted) {
-        // ... (без изменений) ...
+        const oldCard = document.getElementById('wordCard');
+        if (oldCard) {
+            oldCard.classList.add('word-crossfade', 'word-fade-out');
+            await delay(DELAYS.CARD_FADE_IN);
+            checkAborted();
+        }
+        this.renderInitialCard(word);
+        this.addToHistory(word);
     }
 
-    /**
-     * ✅ НОВАЯ ЛОГИКА: Упрощенная и более надежная обработка.
-     */
+    async _playGermanPhase(checkAborted) {
+        const repeats = this.state.repeatMode === 'random' ? 1 : parseInt(this.state.repeatMode, 10);
+        for (let i = 0; i < repeats; i++) {
+            await delay(i === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
+            checkAborted();
+            await this.speakGerman(this.state.currentWord.german);
+            checkAborted();
+        }
+    }
+
+    async _revealMorphemesPhase(checkAborted) {
+        await delay(DELAYS.BEFORE_MORPHEMES);
+        checkAborted();
+        this.displayMorphemesAndTranslations();
+    }
+
+    async _playSentencePhase(checkAborted) {
+        await delay(DELAYS.BEFORE_SENTENCE);
+        checkAborted();
+        this.displaySentence();
+        if (this.state.showSentences && this.state.currentWord.sentence) {
+            await this.speakSentence(this.state.currentWord.sentence);
+            checkAborted();
+        }
+    }
+
+    async _revealTranslationPhase(checkAborted) {
+        await delay(DELAYS.BEFORE_TRANSLATION);
+        checkAborted();
+        this.displayFinalTranslation();
+        await this.speakRussian(this.state.currentWord.russian);
+        checkAborted();
+        if (this.state.isAutoPlaying) {
+            this.setState({ studiedToday: this.state.studiedToday + 1 });
+        }
+    }
+
+    async _prepareNextWord(checkAborted) {
+        await delay(DELAYS.BEFORE_NEXT_WORD);
+        checkAborted();
+        const card = document.getElementById('wordCard');
+        if (card) {
+            card.classList.add('word-crossfade', 'word-fade-out');
+            await delay(DELAYS.CARD_FADE_OUT);
+            checkAborted();
+        }
+    }
+
     speak(text, lang) {
         return new Promise(async (resolve, reject) => {
-            if (!text || this.sequenceController?.signal.aborted) return resolve();
+            if (!text || (this.sequenceController && this.sequenceController.signal.aborted)) {
+                return resolve();
+            }
 
-            const onAbort = () => reject(new DOMException('Aborted', 'AbortError'));
-            this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
+            const onAbort = () => {
+                this.audioPlayer.pause();
+                this.audioPlayer.src = '';
+                cleanup();
+                reject(new DOMException('Aborted', 'AbortError'));
+            };
+            const onFinish = () => {
+                cleanup();
+                resolve();
+            };
+            const cleanup = () => {
+                this.audioPlayer.removeEventListener('ended', onFinish);
+                this.audioPlayer.removeEventListener('error', onFinish);
+                this.sequenceController?.signal.removeEventListener('abort', onAbort);
+            };
 
             try {
                 const apiUrl = `${TTS_API_BASE_URL}/synthesize?lang=${lang}&text=${encodeURIComponent(text)}`;
                 const response = await fetch(apiUrl, { signal: this.sequenceController?.signal });
-                if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+                if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
                 const data = await response.json();
-                if (!data.url) throw new Error('Invalid server response');
-                if (this.sequenceController?.signal.aborted) return; // Проверка после асинхронной операции
+                if (!data.url) throw new Error('Invalid response from TTS server');
+                if (this.sequenceController?.signal.aborted) return reject(new DOMException('Aborted', 'AbortError'));
 
                 this.audioPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
-
-                const onEnded = () => resolve();
-                const onError = (e) => { console.error("Audio error", e); resolve(); }; // Не прерываем все, просто идем дальше
-
-                this.audioPlayer.addEventListener('ended', onEnded, { once: true });
-                this.audioPlayer.addEventListener('error', onError, { once: true });
+                this.audioPlayer.addEventListener('ended', onFinish, { once: true });
+                this.audioPlayer.addEventListener('error', onFinish, { once: true }); // Treat error as finish to not hang the app
+                this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
 
                 await this.audioPlayer.play();
-
             } catch (error) {
-                if (error.name !== 'AbortError') console.error('Speak method error:', error);
-                resolve(); // Всегда разрешаем, чтобы не ломать цепочку
-            } finally {
-                this.sequenceController?.signal.removeEventListener('abort', onAbort);
+                if (error.name !== 'AbortError') {
+                    console.error('Ошибка в методе speak:', error);
+                }
+                onFinish();
             }
         });
     }
-
-    // --- ОСТАЛЬНАЯ ЧАСТЬ КОДА ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ ---
-    // Я привожу ее полностью для вашего удобства
 
     async speakGerman(text) { if (this.state.soundEnabled) await this.speak(text, 'de'); }
     async speakRussian(text) { if (this.state.translationSoundEnabled) await this.speak(text, 'ru'); }
@@ -254,16 +301,18 @@ class VocabularyApp {
         };
         for (const [key, href] of Object.entries(iconMap)) {
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
-                if (!btn.querySelector('svg')) {
+                const use = btn.querySelector('use');
+                if (!use) {
                     btn.innerHTML = `<svg class="icon"><use xlink:href="${href}"></use></svg>`;
-                } else {
-                    btn.querySelector('use').setAttribute('xlink:href', href);
+                } else if (use.getAttribute('xlink:href') !== href) {
+                    use.setAttribute('xlink:href', href);
                 }
             });
         }
     }
 
     updateControlButtons() {
+        this.setupIcons();
         this.updateToggleButton();
         const controls = {
             toggleArticles: this.state.showArticles,
@@ -274,7 +323,6 @@ class VocabularyApp {
             translationSoundToggle: this.state.translationSoundEnabled,
             sentenceSoundToggle: this.state.sentenceSoundEnabled
         };
-
         for (const [key, state] of Object.entries(controls)) {
             document.querySelectorAll(`[id^=${key}]`).forEach(btn => {
                 btn.classList.toggle('active', state);
@@ -291,9 +339,6 @@ class VocabularyApp {
     updateToggleButton() {
         document.querySelectorAll('[id^=toggleButton]').forEach(btn => {
             btn.classList.toggle('playing', this.state.isAutoPlaying);
-            if (btn.querySelector('use')) {
-                btn.querySelector('use').setAttribute('xlink:href', this.state.isAutoPlaying ? '#icon-pause' : '#icon-play');
-            }
         });
         document.getElementById('wordCard')?.classList.toggle('is-clickable', !this.state.isAutoPlaying);
     }
@@ -386,7 +431,7 @@ class VocabularyApp {
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
         this.setState({ currentWord: word });
-        if (wasAutoPlaying) this.startAutoPlay(); else this.renderInitialCard(word);
+        if (wasAutoPlaying) this.startAutoPlay(); else this.runDisplaySequence(word);
     }
 
     showNextWordManually() {
@@ -401,7 +446,7 @@ class VocabularyApp {
             if (nextWord) this.addToHistory(nextWord);
         }
         this.setState({ currentWord: nextWord });
-        if (wasAutoPlaying) this.startAutoPlay(); else this.renderInitialCard(nextWord);
+        if (wasAutoPlaying) this.startAutoPlay(); else this.runDisplaySequence(nextWord);
     }
 
     renderInitialCard(word) {
