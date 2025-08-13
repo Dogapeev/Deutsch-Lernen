@@ -516,6 +516,7 @@ body {
     gap: 20px;
     flex-wrap: wrap;
     justify-content: center;
+    width: 100%;
 }
 
 .control-group {
@@ -541,7 +542,7 @@ body {
     transition: all 0.2s ease;
     color: #666;
     font-size: 0.85rem;
-    min-width: 50px;
+    min-width: 55px;
     text-align: center;
 }
 
