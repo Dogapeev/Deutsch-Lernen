@@ -1,3 +1,5 @@
+# Файл: tts-server/server.py
+
 import os
 import json
 import hashlib
@@ -21,6 +23,8 @@ import sys
 # --- Инициализация ---
 app = Flask(__name__)
 CORS(app)
+# Поскольку сервер запускается из папки tts-server, все пути относительны к ней.
+# Это правильно и не требует изменений.
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
 
 # --- Константы ---
@@ -40,6 +44,7 @@ start_time = time.time()
 
 class AutoVocabularySystem:
     def __init__(self):
+        # Пути определяются относительно места запуска скрипта (tts-server)
         self.audio_dir = Path(AUDIO_DIR)
         self.vocabularies_dir = Path(VOCABULARIES_DIR)
         self.config = self.load_config()
@@ -61,6 +66,7 @@ class AutoVocabularySystem:
         if self.config.get('auto_watch_enabled', True):
             self.start_file_watcher()
 
+    # ... (весь остальной код класса AutoVocabularySystem остается без изменений) ...
     def load_config(self):
         default_config = {
             "auto_watch_enabled": True, "auto_process_on_change": True,
@@ -132,7 +138,6 @@ class AutoVocabularySystem:
     def is_file_protected(self, filename: str) -> bool:
         return filename.replace('.mp3', '') in self.protected_hashes
 
-    # ✅ ВОССТАНОВЛЕНА ЛОГИКА
     def smart_cleanup(self, force: bool = False):
         audio_files = list(self.audio_dir.glob("*.mp3"))
         total_size_mb = sum(f.stat().st_size for f in audio_files) / (1024 * 1024) if audio_files else 0
@@ -144,7 +149,6 @@ class AutoVocabularySystem:
         logger.info(f"🧹 Начинаем умную очистку: {len(audio_files)} файлов, {total_size_mb:.1f} МБ")
         access_stats = self.load_access_stats()
         
-        # Удаляем orphan файлы
         all_protected_hashes = self.protected_hashes
         orphan_files = [f for f in audio_files if f.stem not in all_protected_hashes]
         deleted_orphans = 0
@@ -251,7 +255,6 @@ class AutoVocabularySystem:
             self.file_observer.join()
             logger.info("👁️ Слежение за файлами остановлено")
 
-    # ✅ ВОССТАНОВЛЕНА ЛОГИКА
     async def pregenerate_vocabulary_audio(self, vocab_name: str):
         if vocab_name not in self.vocabulary_registry: 
             raise ValueError(f"Словарь {vocab_name} не найден")
@@ -281,7 +284,6 @@ class AutoVocabularySystem:
             
         return {'generated': len(success_hashes), 'failed': len(results) - len(success_hashes)}
 
-    # ✅ ВОССТАНОВЛЕНА ЛОГИКА
     def get_vocabulary_hashes(self, vocab_data: List[Dict]) -> Set[str]:
         return {self._get_text_hash(l, e[f]) for e in vocab_data 
                 for f,l in [('german','de'),('russian','ru'),('sentence','de'),('sentence_ru','ru')] 
@@ -313,7 +315,6 @@ class AutoVocabularySystem:
 auto_system = AutoVocabularySystem()
 
 # --- API Endpoints ---
-# ✅ ВОССТАНОВЛЕНЫ ВСЕ ENDPOINTS
 @app.route('/synthesize', methods=['GET'])
 @limiter.limit("30 per minute")
 def synthesize_speech():
@@ -329,8 +330,6 @@ def synthesize_speech():
     
     if not filepath.exists():
         try:
-            # Используем run_in_executor для асинхронного вызова блокирующей функции
-            # Это предотвратит блокировку основного потока Flask
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             loop.run_until_complete(auto_system._generate_audio_file(hash_val, lang, text))
@@ -348,6 +347,27 @@ def serve_audio(filename):
         return jsonify({"error": "File not found"}), 404
     auto_system.record_file_access(filename)
     return send_from_directory(str(auto_system.audio_dir), filename)
+
+# --- НОВЫЙ МАРШРУТ ДЛЯ ЗАГРУЗКИ СЛОВАРЯ ---
+@app.route('/api/vocabulary')
+def get_vocabulary():
+    """
+    Отдает основной файл словаря. 
+    Фронтенд будет запрашивать его при первой загрузке.
+    """
+    vocab_filename = "vocabulary.json"
+    # Путь auto_system.vocabularies_dir уже правильный ("vocabularies")
+    # send_from_directory будет искать файл по пути <рабочая_папка>/vocabularies/vocabulary.json
+    # На Render рабочая папка будет tts-server, поэтому все сработает.
+    vocab_path = auto_system.vocabularies_dir / vocab_filename
+    
+    if not vocab_path.exists():
+        logger.error(f"Файл словаря не найден по пути: {vocab_path}")
+        return jsonify({"error": "Vocabulary file not found on server."}), 404
+
+    logger.info(f"Отправляем файл словаря: {vocab_filename} из {auto_system.vocabularies_dir}")
+    return send_from_directory(str(auto_system.vocabularies_dir), vocab_filename)
+# --- КОНЕЦ НОВОГО МАРШРУТА ---
 
 @app.route('/health')
 def health_check():
@@ -386,13 +406,11 @@ def graceful_shutdown():
     logger.info("🛑 Инициирована корректная остановка сервера...")
     auto_system.stop_file_watcher()
     if hasattr(auto_system, 'loop') and auto_system.loop.is_running():
-        # Отправляем задачу-маркер для завершения цикла
         future = asyncio.run_coroutine_threadsafe(auto_system.processing_queue.put(asyncio.CancelledError()), auto_system.loop)
         try:
             future.result(timeout=2)
         except asyncio.TimeoutError:
             logger.warning("Не удалось чисто остановить очередь задач.")
-        # Останавливаем сам цикл
         auto_system.loop.call_soon_threadsafe(auto_system.loop.stop)
     
     if auto_system.background_thread.is_alive():
@@ -415,7 +433,8 @@ if __name__ == '__main__':
     
     auto_system.scan_vocabularies()
     
-    # Этот режим используется только для локальной разработки
-    # На продакшене будет использоваться Gunicorn
     port = int(os.getenv('PORT', 5000))
+    # При запуске локально, убедитесь, что вы находитесь в папке tts-server
+    # cd tts-server
+    # python server.py
     app.run(host='0.0.0.0', port=port, debug=False)
