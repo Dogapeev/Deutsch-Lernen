@@ -23,8 +23,6 @@ import sys
 # --- Инициализация ---
 app = Flask(__name__)
 CORS(app)
-# Поскольку сервер запускается из папки tts-server, все пути относительны к ней.
-# Это правильно и не требует изменений.
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
 
 # --- Константы ---
@@ -43,8 +41,8 @@ logger = logging.getLogger(__name__)
 start_time = time.time()
 
 class AutoVocabularySystem:
+    # ... (вся внутренняя логика класса остается без изменений) ...
     def __init__(self):
-        # Пути определяются относительно места запуска скрипта (tts-server)
         self.audio_dir = Path(AUDIO_DIR)
         self.vocabularies_dir = Path(VOCABULARIES_DIR)
         self.config = self.load_config()
@@ -66,7 +64,6 @@ class AutoVocabularySystem:
         if self.config.get('auto_watch_enabled', True):
             self.start_file_watcher()
 
-    # ... (весь остальной код класса AutoVocabularySystem остается без изменений) ...
     def load_config(self):
         default_config = {
             "auto_watch_enabled": True, "auto_process_on_change": True,
@@ -348,26 +345,46 @@ def serve_audio(filename):
     auto_system.record_file_access(filename)
     return send_from_directory(str(auto_system.audio_dir), filename)
 
-# --- НОВЫЙ МАРШРУТ ДЛЯ ЗАГРУЗКИ СЛОВАРЯ ---
-@app.route('/api/vocabulary')
-def get_vocabulary():
-    """
-    Отдает основной файл словаря. 
-    Фронтенд будет запрашивать его при первой загрузке.
-    """
-    vocab_filename = "vocabulary.json"
-    # Путь auto_system.vocabularies_dir уже правильный ("vocabularies")
-    # send_from_directory будет искать файл по пути <рабочая_папка>/vocabularies/vocabulary.json
-    # На Render рабочая папка будет tts-server, поэтому все сработает.
-    vocab_path = auto_system.vocabularies_dir / vocab_filename
-    
-    if not vocab_path.exists():
-        logger.error(f"Файл словаря не найден по пути: {vocab_path}")
-        return jsonify({"error": "Vocabulary file not found on server."}), 404
 
+# --- НОВЫЙ МАРШРУТ: Отдает список всех словарей ---
+@app.route('/api/vocabularies/list')
+def get_vocabularies_list():
+    """
+    Возвращает JSON-список всех доступных словарей с метаданными.
+    """
+    vocab_list = [
+        {
+            "name": name,
+            "word_count": data.get('word_count', 0),
+            "last_modified": data.get('last_modified', 0),
+            "url": f"/api/vocabulary/{name}" # Формируем URL для запроса конкретного словаря
+        }
+        for name, data in auto_system.vocabulary_registry.items()
+    ]
+    
+    if not vocab_list:
+        logger.warning("Запрошен список словарей, но ни одного не найдено.")
+    
+    return jsonify(vocab_list)
+# --- КОНЕЦ НОВОГО МАРШРУТА ---
+
+
+# --- ИЗМЕНЕНИЕ: Маршрут стал динамическим ---
+@app.route('/api/vocabulary/<vocab_name>')
+def get_vocabulary(vocab_name):
+    """
+    Отдает конкретный файл словаря по его имени (без .json).
+    """
+    # Проверка безопасности, что словарь зарегистрирован системой
+    if vocab_name not in auto_system.vocabulary_registry:
+        logger.error(f"Попытка доступа к незарегистрированному словарю: {vocab_name}")
+        return jsonify({"error": f"Vocabulary '{vocab_name}' not found."}), 404
+    
+    vocab_filename = f"{vocab_name}.json"
     logger.info(f"Отправляем файл словаря: {vocab_filename} из {auto_system.vocabularies_dir}")
     return send_from_directory(str(auto_system.vocabularies_dir), vocab_filename)
-# --- КОНЕЦ НОВОГО МАРШРУТА ---
+# --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
 @app.route('/health')
 def health_check():
@@ -382,7 +399,7 @@ def health_check():
 def system_status():
     return jsonify({
         "system": "AutoVocabularySystem",
-        "version": "1.1.0",
+        "version": "1.2.0", # Обновим версию для себя
         "status": "running",
         "production_mode": PRODUCTION,
         "background_processor_active": auto_system.background_thread.is_alive(),
@@ -434,7 +451,4 @@ if __name__ == '__main__':
     auto_system.scan_vocabularies()
     
     port = int(os.getenv('PORT', 5000))
-    # При запуске локально, убедитесь, что вы находитесь в папке tts-server
-    # cd tts-server
-    # python server.py
     app.run(host='0.0.0.0', port=port, debug=False)
