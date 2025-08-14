@@ -1,0 +1,1963 @@
+{
+  "meta": {
+    "version": "1.1",
+    "level": "A2",
+    "name": "Стандартный курс A2 (Упрощенные примеры)",
+    "themes": {
+      "alltagsleben_und_dienste": "Быт и услуги",
+      "arbeit_und_beruf": "Работа и карьера",
+      "gesundheit_und_medizin": "Здоровье и медицина",
+      "reisen_und_verkehr": "Путешествия и транспорт",
+      "medien_und_technologie": "Медиа и технологии",
+      "wohnen_und_umzug": "Жилье и переезд",
+      "gefuehle_und_meinungen": "Чувства и мнения",
+      "bildung_und_lernen": "Образование и обучение",
+      "feste_und_feiern": "Праздники и торжества",
+      "natur_und_umwelt": "Природа и окружающая среда"
+    }
+  },
+  "words": [
+    {
+        "id": "word_a2_001",
+        "german": "der Alltag",
+        "russian": "будни, повседневная жизнь",
+        "pronunciation": "[дер а́льтак]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Mein Alltag ist sehr voll.",
+        "sentence_ru": "Мои будни очень насыщены."
+    },
+    {
+        "id": "word_a2_002",
+        "german": "der Termin",
+        "russian": "встреча, запись (к врачу)",
+        "pronunciation": "[дер тэрми́н]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich habe einen Termin.",
+        "sentence_ru": "У меня назначена встреча."
+    },
+    {
+        "id": "word_a2_003",
+        "german": "vereinbaren",
+        "russian": "договариваться, согласовывать",
+        "pronunciation": "[фер'а́йнбарэн]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Wir vereinbaren einen Termin.",
+        "sentence_ru": "Мы договариваемся о встрече."
+    },
+    {
+        "id": "word_a2_004",
+        "german": "verschieben",
+        "russian": "переносить, откладывать",
+        "pronunciation": "[ферши́бэн]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich verschiebe den Termin.",
+        "sentence_ru": "Я переношу встречу."
+    },
+    {
+        "id": "word_a2_005",
+        "german": "absagen",
+        "russian": "отменять",
+        "pronunciation": "[а́пзагэн]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "morphemes": [
+            { "m": "ab", "t": "от-" },
+            { "m": "sagen", "t": "говорить" }
+        ],
+        "sentence": "Er muss den Termin absagen.",
+        "sentence_ru": "Он должен отменить встречу."
+    },
+    {
+        "id": "word_a2_006",
+        "german": "die Behörde",
+        "russian": "ведомство, учреждение",
+        "pronunciation": "[ди бэ'хёрдэ]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich gehe zur Behörde.",
+        "sentence_ru": "Я иду в ведомство."
+    },
+    {
+        "id": "word_a2_007",
+        "german": "der Antrag",
+        "russian": "заявление",
+        "pronunciation": "[дер а́нтрак]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Hier ist der Antrag.",
+        "sentence_ru": "Вот это заявление."
+    },
+    {
+        "id": "word_a2_008",
+        "german": "ausfüllen",
+        "russian": "заполнять (формуляр)",
+        "pronunciation": "[а́усфюлен]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "morphemes": [
+            { "m": "aus", "t": "вы-" },
+            { "m": "füllen", "t": "наполнять" }
+        ],
+        "sentence": "Bitte den Antrag ausfüllen.",
+        "sentence_ru": "Пожалуйста, заполните заявление."
+    },
+    {
+        "id": "word_a2_009",
+        "german": "unterschreiben",
+        "russian": "подписывать",
+        "pronunciation": "[унтэр'шра́йбэн]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "morphemes": [
+            { "m": "unter", "t": "под-" },
+            { "m": "schreiben", "t": "писать" }
+        ],
+        "sentence": "Hier bitte unterschreiben.",
+        "sentence_ru": "Подпишите здесь, пожалуйста."
+    },
+    {
+        "id": "word_a2_010",
+        "german": "die Unterschrift",
+        "russian": "подпись",
+        "pronunciation": "[ди у́нтэршрифт]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ihre Unterschrift fehlt hier.",
+        "sentence_ru": "Здесь не хватает вашей подписи."
+    },
+    {
+        "id": "word_a2_011",
+        "german": "gültig",
+        "russian": "действительный",
+        "pronunciation": "[гю́льтихь]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Der Pass ist gültig.",
+        "sentence_ru": "Паспорт действителен."
+    },
+    {
+        "id": "word_a2_012",
+        "german": "die EC-Karte",
+        "russian": "дебетовая карта",
+        "pronunciation": "[ди э-цэ-ка́ртэ]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich bezahle mit EC-Karte.",
+        "sentence_ru": "Я плачу дебетовой картой."
+    },
+    {
+        "id": "word_a2_013",
+        "german": "das Konto",
+        "russian": "счет (в банке)",
+        "pronunciation": "[дас ко́нто]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich eröffne ein Konto.",
+        "sentence_ru": "Я открываю счет."
+    },
+    {
+        "id": "word_a2_014",
+        "german": "die Überweisung",
+        "russian": "банковский перевод",
+        "pronunciation": "[ди юбэр'ва́йзунг]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich mache eine Überweisung.",
+        "sentence_ru": "Я делаю банковский перевод."
+    },
+    {
+        "id": "word_a2_015",
+        "german": "die Reparatur",
+        "russian": "ремонт",
+        "pronunciation": "[ди рэпарату́р]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Die Reparatur ist teuer.",
+        "sentence_ru": "Ремонт дорогой."
+    },
+    {
+        "id": "word_a2_016",
+        "german": "der Handwerker",
+        "russian": "мастер, ремесленник",
+        "pronunciation": "[дер ха́нтверкер]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "morphemes": [
+            { "m": "Hand", "t": "рука" },
+            { "m": "werk", "t": "работа" },
+            { "m": "er", "t": "суф. деятеля" }
+        ],
+        "sentence": "Der Handwerker kommt heute.",
+        "sentence_ru": "Мастер придет сегодня."
+    },
+    {
+        "id": "word_a2_017",
+        "german": "sich beschweren",
+        "russian": "жаловаться",
+        "pronunciation": "[зихь бэ'швэрэн]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich möchte mich beschweren.",
+        "sentence_ru": "Я хочу пожаловаться."
+    },
+    {
+        "id": "word_a2_018",
+        "german": "die Reinigung",
+        "russian": "чистка, химчистка",
+        "pronunciation": "[ди ра́йнигунг]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Ich gehe zur Reinigung.",
+        "sentence_ru": "Я иду в химчистку."
+    },
+    {
+        "id": "word_a2_019",
+        "german": "der Müll",
+        "russian": "мусор",
+        "pronunciation": "[дер мюль]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "sentence": "Bring bitte den Müll raus.",
+        "sentence_ru": "Вынеси мусор, пожалуйста."
+    },
+    {
+        "id": "word_a2_020",
+        "german": "die Mülltrennung",
+        "russian": "сортировка мусора",
+        "pronunciation": "[ди мю́ль-тренунг]",
+        "level": "A2",
+        "theme": "alltagsleben_und_dienste",
+        "morphemes": [
+            { "m": "Müll", "t": "мусор" },
+            { "m": "trennung", "t": "разделение" }
+        ],
+        "sentence": "Mülltrennung ist sehr wichtig.",
+        "sentence_ru": "Сортировка мусора очень важна."
+    },
+    {
+        "id": "word_a2_021",
+        "german": "der Beruf",
+        "russian": "профессия",
+        "pronunciation": "[дер бэру́ф]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Was ist Ihr Beruf?",
+        "sentence_ru": "Какая у Вас профессия?"
+    },
+    {
+        "id": "word_a2_022",
+        "german": "die Bewerbung",
+        "russian": "заявление о приеме на работу",
+        "pronunciation": "[ди бэвэ́рбунг]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Ich schreibe eine Bewerbung.",
+        "sentence_ru": "Я пишу заявление (о приеме на работу)."
+    },
+    {
+        "id": "word_a2_023",
+        "german": "der Lebenslauf",
+        "russian": "биография, резюме (CV)",
+        "pronunciation": "[дер ле́бэнслауф]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "morphemes": [
+            { "m": "Lebens", "t": "жизни" },
+            { "m": "lauf", "t": "ход, течение" }
+        ],
+        "sentence": "Hier ist mein Lebenslauf.",
+        "sentence_ru": "Вот мое резюме."
+    },
+    {
+        "id": "word_a2_024",
+        "german": "das Vorstellungsgespräch",
+        "russian": "собеседование",
+        "pronunciation": "[дас фо́рштэлюнгсгэшпрэхь]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "morphemes": [
+            { "m": "Vorstellung", "t": "представление" },
+            { "m": "s", "t": "связка" },
+            { "m": "gespräch", "t": "разговор" }
+        ],
+        "sentence": "Ich habe ein Vorstellungsgespräch.",
+        "sentence_ru": "У меня собеседование."
+    },
+    {
+        "id": "word_a2_025",
+        "german": "der Arbeitgeber",
+        "russian": "работодатель",
+        "pronunciation": "[дер а́рбайтгебэр]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Mein Arbeitgeber ist nett.",
+        "sentence_ru": "Мой работодатель хороший."
+    },
+    {
+        "id": "word_a2_026",
+        "german": "der Arbeitnehmer",
+        "russian": "работник, сотрудник",
+        "pronunciation": "[дер а́рбайтнемэр]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Er ist ein guter Arbeitnehmer.",
+        "sentence_ru": "Он хороший работник."
+    },
+    {
+        "id": "word_a2_027",
+        "german": "der Kollege",
+        "russian": "коллега (мужчина)",
+        "pronunciation": "[дер колле́гэ]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Mein Kollege ist hilfsbereit.",
+        "sentence_ru": "Мой коллега всегда готов помочь."
+    },
+    {
+        "id": "word_a2_028",
+        "german": "das Gehalt",
+        "russian": "зарплата",
+        "pronunciation": "[дас гэха́льт]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Das Gehalt ist gut.",
+        "sentence_ru": "Зарплата хорошая."
+    },
+    {
+        "id": "word_a2_029",
+        "german": "die Überstunden",
+        "russian": "сверхурочная работа",
+        "pronunciation": "[ди ю́бэрштундэн]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Ich mache heute Überstunden.",
+        "sentence_ru": "Я сегодня работаю сверхурочно."
+    },
+    {
+        "id": "word_a2_030",
+        "german": "die Kündigung",
+        "russian": "увольнение",
+        "pronunciation": "[ди кю́ндигунг]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Er hat die Kündigung bekommen.",
+        "sentence_ru": "Он получил уведомление об увольнении."
+    },
+    {
+        "id": "word_a2_031",
+        "german": "arbeitslos",
+        "russian": "безработный",
+        "pronunciation": "[а́рбайтслос]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Er ist jetzt arbeitslos.",
+        "sentence_ru": "Он сейчас безработный."
+    },
+    {
+        "id": "word_a2_032",
+        "german": "die Erfahrung",
+        "russian": "опыт",
+        "pronunciation": "[ди эрфа́рунг]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Ich habe viel Erfahrung.",
+        "sentence_ru": "У меня много опыта."
+    },
+    {
+        "id": "word_a2_033",
+        "german": "die Fähigkeit",
+        "russian": "способность, умение",
+        "pronunciation": "[ди фэ́хьигкайт]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Das ist eine wichtige Fähigkeit.",
+        "sentence_ru": "Это важная способность."
+    },
+    {
+        "id": "word_a2_034",
+        "german": "die Aufgabe",
+        "russian": "задача, задание",
+        "pronunciation": "[ди а́уфгабэ]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Das ist meine Aufgabe.",
+        "sentence_ru": "Это моя задача."
+    },
+    {
+        "id": "word_a2_035",
+        "german": "die Besprechung",
+        "russian": "совещание, обсуждение",
+        "pronunciation": "[ди бэ'шпрэхунг]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Wir haben eine Besprechung.",
+        "sentence_ru": "У нас совещание."
+    },
+    {
+        "id": "word_a2_036",
+        "german": "der Feierabend",
+        "russian": "конец рабочего дня",
+        "pronunciation": "[дер фа́йер'абэнт]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "morphemes": [
+            { "m": "Feier", "t": "праздник" },
+            { "m": "abend", "t": "вечер" }
+        ],
+        "sentence": "Endlich ist Feierabend!",
+        "sentence_ru": "Наконец-то конец рабочего дня!"
+    },
+    {
+        "id": "word_a2_037",
+        "german": "selbstständig",
+        "russian": "самостоятельный, самозанятый",
+        "pronunciation": "[зе́льпст'штэндихь]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Ich arbeite jetzt selbstständig.",
+        "sentence_ru": "Я теперь работаю на себя."
+    },
+    {
+        "id": "word_a2_038",
+        "german": "die Teilzeit",
+        "russian": "неполный рабочий день",
+        "pronunciation": "[ди та́йльцайт]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Sie arbeitet in Teilzeit.",
+        "sentence_ru": "Она работает неполный день."
+    },
+    {
+        "id": "word_a2_039",
+        "german": "die Vollzeit",
+        "russian": "полный рабочий день",
+        "pronunciation": "[ди фо́льцайт]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Ich suche eine Vollzeit-Stelle.",
+        "sentence_ru": "Я ищу работу на полный день."
+    },
+    {
+        "id": "word_a2_040",
+        "german": "die Werkstatt",
+        "russian": "мастерская",
+        "pronunciation": "[ди вэ́ркштат]",
+        "level": "A2",
+        "theme": "arbeit_und_beruf",
+        "sentence": "Mein Auto ist in der Werkstatt.",
+        "sentence_ru": "Моя машина в мастерской."
+    },
+    {
+        "id": "word_a2_041",
+        "german": "sich fühlen",
+        "russian": "чувствовать себя",
+        "pronunciation": "[зихь фю́лен]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ich fühle mich nicht gut.",
+        "sentence_ru": "Я чувствую себя нехорошо."
+    },
+    {
+        "id": "word_a2_042",
+        "german": "der Schmerz",
+        "russian": "боль",
+        "pronunciation": "[дер шмерц]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ich habe einen starken Schmerz.",
+        "sentence_ru": "У меня сильная боль."
+    },
+    {
+        "id": "word_a2_043",
+        "german": "die Kopfschmerzen",
+        "russian": "головная боль",
+        "pronunciation": "[ди ко́пфшмерцэн]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ich habe oft Kopfschmerzen.",
+        "sentence_ru": "У меня часто болит голова."
+    },
+    {
+        "id": "word_a2_044",
+        "german": "die Erkältung",
+        "russian": "простуда",
+        "pronunciation": "[ди эркэ́льтунг]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ich habe eine Erkältung.",
+        "sentence_ru": "У меня простуда."
+    },
+    {
+        "id": "word_a2_045",
+        "german": "der Husten",
+        "russian": "кашель",
+        "pronunciation": "[дер ху́стэн]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Dieser Husten ist schlimm.",
+        "sentence_ru": "Этот кашель ужасен."
+    },
+    {
+        "id": "word_a2_046",
+        "german": "der Schnupfen",
+        "russian": "насморк",
+        "pronunciation": "[дер шну́пфэн]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Mein Schnupfen ist besser.",
+        "sentence_ru": "Мой насморк прошел."
+    },
+    {
+        "id": "word_a2_047",
+        "german": "das Fieber",
+        "russian": "жар, высокая температура",
+        "pronunciation": "[дас фи́бэр]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Das Kind hat Fieber.",
+        "sentence_ru": "У ребенка температура."
+    },
+    {
+        "id": "word_a2_048",
+        "german": "die Apotheke",
+        "russian": "аптека",
+        "pronunciation": "[ди апотэ́кэ]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ich gehe zur Apotheke.",
+        "sentence_ru": "Я иду в аптеку."
+    },
+    {
+        "id": "word_a2_049",
+        "german": "das Rezept",
+        "russian": "рецепт (медицинский)",
+        "pronunciation": "[дас рэцэ́пт]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ich brauche ein Rezept.",
+        "sentence_ru": "Мне нужен рецепт."
+    },
+    {
+        "id": "word_a2_050",
+        "german": "die Tablette",
+        "russian": "таблетка",
+        "pronunciation": "[ди табле́тэ]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Nimm diese Tablette.",
+        "sentence_ru": "Прими эту таблетку."
+    },
+    {
+        "id": "word_a2_051",
+        "german": "die Verletzung",
+        "russian": "травма, повреждение",
+        "pronunciation": "[ди ферле́цунг]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Das ist eine kleine Verletzung.",
+        "sentence_ru": "Это небольшая травма."
+    },
+    {
+        "id": "word_a2_052",
+        "german": "der Verband",
+        "russian": "повязка, бинт",
+        "pronunciation": "[дер ферба́нт]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ich brauche einen Verband.",
+        "sentence_ru": "Мне нужна повязка."
+    },
+    {
+        "id": "word_a2_053",
+        "german": "die Krankenversicherung",
+        "russian": "медицинская страховка",
+        "pronunciation": "[ди кра́нкенферзихерунг]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "morphemes": [
+            { "m": "Kranken", "t": "больных" },
+            { "m": "versicherung", "t": "страхование" }
+        ],
+        "sentence": "Ich habe eine Krankenversicherung.",
+        "sentence_ru": "У меня есть медицинская страховка."
+    },
+    {
+        "id": "word_a2_054",
+        "german": "die Versichertenkarte",
+        "russian": "страховая карта",
+        "pronunciation": "[ди ферзи́хертэнкартэ]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Hier ist meine Versichertenkarte.",
+        "sentence_ru": "Вот моя страховая карта."
+    },
+    {
+        "id": "word_a2_055",
+        "german": "gesund",
+        "russian": "здоровый",
+        "pronunciation": "[гэзу́нт]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Essen Sie gesund!",
+        "sentence_ru": "Ешьте здоровую пищу!"
+    },
+    {
+        "id": "word_a2_056",
+        "german": "sich erholen",
+        "russian": "отдыхать, восстанавливаться",
+        "pronunciation": "[зихь эрхо́лен]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Du musst dich erholen.",
+        "sentence_ru": "Тебе нужно восстановиться."
+    },
+    {
+        "id": "word_a2_057",
+        "german": "der Notfall",
+        "russian": "экстренный случай",
+        "pronunciation": "[дер но́тфаль]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Das ist ein Notfall.",
+        "sentence_ru": "Это экстренный случай."
+    },
+    {
+        "id": "word_a2_058",
+        "german": "der Krankenwagen",
+        "russian": "скорая помощь",
+        "pronunciation": "[дер кра́нкенвагэн]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Ruf einen Krankenwagen!",
+        "sentence_ru": "Вызови скорую помощь!"
+    },
+    {
+        "id": "word_a2_059",
+        "german": "untersuchen",
+        "russian": "обследовать, осматривать",
+        "pronunciation": "[унтэрзу́хен]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Der Arzt untersucht mich.",
+        "sentence_ru": "Врач меня осматривает."
+    },
+    {
+        "id": "word_a2_060",
+        "german": "die Behandlung",
+        "russian": "лечение",
+        "pronunciation": "[ди бэха́ндлунг]",
+        "level": "A2",
+        "theme": "gesundheit_und_medizin",
+        "sentence": "Die Behandlung hat geholfen.",
+        "sentence_ru": "Лечение помогло."
+    },
+    {
+        "id": "word_a2_061",
+        "german": "die Fahrkarte",
+        "russian": "проездной билет",
+        "pronunciation": "[ди фа́ркартэ]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Ich kaufe eine Fahrkarte.",
+        "sentence_ru": "Я покупаю билет."
+    },
+    {
+        "id": "word_a2_062",
+        "german": "der Fahrplan",
+        "russian": "расписание (движения)",
+        "pronunciation": "[дер фа́рплан]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Schau auf den Fahrplan.",
+        "sentence_ru": "Посмотри на расписание."
+    },
+    {
+        "id": "word_a2_063",
+        "german": "die Haltestelle",
+        "russian": "остановка",
+        "pronunciation": "[ди ха́льтэштэле]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Wo ist die Haltestelle?",
+        "sentence_ru": "Где остановка?"
+    },
+    {
+        "id": "word_a2_064",
+        "german": "aussteigen",
+        "russian": "выходить (из транспорта)",
+        "pronunciation": "[а́усштайген]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Hier müssen wir aussteigen.",
+        "sentence_ru": "Здесь мы должны выйти."
+    },
+    {
+        "id": "word_a2_065",
+        "german": "einsteigen",
+        "russian": "входить, садиться (в транспорт)",
+        "pronunciation": "[а́йнштайген]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Steigen Sie bitte ein.",
+        "sentence_ru": "Садитесь, пожалуйста."
+    },
+    {
+        "id": "word_a2_066",
+        "german": "umsteigen",
+        "russian": "пересаживаться",
+        "pronunciation": "[у́мштайген]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Wir müssen hier umsteigen.",
+        "sentence_ru": "Мы должны здесь пересесть."
+    },
+    {
+        "id": "word_a2_067",
+        "german": "der Stau",
+        "russian": "пробка (на дороге)",
+        "pronunciation": "[дер штау]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Wir stehen im Stau.",
+        "sentence_ru": "Мы стоим в пробке."
+    },
+    {
+        "id": "word_a2_068",
+        "german": "die Verspätung",
+        "russian": "опоздание",
+        "pronunciation": "[ди фершпэ́тунг]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Der Zug hat Verspätung.",
+        "sentence_ru": "Поезд опаздывает."
+    },
+    {
+        "id": "word_a2_069",
+        "german": "der Flughafen",
+        "russian": "аэропорт",
+        "pronunciation": "[дер флу́кхафэн]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Wir fahren zum Flughafen.",
+        "sentence_ru": "Мы едем в аэропорт."
+    },
+    {
+        "id": "word_a2_070",
+        "german": "der Flug",
+        "russian": "полет, рейс",
+        "pronunciation": "[дер флук]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Mein Flug geht um 10.",
+        "sentence_ru": "Мой рейс в 10."
+    },
+    {
+        "id": "word_a2_071",
+        "german": "das Gepäck",
+        "russian": "багаж",
+        "pronunciation": "[дас гэпэ́к]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Wo ist mein Gepäck?",
+        "sentence_ru": "Где мой багаж?"
+    },
+    {
+        "id": "word_a2_072",
+        "german": "der Koffer",
+        "russian": "чемодан",
+        "pronunciation": "[дер ко́фер]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Dieser Koffer ist schwer.",
+        "sentence_ru": "Этот чемодан тяжелый."
+    },
+    {
+        "id": "word_a2_073",
+        "german": "die Unterkunft",
+        "russian": "жилье, место проживания",
+        "pronunciation": "[ди у́нтэркунфт]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Wir suchen eine Unterkunft.",
+        "sentence_ru": "Мы ищем жилье."
+    },
+    {
+        "id": "word_a2_074",
+        "german": "buchen",
+        "russian": "бронировать",
+        "pronunciation": "[бу́хен]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Ich buche ein Hotelzimmer.",
+        "sentence_ru": "Я бронирую номер в отеле."
+    },
+    {
+        "id": "word_a2_075",
+        "german": "die Sehenswürdigkeit",
+        "russian": "достопримечательность",
+        "pronunciation": "[ди зэ́энсвюрдихькайт]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Das ist eine Sehenswürdigkeit.",
+        "sentence_ru": "Это достопримечательность."
+    },
+    {
+        "id": "word_a2_076",
+        "german": "der Stadtplan",
+        "russian": "карта города",
+        "pronunciation": "[дер шта́тплан]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Ich brauche einen Stadtplan.",
+        "sentence_ru": "Мне нужна карта города."
+    },
+    {
+        "id": "word_a2_077",
+        "german": "der Verkehr",
+        "russian": "дорожное движение",
+        "pronunciation": "[дер ферке́р]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Der Verkehr ist heute stark.",
+        "sentence_ru": "Движение сегодня интенсивное."
+    },
+    {
+        "id": "word_a2_078",
+        "german": "die Autobahn",
+        "russian": "автомагистраль",
+        "pronunciation": "[ди а́утобан]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Wir fahren auf der Autobahn.",
+        "sentence_ru": "Мы едем по автомагистрали."
+    },
+    {
+        "id": "word_a2_079",
+        "german": "die Kreuzung",
+        "russian": "перекресток",
+        "pronunciation": "[ди кро́йцунг]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "An der Kreuzung links.",
+        "sentence_ru": "На перекрестке налево."
+    },
+    {
+        "id": "word_a2_080",
+        "german": "abbiegen",
+        "russian": "поворачивать",
+        "pronunciation": "[а́пбиген]",
+        "level": "A2",
+        "theme": "reisen_und_verkehr",
+        "sentence": "Hier rechts abbiegen.",
+        "sentence_ru": "Здесь поверните направо."
+    },
+    {
+        "id": "word_a2_081",
+        "german": "der Computer",
+        "russian": "компьютер",
+        "pronunciation": "[дер компю́тер]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Mein Computer ist neu.",
+        "sentence_ru": "Мой компьютер новый."
+    },
+    {
+        "id": "word_a2_082",
+        "german": "das Handy",
+        "russian": "мобильный телефон",
+        "pronunciation": "[дас хэ́нди]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Wo ist mein Handy?",
+        "sentence_ru": "Где мой телефон?"
+    },
+    {
+        "id": "word_a2_083",
+        "german": "das Internet",
+        "russian": "интернет",
+        "pronunciation": "[дас и́нтэрнэт]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich brauche das Internet.",
+        "sentence_ru": "Мне нужен интернет."
+    },
+    {
+        "id": "word_a2_084",
+        "german": "die E-Mail",
+        "russian": "электронное письмо",
+        "pronunciation": "[ди и́-мейл]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Schreib mir eine E-Mail.",
+        "sentence_ru": "Напиши мне письмо."
+    },
+    {
+        "id": "word_a2_085",
+        "german": "die Nachricht",
+        "russian": "сообщение, новость",
+        "pronunciation": "[ди на́хрихт]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich habe eine Nachricht.",
+        "sentence_ru": "У меня есть сообщение."
+    },
+    {
+        "id": "word_a2_086",
+        "german": "anrufen",
+        "russian": "звонить (по телефону)",
+        "pronunciation": "[а́нруфэн]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich muss dich anrufen.",
+        "sentence_ru": "Я должен тебе позвонить."
+    },
+    {
+        "id": "word_a2_087",
+        "german": "die Webseite",
+        "russian": "веб-сайт, страница",
+        "pronunciation": "[ди вэ́пзайте]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Besuch unsere Webseite.",
+        "sentence_ru": "Посети наш сайт."
+    },
+    {
+        "id": "word_a2_088",
+        "german": "herunterladen",
+        "russian": "скачивать, загружать",
+        "pronunciation": "[херу́нтэрладен]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich lade die Datei herunter.",
+        "sentence_ru": "Я скачиваю файл."
+    },
+    {
+        "id": "word_a2_089",
+        "german": "hochladen",
+        "russian": "загружать (в интернет)",
+        "pronunciation": "[хо́хладен]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Lade das Foto hoch.",
+        "sentence_ru": "Загрузи фотографию."
+    },
+    {
+        "id": "word_a2_090",
+        "german": "die Datei",
+        "russian": "файл",
+        "pronunciation": "[ди дата́й]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Schick mir die Datei.",
+        "sentence_ru": "Отправь мне файл."
+    },
+    {
+        "id": "word_a2_091",
+        "german": "drucken",
+        "russian": "печатать",
+        "pronunciation": "[дру́кен]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich muss das drucken.",
+        "sentence_ru": "Мне нужно это распечатать."
+    },
+    {
+        "id": "word_a2_092",
+        "german": "der Drucker",
+        "russian": "принтер",
+        "pronunciation": "[дер дру́кер]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Der Drucker ist kaputt.",
+        "sentence_ru": "Принтер сломан."
+    },
+    {
+        "id": "word_a2_093",
+        "german": "die Tastatur",
+        "russian": "клавиатура",
+        "pronunciation": "[ди тастату́р]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich brauche eine Tastatur.",
+        "sentence_ru": "Мне нужна клавиатура."
+    },
+    {
+        "id": "word_a2_094",
+        "german": "der Bildschirm",
+        "russian": "экран, монитор",
+        "pronunciation": "[дер би́льдширм]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Der Bildschirm ist groß.",
+        "sentence_ru": "Экран большой."
+    },
+    {
+        "id": "word_a2_095",
+        "german": "soziale Netzwerke",
+        "russian": "социальные сети",
+        "pronunciation": "[зоциа́ле нэ́цверке]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Er mag soziale Netzwerke.",
+        "sentence_ru": "Он любит социальные сети."
+    },
+    {
+        "id": "word_a2_096",
+        "german": "das Passwort",
+        "russian": "пароль",
+        "pronunciation": "[дас па́сворт]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich habe mein Passwort vergessen.",
+        "sentence_ru": "Я забыл свой пароль."
+    },
+    {
+        "id": "word_a2_097",
+        "german": "einschalten",
+        "russian": "включать",
+        "pronunciation": "[а́йншальтэн]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Schalte das Licht ein.",
+        "sentence_ru": "Включи свет."
+    },
+    {
+        "id": "word_a2_098",
+        "german": "ausschalten",
+        "russian": "выключать",
+        "pronunciation": "[а́усшальтэн]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Schalte den Fernseher aus.",
+        "sentence_ru": "Выключи телевизор."
+    },
+    {
+        "id": "word_a2_099",
+        "german": "die Werbung",
+        "russian": "реклама",
+        "pronunciation": "[ди вэ́рбунг]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "sentence": "Ich mag keine Werbung.",
+        "sentence_ru": "Я не люблю рекламу."
+    },
+    {
+        "id": "word_a2_100",
+        "german": "die Fernbedienung",
+        "russian": "пульт дистанционного управления",
+        "pronunciation": "[ди фэ́рнбэдинунг]",
+        "level": "A2",
+        "theme": "medien_und_technologie",
+        "morphemes": [
+            { "m": "Fern", "t": "дальний" },
+            { "m": "bedienung", "t": "управление" }
+        ],
+        "sentence": "Gib mir die Fernbedienung.",
+        "sentence_ru": "Дай мне пульт."
+    },
+    {
+        "id": "word_a2_101",
+        "german": "die Miete",
+        "russian": "арендная плата",
+        "pronunciation": "[ди ми́тэ]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Die Miete ist hoch.",
+        "sentence_ru": "Арендная плата высокая."
+    },
+    {
+        "id": "word_a2_102",
+        "german": "der Vermieter",
+        "russian": "арендодатель",
+        "pronunciation": "[дер ферми́тэр]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Der Vermieter ist nett.",
+        "sentence_ru": "Арендодатель приятный."
+    },
+    {
+        "id": "word_a2_103",
+        "german": "der Mieter",
+        "russian": "арендатор, жилец",
+        "pronunciation": "[дер ми́тэр]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Der Mieter zahlt pünktlich.",
+        "sentence_ru": "Жилец платит вовремя."
+    },
+    {
+        "id": "word_a2_104",
+        "german": "der Mietvertrag",
+        "russian": "договор аренды",
+        "pronunciation": "[дер ми́тфертрак]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Ich unterschreibe den Mietvertrag.",
+        "sentence_ru": "Я подписываю договор аренды."
+    },
+    {
+        "id": "word_a2_105",
+        "german": "die Nebenkosten",
+        "russian": "коммунальные платежи",
+        "pronunciation": "[ди не́бэнкостэн]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Die Nebenkosten sind niedrig.",
+        "sentence_ru": "Коммунальные платежи низкие."
+    },
+    {
+        "id": "word_a2_106",
+        "german": "die Kaution",
+        "russian": "залог",
+        "pronunciation": "[ди кауцио́н]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Ich zahle die Kaution.",
+        "sentence_ru": "Я плачу залог."
+    },
+    {
+        "id": "word_a2_107",
+        "german": "der Umzug",
+        "russian": "переезд",
+        "pronunciation": "[дер у́мцук]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Der Umzug war anstrengend.",
+        "sentence_ru": "Переезд был утомительным."
+    },
+    {
+        "id": "word_a2_108",
+        "german": "umziehen",
+        "russian": "переезжать",
+        "pronunciation": "[у́мциен]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Wir ziehen bald um.",
+        "sentence_ru": "Мы скоро переезжаем."
+    },
+    {
+        "id": "word_a2_109",
+        "german": "einrichten",
+        "russian": "обставлять (мебелью)",
+        "pronunciation": "[а́йнрихтэн]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Wir richten die Wohnung ein.",
+        "sentence_ru": "Мы обставляем квартиру."
+    },
+    {
+        "id": "word_a2_110",
+        "german": "die Einrichtung",
+        "russian": "обстановка, меблировка",
+        "pronunciation": "[ди а́йнрихтунг]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Die Einrichtung ist modern.",
+        "sentence_ru": "Обстановка современная."
+    },
+    {
+        "id": "word_a2_111",
+        "german": "der Nachbar",
+        "russian": "сосед",
+        "pronunciation": "[дер на́хбар]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Mein Nachbar ist sehr laut.",
+        "sentence_ru": "Мой сосед очень шумный."
+    },
+    {
+        "id": "word_a2_112",
+        "german": "der Hausmeister",
+        "russian": "управдом, дворник",
+        "pronunciation": "[дер ха́усмайстер]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Ruf den Hausmeister an.",
+        "sentence_ru": "Позвони управдому."
+    },
+    {
+        "id": "word_a2_113",
+        "german": "die Hausordnung",
+        "russian": "правила внутреннего распорядка",
+        "pronunciation": "[ди ха́усорднунг]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Lesen Sie die Hausordnung.",
+        "sentence_ru": "Прочитайте правила дома."
+    },
+    {
+        "id": "word_a2_114",
+        "german": "der Aufzug",
+        "russian": "лифт",
+        "pronunciation": "[дер а́уфцук]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Der Aufzug ist kaputt.",
+        "sentence_ru": "Лифт сломан."
+    },
+    {
+        "id": "word_a2_115",
+        "german": "die Lage",
+        "russian": "расположение, местоположение",
+        "pronunciation": "[ди ла́гэ]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Die Lage ist sehr gut.",
+        "sentence_ru": "Расположение очень хорошее."
+    },
+    {
+        "id": "word_a2_116",
+        "german": "möbliert",
+        "russian": "меблированный",
+        "pronunciation": "[мёбли́рт]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Die Wohnung ist möbliert.",
+        "sentence_ru": "Квартира меблирована."
+    },
+    {
+        "id": "word_a2_117",
+        "german": "der Stock",
+        "russian": "этаж",
+        "pronunciation": "[дер шток]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Ich wohne im ersten Stock.",
+        "sentence_ru": "Я живу на первом этаже."
+    },
+    {
+        "id": "word_a2_118",
+        "german": "die Treppe",
+        "russian": "лестница",
+        "pronunciation": "[ди тре́пэ]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Ich nehme die Treppe.",
+        "sentence_ru": "Я пойду по лестнице."
+    },
+    {
+        "id": "word_a2_119",
+        "german": "die Klingel",
+        "russian": "звонок (дверной)",
+        "pronunciation": "[ди кли́нгель]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Die Klingel funktioniert nicht.",
+        "sentence_ru": "Звонок не работает."
+    },
+    {
+        "id": "word_a2_120",
+        "german": "der Strom",
+        "russian": "электричество",
+        "pronunciation": "[дер штром]",
+        "level": "A2",
+        "theme": "wohnen_und_umzug",
+        "sentence": "Der Strom ist ausgefallen.",
+        "sentence_ru": "Электричество отключилось."
+    },
+    {
+        "id": "word_a2_121",
+        "german": "die Meinung",
+        "russian": "мнение",
+        "pronunciation": "[ди ма́йнунг]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Das ist meine Meinung.",
+        "sentence_ru": "Это мое мнение."
+    },
+    {
+        "id": "word_a2_122",
+        "german": "denken",
+        "russian": "думать",
+        "pronunciation": "[дэ́нкен]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich denke, das ist gut.",
+        "sentence_ru": "Я думаю, это хорошо."
+    },
+    {
+        "id": "word_a2_123",
+        "german": "glauben",
+        "russian": "верить, полагать",
+        "pronunciation": "[гла́убэн]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich glaube dir nicht.",
+        "sentence_ru": "Я тебе не верю."
+    },
+    {
+        "id": "word_a2_124",
+        "german": "finden",
+        "russian": "находить, считать (иметь мнение)",
+        "pronunciation": "[фи́ндэн]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich finde das interessant.",
+        "sentence_ru": "Я нахожу это интересным."
+    },
+    {
+        "id": "word_a2_125",
+        "german": "zustimmen",
+        "russian": "соглашаться",
+        "pronunciation": "[цу́штимэн]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich stimme dir zu.",
+        "sentence_ru": "Я с тобой согласен."
+    },
+    {
+        "id": "word_a2_126",
+        "german": "ablehnen",
+        "russian": "отклонять, отказывать",
+        "pronunciation": "[а́пленэн]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich muss das ablehnen.",
+        "sentence_ru": "Я должен это отклонить."
+    },
+    {
+        "id": "word_a2_127",
+        "german": "der Vorschlag",
+        "russian": "предложение",
+        "pronunciation": "[дер фо́ршлак]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Das ist ein guter Vorschlag.",
+        "sentence_ru": "Это хорошее предложение."
+    },
+    {
+        "id": "word_a2_128",
+        "german": "vorschlagen",
+        "russian": "предлагать",
+        "pronunciation": "[фо́ршлагэн]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich schlage etwas vor.",
+        "sentence_ru": "Я кое-что предлагаю."
+    },
+    {
+        "id": "word_a2_129",
+        "german": "die Diskussion",
+        "russian": "дискуссия",
+        "pronunciation": "[ди дискусио́н]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Die Diskussion war lang.",
+        "sentence_ru": "Дискуссия была долгой."
+    },
+    {
+        "id": "word_a2_130",
+        "german": "das Gefühl",
+        "russian": "чувство",
+        "pronunciation": "[дас гэфю́ль]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich habe ein gutes Gefühl.",
+        "sentence_ru": "У меня хорошее предчувствие."
+    },
+    {
+        "id": "word_a2_131",
+        "german": "sich freuen",
+        "russian": "радоваться",
+        "pronunciation": "[зихь фро́йен]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich freue mich sehr.",
+        "sentence_ru": "Я очень рад."
+    },
+    {
+        "id": "word_a2_132",
+        "german": "sich ärgern",
+        "russian": "злиться, сердиться",
+        "pronunciation": "[зихь э́ргерн]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ärgere dich nicht.",
+        "sentence_ru": "Не злись."
+    },
+    {
+        "id": "word_a2_133",
+        "german": "überrascht",
+        "russian": "удивленный",
+        "pronunciation": "[юбер'ра́шт]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Ich bin positiv überrascht.",
+        "sentence_ru": "Я приятно удивлен."
+    },
+    {
+        "id": "word_a2_134",
+        "german": "enttäuscht",
+        "russian": "разочарованный",
+        "pronunciation": "[энт'то́йшт]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Er war sehr enttäuscht.",
+        "sentence_ru": "Он был очень разочарован."
+    },
+    {
+        "id": "word_a2_135",
+        "german": "zufrieden",
+        "russian": "довольный, удовлетворенный",
+        "pronunciation": "[цуфри́дэн]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Bist du jetzt zufrieden?",
+        "sentence_ru": "Ты теперь доволен?"
+    },
+    {
+        "id": "word_a2_136",
+        "german": "der Grund",
+        "russian": "причина, основание",
+        "pronunciation": "[дер грунт]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Das ist der Grund.",
+        "sentence_ru": "Вот в чем причина."
+    },
+    {
+        "id": "word_a2_137",
+        "german": "deshalb",
+        "russian": "поэтому",
+        "pronunciation": "[дэс'ха́льп]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Deshalb bin ich hier.",
+        "sentence_ru": "Поэтому я здесь."
+    },
+    {
+        "id": "word_a2_138",
+        "german": "trotzdem",
+        "russian": "несмотря на это, все же",
+        "pronunciation": "[тро́цдем]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Trotzdem komme ich mit.",
+        "sentence_ru": "Тем не менее, я пойду с вами."
+    },
+    {
+        "id": "word_a2_139",
+        "german": "vielleicht",
+        "russian": "может быть, возможно",
+        "pronunciation": "[фила́йхьт]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Vielleicht sehe ich dich.",
+        "sentence_ru": "Может быть, я тебя увижу."
+    },
+    {
+        "id": "word_a2_140",
+        "german": "wahrscheinlich",
+        "russian": "вероятно",
+        "pronunciation": "[вар'ша́йнлихь]",
+        "level": "A2",
+        "theme": "gefuehle_und_meinungen",
+        "sentence": "Er kommt wahrscheinlich nicht.",
+        "sentence_ru": "Он, вероятно, не придет."
+    },
+    {
+        "id": "word_a2_141",
+        "german": "die Ausbildung",
+        "russian": "профессиональное образование",
+        "pronunciation": "[ди а́усбильдунг]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Er macht eine Ausbildung.",
+        "sentence_ru": "Он получает образование."
+    },
+    {
+        "id": "word_a2_142",
+        "german": "die Prüfung",
+        "russian": "экзамен",
+        "pronunciation": "[ди прю́фунг]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Ich habe morgen Prüfung.",
+        "sentence_ru": "У меня завтра экзамен."
+    },
+    {
+        "id": "word_a2_143",
+        "german": "das Zeugnis",
+        "russian": "свидетельство, аттестат, табель",
+        "pronunciation": "[дас цо́йгнис]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Hier ist mein Zeugnis.",
+        "sentence_ru": "Вот мой аттестат."
+    },
+    {
+        "id": "word_a2_144",
+        "german": "der Unterricht",
+        "russian": "занятие, урок",
+        "pronunciation": "[дер у́нтэррихт]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Der Unterricht war gut.",
+        "sentence_ru": "Урок был хорошим."
+    },
+    {
+        "id": "word_a2_145",
+        "german": "die Note",
+        "russian": "оценка",
+        "pronunciation": "[ди но́тэ]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Ich habe eine gute Note.",
+        "sentence_ru": "У меня хорошая оценка."
+    },
+    {
+        "id": "word_a2_146",
+        "german": "das Fach",
+        "russian": "предмет (учебный)",
+        "pronunciation": "[дас фах]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Deutsch ist mein Lieblingsfach.",
+        "sentence_ru": "Немецкий - мой любимый предмет."
+    },
+    {
+        "id": "word_a2_147",
+        "german": "die Hausaufgaben",
+        "russian": "домашние задания",
+        "pronunciation": "[ди ха́усауфгабэн]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Mach deine Hausaufgaben.",
+        "sentence_ru": "Делай свои домашние задания."
+    },
+    {
+        "id": "word_a2_148",
+        "german": "der Fehler",
+        "russian": "ошибка",
+        "pronunciation": "[дер фе́лер]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Das war ein Fehler.",
+        "sentence_ru": "Это была ошибка."
+    },
+    {
+        "id": "word_a2_149",
+        "german": "verbessern",
+        "russian": "улучшать, исправлять",
+        "pronunciation": "[фербэ́серн]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Ich will mein Deutsch verbessern.",
+        "sentence_ru": "Я хочу улучшить свой немецкий."
+    },
+    {
+        "id": "word_a2_150",
+        "german": "erklären",
+        "russian": "объяснять",
+        "pronunciation": "[эркле́рэн]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Erklären Sie das bitte.",
+        "sentence_ru": "Объясните это, пожалуйста."
+    },
+    {
+        "id": "word_a2_151",
+        "german": "die Regel",
+        "russian": "правило",
+        "pronunciation": "[ди ре́гель]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Das ist eine wichtige Regel.",
+        "sentence_ru": "Это важное правило."
+    },
+    {
+        "id": "word_a2_152",
+        "german": "das Beispiel",
+        "russian": "пример",
+        "pronunciation": "[дас ба́йшпиль]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Gib mir ein Beispiel.",
+        "sentence_ru": "Приведи мне пример."
+    },
+    {
+        "id": "word_a2_153",
+        "german": "üben",
+        "russian": "упражняться, тренироваться",
+        "pronunciation": "[ю́бэн]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Wir müssen viel üben.",
+        "sentence_ru": "Мы должны много упражняться."
+    },
+    {
+        "id": "word_a2_154",
+        "german": "der Teilnehmer",
+        "russian": "участник",
+        "pronunciation": "[дер та́йльнемер]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Es gibt zehn Teilnehmer.",
+        "sentence_ru": "Есть десять участников."
+    },
+    {
+        "id": "word_a2_155",
+        "german": "die Kenntnisse",
+        "russian": "знания",
+        "pronunciation": "[ди ке́нтнисэ]",
+        "level": "A2",
+        "theme": "bildung_und_lernen",
+        "sentence": "Er hat gute Kenntnisse.",
+        "sentence_ru": "У него хорошие знания."
+    },
+    {
+        "id": "word_a2_156",
+        "german": "der Geburtstag",
+        "russian": "день рождения",
+        "pronunciation": "[дер гэбу́ртстак]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Ich feiere meinen Geburtstag.",
+        "sentence_ru": "Я праздную свой день рождения."
+    },
+    {
+        "id": "word_a2_157",
+        "german": "feiern",
+        "russian": "праздновать",
+        "pronunciation": "[фа́йерн]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Lass uns zusammen feiern.",
+        "sentence_ru": "Давай праздновать вместе."
+    },
+    {
+        "id": "word_a2_158",
+        "german": "das Fest",
+        "russian": "праздник",
+        "pronunciation": "[дас фэст]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Das Fest war sehr schön.",
+        "sentence_ru": "Праздник был очень хорошим."
+    },
+    {
+        "id": "word_a2_159",
+        "german": "das Geschenk",
+        "russian": "подарок",
+        "pronunciation": "[дас гэшэ́нк]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Danke für das Geschenk.",
+        "sentence_ru": "Спасибо за подарок."
+    },
+    {
+        "id": "word_a2_160",
+        "german": "einladen",
+        "russian": "приглашать",
+        "pronunciation": "[а́йнладен]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Ich lade dich ein.",
+        "sentence_ru": "Я тебя приглашаю."
+    },
+    {
+        "id": "word_a2_161",
+        "german": "die Einladung",
+        "russian": "приглашение",
+        "pronunciation": "[ди а́йнладунг]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Danke für die Einladung.",
+        "sentence_ru": "Спасибо за приглашение."
+    },
+    {
+        "id": "word_a2_162",
+        "german": "der Gast",
+        "russian": "гость",
+        "pronunciation": "[дер гаст]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Ich bin heute dein Gast.",
+        "sentence_ru": "Я сегодня твой гость."
+    },
+    {
+        "id": "word_a2_163",
+        "german": "die Hochzeit",
+        "russian": "свадьба",
+        "pronunciation": "[ди хо́хцайт]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Die Hochzeit war wunderschön.",
+        "sentence_ru": "Свадьба была прекрасной."
+    },
+    {
+        "id": "word_a2_164",
+        "german": "Weihnachten",
+        "russian": "Рождество",
+        "pronunciation": "[ва́йнахтэн]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Frohe Weihnachten wünsche ich.",
+        "sentence_ru": "Я желаю счастливого Рождества."
+    },
+    {
+        "id": "word_a2_165",
+        "german": "Ostern",
+        "russian": "Пасха",
+        "pronunciation": "[о́стэрн]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Was machst du zu Ostern?",
+        "sentence_ru": "Что ты делаешь на Пасху?"
+    },
+    {
+        "id": "word_a2_166",
+        "german": "Silvester",
+        "russian": "канун Нового года",
+        "pronunciation": "[зильвэ́стэр]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Wir feiern Silvester zusammen.",
+        "sentence_ru": "Мы празднуем Новый год вместе."
+    },
+    {
+        "id": "word_a2_167",
+        "german": "der Feiertag",
+        "russian": "праздничный день",
+        "pronunciation": "[дер фа́йертак]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Morgen ist ein Feiertag.",
+        "sentence_ru": "Завтра праздничный день."
+    },
+    {
+        "id": "word_a2_168",
+        "german": "gratulieren",
+        "russian": "поздравлять",
+        "pronunciation": "[гратули́рэн]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Ich gratuliere dir herzlich.",
+        "sentence_ru": "Я сердечно тебя поздравляю."
+    },
+    {
+        "id": "word_a2_169",
+        "german": "die Überraschung",
+        "russian": "сюрприз",
+        "pronunciation": "[ди юбер'ра́шунг]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Das ist eine Überraschung!",
+        "sentence_ru": "Это сюрприз!"
+    },
+    {
+        "id": "word_a2_170",
+        "german": "die Stimmung",
+        "russian": "настроение, атмосфера",
+        "pronunciation": "[ди шти́мунг]",
+        "level": "A2",
+        "theme": "feste_und_feiern",
+        "sentence": "Die Stimmung ist super.",
+        "sentence_ru": "Настроение отличное."
+    },
+    {
+        "id": "word_a2_171",
+        "german": "die Natur",
+        "russian": "природа",
+        "pronunciation": "[ди нату́р]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Ich liebe die Natur.",
+        "sentence_ru": "Я люблю природу."
+    },
+    {
+        "id": "word_a2_172",
+        "german": "die Umwelt",
+        "russian": "окружающая среда",
+        "pronunciation": "[ди у́мвэльт]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Schütze die Umwelt.",
+        "sentence_ru": "Защищай окружающую среду."
+    },
+    {
+        "id": "word_a2_173",
+        "german": "der Umweltschutz",
+        "russian": "защита окружающей среды",
+        "pronunciation": "[дер у́мвэльтшуц]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Umweltschutz ist sehr wichtig.",
+        "sentence_ru": "Защита природы очень важна."
+    },
+    {
+        "id": "word_a2_174",
+        "german": "der Wald",
+        "russian": "лес",
+        "pronunciation": "[дер вальт]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Wir gehen in den Wald.",
+        "sentence_ru": "Мы идем в лес."
+    },
+    {
+        "id": "word_a2_175",
+        "german": "der Baum",
+        "russian": "дерево",
+        "pronunciation": "[дер баум]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Der Baum ist sehr alt.",
+        "sentence_ru": "Дерево очень старое."
+    },
+    {
+        "id": "word_a2_176",
+        "german": "die Blume",
+        "russian": "цветок",
+        "pronunciation": "[ди блу́мэ]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Diese Blume ist schön.",
+        "sentence_ru": "Этот цветок красивый."
+    },
+    {
+        "id": "word_a2_177",
+        "german": "der Fluss",
+        "russian": "река",
+        "pronunciation": "[дер флус]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Der Fluss ist breit.",
+        "sentence_ru": "Река широкая."
+    },
+    {
+        "id": "word_a2_178",
+        "german": "der See",
+        "russian": "озеро",
+        "pronunciation": "[дер зэ]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Wir schwimmen im See.",
+        "sentence_ru": "Мы плаваем в озере."
+    },
+    {
+        "id": "word_a2_179",
+        "german": "der Berg",
+        "russian": "гора",
+        "pronunciation": "[дер берк]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Der Berg ist sehr hoch.",
+        "sentence_ru": "Гора очень высокая."
+    },
+    {
+        "id": "word_a2_180",
+        "german": "das Tier",
+        "russian": "животное",
+        "pronunciation": "[дас тир]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Dieses Tier ist selten.",
+        "sentence_ru": "Это животное редкое."
+    },
+    {
+        "id": "word_a2_181",
+        "german": "die Pflanze",
+        "russian": "растение",
+        "pronunciation": "[ди пла́нцэ]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Die Pflanze braucht Wasser.",
+        "sentence_ru": "Растению нужна вода."
+    },
+    {
+        "id": "word_a2_182",
+        "german": "die Luft",
+        "russian": "воздух",
+        "pronunciation": "[ди луфт]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Die Luft ist heute frisch.",
+        "sentence_ru": "Воздух сегодня свежий."
+    },
+    {
+        "id": "word_a2_183",
+        "german": "die Energie",
+        "russian": "энергия",
+        "pronunciation": "[ди энерги́]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Wir sparen Energie.",
+        "sentence_ru": "Мы экономим энергию."
+    },
+    {
+        "id": "word_a2_184",
+        "german": "recyceln",
+        "russian": "перерабатывать (вторсырье)",
+        "pronunciation": "[риса́йкэльн]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Wir müssen Papier recyceln.",
+        "sentence_ru": "Мы должны перерабатывать бумагу."
+    },
+    {
+        "id": "word_a2_185",
+        "german": "die Verschmutzung",
+        "russian": "загрязнение",
+        "pronunciation": "[ди фершму́цунг]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Luftverschmutzung ist ein Problem.",
+        "sentence_ru": "Загрязнение воздуха - это проблема."
+    },
+    {
+        "id": "word_a2_186",
+        "german": "der Müll",
+        "russian": "мусор",
+        "pronunciation": "[дер мюль]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Wir trennen den Müll.",
+        "sentence_ru": "Мы сортируем мусор."
+    },
+    {
+        "id": "word_a2_187",
+        "german": "sauber",
+        "russian": "чистый",
+        "pronunciation": "[за́убэр]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Das Wasser ist sauber.",
+        "sentence_ru": "Вода чистая."
+    },
+    {
+        "id": "word_a2_188",
+        "german": "schmutzig",
+        "russian": "грязный",
+        "pronunciation": "[шму́цихь]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Meine Hände sind schmutzig.",
+        "sentence_ru": "Мои руки грязные."
+    },
+    {
+        "id": "word_a2_189",
+        "german": "die Landschaft",
+        "russian": "пейзаж, ландшафт",
+        "pronunciation": "[ди ла́нтшафт]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Die Landschaft ist schön.",
+        "sentence_ru": "Пейзаж красивый."
+    },
+    {
+        "id": "word_a2_190",
+        "german": "das Klima",
+        "russian": "климат",
+        "pronunciation": "[дас кли́ма]",
+        "level": "A2",
+        "theme": "natur_und_umwelt",
+        "sentence": "Das Klima ändert sich.",
+        "sentence_ru": "Климат меняется."
+    }
+  ]
+}
