@@ -1,5 +1,5 @@
 # Файл: tts-server/server.py
-# ВЕРСИЯ 1.4.2: Поддержка новой мета-архитектуры словарей
+# ВЕРСИЯ 1.4.3: Исправлена ошибка '429 Too Many Requests' и добавлен параметр gtts_concurrency
 
 import os
 import json
@@ -51,7 +51,9 @@ class AutoVocabularySystem:
         self.file_observer = None
         self.processing_queue = asyncio.Queue()
         self.last_cleanup_time = time.time()
-        self.gtts_semaphore = asyncio.Semaphore(3)
+        # --- ИЗМЕНЕНИЕ 1: Инициализация семафора из конфига ---
+        # Устанавливаем количество одновременных запросов к TTS API. 1 - самый безопасный вариант.
+        self.gtts_semaphore = asyncio.Semaphore(self.config.get('gtts_concurrency', 1))
         self._initialized = False
 
         os.makedirs(AUDIO_DIR, exist_ok=True)
@@ -78,6 +80,7 @@ class AutoVocabularySystem:
         logger.info("✅ Отложенная инициализация завершена")
 
     def load_config(self):
+        # --- ИЗМЕНЕНИЕ 2: Добавлен параметр в конфиг по умолчанию ---
         default_config = {
             "auto_watch_enabled": True, "auto_process_on_change": True,
             "auto_process_on_startup": True, "retry_failed": True,
@@ -85,7 +88,8 @@ class AutoVocabularySystem:
             "cleanup_interval_hours": 24, "min_access_count_protect": 2,
             "max_cache_files": 1000, "max_cache_size_mb": 500,
             "check_interval_seconds": 300, "supported_extensions": [".json"],
-            "exclude_patterns": [".*", "~*", "*~", "*.bak", "*.tmp"]
+            "exclude_patterns": [".*", "~*", "*~", "*.bak", "*.tmp"],
+            "gtts_concurrency": 1 # Количество одновременных запросов к TTS (1 - рекомендуется)
         }
         try:
             if os.path.exists(CONFIG_FILE):
@@ -160,25 +164,22 @@ class AutoVocabularySystem:
                     with open(vocab_file, 'r', encoding='utf-8') as f:
                         vocab_data = json.load(f)
 
-                    # --- ИЗМЕНЕНИЕ: Умное определение количества слов ---
                     word_count = 0
-                    # Сначала проверяем новый формат { "meta": ..., "words": [...] }
                     if isinstance(vocab_data, dict) and 'words' in vocab_data and isinstance(vocab_data['words'], list):
                         word_count = len(vocab_data['words'])
                         logger.info(f"📖 Обнаружен словарь нового формата '{vocab_name}' ({word_count} слов).")
-                    # Затем проверяем старый формат [...] для обратной совместимости
                     elif isinstance(vocab_data, list):
                         word_count = len(vocab_data)
                         logger.warning(f"⚠️ Обнаружен словарь старого формата '{vocab_name}' ({word_count} слов). Рекомендуется обновить.")
                     else:
                         logger.error(f"❌ Неверный формат словаря в файле {vocab_file.name}. Пропускаем.")
-                        continue # Пропустить этот файл и перейти к следующему
+                        continue
 
                     logger.info(f"📖 Обнаружен новый/измененный словарь. Загрузка: {vocab_name}")
                         
                     self.vocabulary_registry[vocab_name] = {
                         'file_path': str(vocab_file),
-                        'word_count': word_count, # Используем правильное количество
+                        'word_count': word_count,
                         'last_modified': current_mtime,
                         'status': 'detected',
                         'detection_time': datetime.now().isoformat()
@@ -186,7 +187,6 @@ class AutoVocabularySystem:
                     
                     new_or_changed.append(vocab_name)
                     logger.info(f"✅ Словарь {vocab_name} успешно добавлен/обновлен ({word_count} слов)")
-                # --- КОНЕЦ ИЗМЕНЕНИЯ ---
             except json.JSONDecodeError as e:
                 logger.error(f"❌ Ошибка декодирования JSON в файле {vocab_file.name}: {e}")
             except Exception as e:
@@ -289,7 +289,6 @@ class AutoVocabularySystem:
         
         logger.info(f"🎵 {vocab_name}: требуется {len(missing_files)} аудиофайлов")
         
-        # Обрабатываем оба формата словаря, чтобы извлечь тексты для озвучки
         words_list = vocab_data['words'] if isinstance(vocab_data, dict) and 'words' in vocab_data else vocab_data
         
         hash_to_text_map = {self._get_text_hash(lang, entry[field]): (lang, entry[field])
@@ -387,7 +386,7 @@ def health_check(): return jsonify({"status": "healthy", "timestamp": datetime.n
 
 @app.route('/status')
 def system_status():
-    return jsonify({"system": "AutoVocabularySystem", "version": "1.4.2-meta-ready", "status": "running", "production_mode": PRODUCTION, "initialized": auto_system._initialized, "background_processor_active": auto_system.background_thread.is_alive(), "file_watcher_active": auto_system.file_observer.is_alive() if auto_system.file_observer else False})
+    return jsonify({"system": "AutoVocabularySystem", "version": "1.4.3-rate-limit-fix", "status": "running", "production_mode": PRODUCTION, "initialized": auto_system._initialized, "background_processor_active": auto_system.background_thread.is_alive(), "file_watcher_active": auto_system.file_observer.is_alive() if auto_system.file_observer else False})
 
 @app.route('/debug/quick')
 def quick_debug():
