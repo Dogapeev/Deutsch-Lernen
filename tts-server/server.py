@@ -1,5 +1,5 @@
 # Файл: tts-server/server.py
-# ВЕРСИЯ 1.4.1: Исправленная версия для облачных платформ
+# ВЕРСИЯ 1.4.2: Поддержка новой мета-архитектуры словарей
 
 import os
 import json
@@ -58,7 +58,6 @@ class AutoVocabularySystem:
         os.makedirs(VOCABULARIES_DIR, exist_ok=True)
         self.load_manifest()
         
-        # Инициализируем event loop
         try:
             self.loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -68,39 +67,26 @@ class AutoVocabularySystem:
         self.background_thread = threading.Thread(target=self.run_background_processor, daemon=True)
 
     def ensure_initialized(self):
-        """Ленивая инициализация при первом обращении"""
         if self._initialized:
             return
             
         logger.info("🚀 Выполняю отложенную инициализацию...")
-        
-        # Запускаем сканирование
         self.scan_vocabularies(auto_process=True)
-        
-        # Запускаем файловый наблюдатель
         if self.config.get('auto_watch_enabled', True):
             self.start_file_watcher()
-            
         self._initialized = True
         logger.info("✅ Отложенная инициализация завершена")
 
     def load_config(self):
         default_config = {
-            "auto_watch_enabled": True,
-            "auto_process_on_change": True,
-            "auto_process_on_startup": True,
-            "retry_failed": True,
-            "cleanup_on_startup": False,
-            "auto_cleanup_enabled": True,
-            "cleanup_interval_hours": 24,
-            "min_access_count_protect": 2,
-            "max_cache_files": 1000,
-            "max_cache_size_mb": 500,
-            "check_interval_seconds": 300,
-            "supported_extensions": [".json"],
+            "auto_watch_enabled": True, "auto_process_on_change": True,
+            "auto_process_on_startup": True, "retry_failed": True,
+            "cleanup_on_startup": False, "auto_cleanup_enabled": True,
+            "cleanup_interval_hours": 24, "min_access_count_protect": 2,
+            "max_cache_files": 1000, "max_cache_size_mb": 500,
+            "check_interval_seconds": 300, "supported_extensions": [".json"],
             "exclude_patterns": [".*", "~*", "*~", "*.bak", "*.tmp"]
         }
-        
         try:
             if os.path.exists(CONFIG_FILE):
                 with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
@@ -109,28 +95,12 @@ class AutoVocabularySystem:
                     default_config.update(loaded_config)
                 logger.info("🔧 Конфигурация загружена из файла")
             else:
-                config_with_comments = {
-                    **default_config,
-                    "_comments": {
-                        "exclude_patterns": [
-                            "Паттерны для исключения файлов при сканировании:",
-                            "  '.*' - файлы начинающиеся с точки",
-                            "  '~*' - файлы начинающиеся с тильды", 
-                            "  '*~' - файлы заканчивающиеся тильдой",
-                            "  '*.bak' - backup файлы",
-                            "  '*.tmp' - временные файлы"
-                        ]
-                    }
-                }
-                
+                config_with_comments = {**default_config, "_comments": {}}
                 with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                     json.dump(config_with_comments, f, indent=2, ensure_ascii=False)
                 logger.info("🔧 Создана конфигурация по умолчанию")
-                
         except Exception as e:
             logger.error(f"Ошибка загрузки конфигурации: {e}", exc_info=not PRODUCTION)
-        
-        logger.info(f"📋 Паттерны исключений: {default_config['exclude_patterns']}")
         return default_config
 
     def load_manifest(self):
@@ -145,11 +115,7 @@ class AutoVocabularySystem:
 
     def save_manifest(self):
         try:
-            data = {
-                'protected_hashes': list(self.protected_hashes), 
-                'vocabularies': self.vocabulary_registry, 
-                'last_updated': datetime.now().isoformat()
-            }
+            data = {'protected_hashes': list(self.protected_hashes), 'vocabularies': self.vocabulary_registry, 'last_updated': datetime.now().isoformat()}
             with open(CACHE_MANIFEST, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
@@ -169,62 +135,58 @@ class AutoVocabularySystem:
             vocab_files.extend(self.vocabularies_dir.glob(f"*{ext}"))
         
         logger.info(f"📁 Найдено файлов для анализа: {len(vocab_files)}")
-        
         new_or_changed = []
         
         for vocab_file in vocab_files:
             vocab_name = vocab_file.stem
             
-            # Исправленная логика исключений
             should_exclude = False
-            matched_pattern = ""
             for pattern in self.config['exclude_patterns']:
-                is_match = False
-                if pattern.startswith('*') and vocab_file.name.endswith(pattern[1:]):
-                    is_match = True
-                elif pattern.endswith('*') and vocab_file.name.startswith(pattern[:-1]):
-                    is_match = True
-                elif '*' not in pattern and pattern == vocab_file.name:
-                    is_match = True
-                
-                if is_match:
+                if (pattern.startswith('*') and vocab_file.name.endswith(pattern[1:])) or \
+                   (pattern.endswith('*') and vocab_file.name.startswith(pattern[:-1])) or \
+                   (pattern == vocab_file.name):
                     should_exclude = True
-                    matched_pattern = pattern
                     break
             
             if should_exclude:
-                logger.info(f"⏭️ Пропускаем файл по правилу исключения '{matched_pattern}': {vocab_file.name}")
+                logger.info(f"⏭️ Пропускаем файл по правилу исключения '{pattern}': {vocab_file.name}")
                 continue
                 
             try:
                 current_mtime = vocab_file.stat().st_mtime
-                
-                needs_update = (
-                    vocab_name not in self.vocabulary_registry or 
-                    self.vocabulary_registry[vocab_name].get('last_modified', 0) < current_mtime
-                )
+                needs_update = (vocab_name not in self.vocabulary_registry or self.vocabulary_registry[vocab_name].get('last_modified', 0) < current_mtime)
                 
                 if needs_update:
-                    logger.info(f"📖 Обнаружен новый/измененный словарь. Загрузка: {vocab_name}")
-                    
                     with open(vocab_file, 'r', encoding='utf-8') as f:
                         vocab_data = json.load(f)
-                    
-                    if not isinstance(vocab_data, list):
-                        logger.error(f"❌ Словарь {vocab_name} не является массивом (list)")
-                        continue
+
+                    # --- ИЗМЕНЕНИЕ: Умное определение количества слов ---
+                    word_count = 0
+                    # Сначала проверяем новый формат { "meta": ..., "words": [...] }
+                    if isinstance(vocab_data, dict) and 'words' in vocab_data and isinstance(vocab_data['words'], list):
+                        word_count = len(vocab_data['words'])
+                        logger.info(f"📖 Обнаружен словарь нового формата '{vocab_name}' ({word_count} слов).")
+                    # Затем проверяем старый формат [...] для обратной совместимости
+                    elif isinstance(vocab_data, list):
+                        word_count = len(vocab_data)
+                        logger.warning(f"⚠️ Обнаружен словарь старого формата '{vocab_name}' ({word_count} слов). Рекомендуется обновить.")
+                    else:
+                        logger.error(f"❌ Неверный формат словаря в файле {vocab_file.name}. Пропускаем.")
+                        continue # Пропустить этот файл и перейти к следующему
+
+                    logger.info(f"📖 Обнаружен новый/измененный словарь. Загрузка: {vocab_name}")
                         
                     self.vocabulary_registry[vocab_name] = {
                         'file_path': str(vocab_file),
-                        'word_count': len(vocab_data),
+                        'word_count': word_count, # Используем правильное количество
                         'last_modified': current_mtime,
                         'status': 'detected',
                         'detection_time': datetime.now().isoformat()
                     }
                     
                     new_or_changed.append(vocab_name)
-                    logger.info(f"✅ Словарь {vocab_name} успешно добавлен/обновлен ({len(vocab_data)} слов)")
-                
+                    logger.info(f"✅ Словарь {vocab_name} успешно добавлен/обновлен ({word_count} слов)")
+                # --- КОНЕЦ ИЗМЕНЕНИЯ ---
             except json.JSONDecodeError as e:
                 logger.error(f"❌ Ошибка декодирования JSON в файле {vocab_file.name}: {e}")
             except Exception as e:
@@ -235,16 +197,11 @@ class AutoVocabularySystem:
             logger.info(f"💾 Реестр обновлен. Новых/измененных словарей: {len(new_or_changed)}")
         
         if auto_process and new_or_changed:
-            # Запускаем фоновый процессор если еще не запущен
             if not self.background_thread.is_alive():
                 self.background_thread.start()
-                
             for vocab_name in new_or_changed:
                 if hasattr(self, 'loop') and not self.loop.is_closed():
-                    asyncio.run_coroutine_threadsafe(
-                        self.add_to_processing_queue(vocab_name), 
-                        self.loop
-                    )
+                    asyncio.run_coroutine_threadsafe(self.add_to_processing_queue(vocab_name), self.loop)
             logger.info(f"🔄 Добавлено в очередь на автогенерацию аудио: {new_or_changed}")
         
         logger.info(f"📊 Итого словарей в реестре: {len(self.vocabulary_registry)}")
@@ -261,16 +218,14 @@ class AutoVocabularySystem:
         except Exception as e:
             logger.error(f"Ошибка в фоновом процессоре: {e}")
         finally:
-            if not self.loop.is_closed():
-                self.loop.close()
+            if not self.loop.is_closed(): self.loop.close()
 
     async def background_processor(self):
         logger.info("🔄 Фоновый процессор запущен")
         while True:
             try:
                 task = await asyncio.wait_for(self.processing_queue.get(), timeout=self.config['check_interval_seconds'])
-                if isinstance(task, asyncio.CancelledError): 
-                    break
+                if isinstance(task, asyncio.CancelledError): break
                 if task['action'] == 'pregenerate':
                     vocab_name = task['vocab_name']
                     logger.info(f"🎵 Начинаем автогенерацию для: {vocab_name}")
@@ -288,11 +243,9 @@ class AutoVocabularySystem:
                             self.vocabulary_registry[vocab_name]['last_error'] = str(e)
                 self.processing_queue.task_done()
             except asyncio.TimeoutError:
-                # Автоочистка при тайм-ауте
                 if self.config.get('auto_cleanup_enabled', True):
                     cleanup_interval = self.config.get('cleanup_interval_hours', 24) * 3600
-                    if time.time() - self.last_cleanup_time > cleanup_interval:
-                        self.smart_cleanup()
+                    if time.time() - self.last_cleanup_time > cleanup_interval: self.smart_cleanup()
             except asyncio.CancelledError:
                 logger.info("Фоновый процессор останавливается.")
                 break
@@ -301,22 +254,16 @@ class AutoVocabularySystem:
                 await asyncio.sleep(10)
 
     def start_file_watcher(self):
-        if self.file_observer and self.file_observer.is_alive():
-            return
-            
+        if self.file_observer and self.file_observer.is_alive(): return
         class VocabularyFileHandler(FileSystemEventHandler):
             def __init__(self, system_ref): 
-                self.system = system_ref
-                self.timer = None
-            
+                self.system = system_ref; self.timer = None
             def on_any_event(self, event):
                 if not event.is_directory and any(event.src_path.endswith(ext) for ext in self.system.config['supported_extensions']):
-                    if self.timer: 
-                        self.timer.cancel()
+                    if self.timer: self.timer.cancel()
                     logger.info(f"📁 Обнаружено событие файла: {event.src_path}. Ожидание 2 сек...")
                     self.timer = threading.Timer(2.0, self.system.scan_vocabularies, args=[True])
                     self.timer.start()
-
         self.file_observer = Observer()
         self.file_observer.schedule(VocabularyFileHandler(self), str(self.vocabularies_dir), recursive=True)
         self.file_observer.start()
@@ -324,18 +271,13 @@ class AutoVocabularySystem:
         
     def stop_file_watcher(self):
         if self.file_observer and self.file_observer.is_alive(): 
-            self.file_observer.stop()
-            self.file_observer.join()
+            self.file_observer.stop(); self.file_observer.join()
             logger.info("👁️ Слежение за файлами остановлено")
 
-    def smart_cleanup(self, force: bool = False):
-        # Упрощенная версия для стабильности
-        pass
+    def smart_cleanup(self, force: bool = False): pass
 
-    # Остальные методы без изменений
     async def pregenerate_vocabulary_audio(self, vocab_name: str):
-        if vocab_name not in self.vocabulary_registry: 
-            raise ValueError(f"Словарь {vocab_name} не найден")
+        if vocab_name not in self.vocabulary_registry: raise ValueError(f"Словарь {vocab_name} не найден")
         
         with open(self.vocabulary_registry[vocab_name]['file_path'], 'r', encoding='utf-8') as f: 
             vocab_data = json.load(f)
@@ -343,12 +285,15 @@ class AutoVocabularySystem:
         required_hashes = self.get_vocabulary_hashes(vocab_data)
         missing_files = {h for h in required_hashes if not (self.audio_dir / f"{h}.mp3").exists()}
         
-        if not missing_files: 
-            return {'status': 'all_files_exist', 'count': len(required_hashes)}
+        if not missing_files: return {'status': 'all_files_exist', 'count': len(required_hashes)}
         
         logger.info(f"🎵 {vocab_name}: требуется {len(missing_files)} аудиофайлов")
+        
+        # Обрабатываем оба формата словаря, чтобы извлечь тексты для озвучки
+        words_list = vocab_data['words'] if isinstance(vocab_data, dict) and 'words' in vocab_data else vocab_data
+        
         hash_to_text_map = {self._get_text_hash(lang, entry[field]): (lang, entry[field])
-                            for entry in vocab_data
+                            for entry in words_list
                             for field, lang in [('german', 'de'), ('russian', 'ru'), ('sentence', 'de'), ('sentence_ru', 'ru')]
                             if entry.get(field)}
 
@@ -362,8 +307,9 @@ class AutoVocabularySystem:
             
         return {'generated': len(success_hashes), 'failed': len(results) - len(success_hashes)}
 
-    def get_vocabulary_hashes(self, vocab_data: List[Dict]) -> Set[str]:
-        return {self._get_text_hash(l, e[f]) for e in vocab_data 
+    def get_vocabulary_hashes(self, vocab_data) -> Set[str]:
+        words_list = vocab_data['words'] if isinstance(vocab_data, dict) and 'words' in vocab_data else vocab_data
+        return {self._get_text_hash(l, e[f]) for e in words_list
                 for f,l in [('german','de'),('russian','ru'),('sentence','de'),('sentence_ru','ru')] 
                 if e.get(f)}
 
@@ -373,7 +319,6 @@ class AutoVocabularySystem:
     async def _generate_audio_file(self, hash_value: str, lang: str, text: str):
         filepath = self.audio_dir / f"{hash_value}.mp3"
         if filepath.exists(): return
-
         async with self.gtts_semaphore:
             for attempt in range(3):
                 try:
@@ -389,21 +334,15 @@ class AutoVocabularySystem:
         tts = gTTS(text=text, lang=lang, slow=False)
         tts.save(path)
 
-
-# --- Инициализация системы ---
 auto_system = AutoVocabularySystem()
 
-# --- API Endpoints ---
 @app.route('/synthesize', methods=['GET'])
 @limiter.limit("30 per minute")
 def synthesize_speech():
-    auto_system.ensure_initialized()  # Ленивая инициализация
-    
+    auto_system.ensure_initialized()
     text, lang = request.args.get('text', '').strip(), request.args.get('lang', '').lower()
-    if not (1 <= len(text) <= 500): 
-        return jsonify({"error": "Invalid text length (1-500)"}), 400
-    if lang not in SUPPORTED_LANGUAGES: 
-        return jsonify({"error": f"Unsupported language: {lang}"}), 400
+    if not (1 <= len(text) <= 500): return jsonify({"error": "Invalid text length (1-500)"}), 400
+    if lang not in SUPPORTED_LANGUAGES: return jsonify({"error": f"Unsupported language: {lang}"}), 400
     
     hash_val = auto_system._get_text_hash(lang, text)
     filename = f"{hash_val}.mp3"
@@ -418,99 +357,54 @@ def synthesize_speech():
         except Exception as e:
             logger.error(f"Ошибка динамической генерации: {e}", exc_info=not PRODUCTION)
             return jsonify({"error": f"Failed to generate audio: {e}"}), 500
-    
     return jsonify({"url": f"/audio/{filename}"})
 
 @app.route('/audio/<filename>')
 @limiter.limit("120 per minute")
 def serve_audio(filename):
-    if not Path(auto_system.audio_dir, filename).exists():
-        return jsonify({"error": "File not found"}), 404
+    if not Path(auto_system.audio_dir, filename).exists(): return jsonify({"error": "File not found"}), 404
     return send_from_directory(str(auto_system.audio_dir), filename)
 
 @app.route('/api/vocabularies/list')
 def get_vocabularies_list():
-    auto_system.ensure_initialized()  # Ленивая инициализация
-    
-    vocab_list = [
-        {
-            "name": name,
-            "word_count": data.get('word_count', 0),
-            "last_modified": data.get('last_modified', 0),
-            "url": f"/api/vocabulary/{name}"
-        }
-        for name, data in auto_system.vocabulary_registry.items()
-    ]
-    
-    if not vocab_list:
-        logger.warning("Запрошен список словарей, но ни одного не найдено в реестре.")
-    
+    auto_system.ensure_initialized()
+    vocab_list = [{"name": name, "word_count": data.get('word_count', 0), "last_modified": data.get('last_modified', 0), "url": f"/api/vocabulary/{name}"} for name, data in auto_system.vocabulary_registry.items()]
+    if not vocab_list: logger.warning("Запрошен список словарей, но ни одного не найдено в реестре.")
     return jsonify(vocab_list)
 
 @app.route('/api/vocabulary/<vocab_name>')
 def get_vocabulary(vocab_name):
-    auto_system.ensure_initialized()  # Ленивая инициализация
-    
+    auto_system.ensure_initialized()
     if vocab_name not in auto_system.vocabulary_registry:
         logger.error(f"Попытка доступа к незарегистрированному словарю: {vocab_name}")
         return jsonify({"error": f"Vocabulary '{vocab_name}' not found."}), 404
-    
     vocab_filename = f"{vocab_name}.json"
     logger.info(f"Отправляем файл словаря: {vocab_filename} из {auto_system.vocabularies_dir}")
     return send_from_directory(str(auto_system.vocabularies_dir), vocab_filename)
 
 @app.route('/health')
-def health_check():
-    return jsonify({
-        "status": "healthy", 
-        "timestamp": datetime.now().isoformat()
-    })
+def health_check(): return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
 @app.route('/status')
 def system_status():
-    return jsonify({
-        "system": "AutoVocabularySystem",
-        "version": "1.4.1-cloud-ready",
-        "status": "running",
-        "production_mode": PRODUCTION,
-        "initialized": auto_system._initialized,
-        "background_processor_active": auto_system.background_thread.is_alive(),
-        "file_watcher_active": auto_system.file_observer.is_alive() if auto_system.file_observer else False
-    })
+    return jsonify({"system": "AutoVocabularySystem", "version": "1.4.2-meta-ready", "status": "running", "production_mode": PRODUCTION, "initialized": auto_system._initialized, "background_processor_active": auto_system.background_thread.is_alive(), "file_watcher_active": auto_system.file_observer.is_alive() if auto_system.file_observer else False})
 
 @app.route('/debug/quick')
 def quick_debug():
-    """Быстрая диагностика текущего состояния"""
-    auto_system.ensure_initialized()  # Ленивая инициализация
-    
+    auto_system.ensure_initialized()
     json_files_count = 0
-    if auto_system.vocabularies_dir.exists():
-        json_files_count = len(list(auto_system.vocabularies_dir.glob("*.json")))
+    if auto_system.vocabularies_dir.exists(): json_files_count = len(list(auto_system.vocabularies_dir.glob("*.json")))
+    return jsonify({"vocabularies_dir_exists": auto_system.vocabularies_dir.exists(), "json_files_in_dir_count": json_files_count, "current_registry_count": len(auto_system.vocabulary_registry), "current_registry_keys": list(auto_system.vocabulary_registry.keys()), "exclude_patterns_in_use": auto_system.config['exclude_patterns'], "initialized": auto_system._initialized})
 
-    return jsonify({
-        "vocabularies_dir_exists": auto_system.vocabularies_dir.exists(),
-        "json_files_in_dir_count": json_files_count,
-        "current_registry_count": len(auto_system.vocabulary_registry),
-        "current_registry_keys": list(auto_system.vocabulary_registry.keys()),
-        "exclude_patterns_in_use": auto_system.config['exclude_patterns'],
-        "initialized": auto_system._initialized
-    })
-
-
-# --- Graceful Shutdown ---
 def graceful_shutdown():
     logger.info("🛑 Инициирована корректная остановка сервера...")
     auto_system.stop_file_watcher()
     if auto_system.background_thread.is_alive():
         if hasattr(auto_system, 'loop') and not auto_system.loop.is_closed():
             try:
-                future = asyncio.run_coroutine_threadsafe(
-                    auto_system.processing_queue.put(asyncio.CancelledError()), 
-                    auto_system.loop
-                )
+                future = asyncio.run_coroutine_threadsafe(auto_system.processing_queue.put(asyncio.CancelledError()), auto_system.loop)
                 future.result(timeout=2)
-            except:
-                pass
+            except: pass
         auto_system.background_thread.join(timeout=3)
     logger.info("✅ Сервер остановлен.")
 
@@ -518,17 +412,12 @@ def signal_handler(sig, frame):
     graceful_shutdown()
     sys.exit(0)
 
-# Регистрируем cleanup при выходе
 atexit.register(graceful_shutdown)
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-# --- Запуск приложения ---
 if __name__ == '__main__':
     logger.info("🤖 Автоматическая система TTS запускается...")
-    
-    # При локальном запуске сразу инициализируем
     auto_system.ensure_initialized()
-    
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
