@@ -28,6 +28,7 @@ class VocabularyApp {
         this.currentHistoryIndex = -1;
         this.sequenceController = null;
         this.audioPlayer = document.getElementById('audioPlayer');
+        this.themeMap = {}; // <-- ИЗМЕНЕНИЕ: Карта для отображения названий тем
 
         this.state = {
             isAutoPlaying: false,
@@ -108,7 +109,13 @@ class VocabularyApp {
 
         try {
             await this.fetchVocabularyData(finalVocabName);
-            this.allWords = this.vocabulariesCache[finalVocabName];
+            // <-- ИЗМЕНЕНИЕ: Извлекаем данные из обновленного кэша
+            const vocabularyData = this.vocabulariesCache[finalVocabName];
+            if (!vocabularyData) throw new Error("Кэшированные данные не найдены после загрузки.");
+
+            this.allWords = vocabularyData.words;
+            this.themeMap = vocabularyData.meta.themes || {}; // Устанавливаем карту тем для текущего словаря
+
         } catch (error) {
             console.error(`Ошибка загрузки словаря "${finalVocabName}":`, error);
             this.handleLoadingError(`Не удалось загрузить данные словаря: ${finalVocabName}.`);
@@ -122,17 +129,40 @@ class VocabularyApp {
     }
 
     async fetchVocabularyData(vocabName) {
-        if (this.vocabulariesCache[vocabName]) return;
+        // <-- ИЗМЕНЕНИЕ: Проверяем наличие уже обработанного объекта в кэше
+        if (this.vocabulariesCache[vocabName] && this.vocabulariesCache[vocabName].words) {
+            return; // Словарь уже загружен и обработан, выходим
+        }
 
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загружаю словарь: ${vocabName}...</p></div>`;
         const response = await fetch(`${TTS_API_BASE_URL}/api/vocabulary/${vocabName}`);
         if (!response.ok) throw new Error(`Ошибка сервера ${response.status}`);
         const data = await response.json();
-        this.vocabulariesCache[vocabName] = data.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` }));
+
+        // <-- ИЗМЕНЕНИЕ: Проверяем новую структуру и разбираем ее
+        if (!data.words || !data.meta || !data.meta.themes) {
+            // Для обратной совместимости попробуем обработать как старый массив
+            if (Array.isArray(data)) {
+                console.warn(`Словарь "${vocabName}" имеет устаревший формат (простой массив). Рекомендуется обновить его до структуры {meta, words}.`);
+                this.vocabulariesCache[vocabName] = {
+                    words: data.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
+                    meta: { themes: {} } // Создаем пустую карту тем
+                };
+                return;
+            }
+            throw new Error(`Неверный формат словаря "${vocabName}": отсутствует 'words' или 'meta.themes'`);
+        }
+
+        // <-- ИЗМЕНЕНИЕ: Кэшируем весь объект {words, meta} для надежности
+        this.vocabulariesCache[vocabName] = {
+            words: data.words.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
+            meta: data.meta
+        };
     }
 
     handleLoadingError(errorMessage) {
         this.allWords = [];
+        this.themeMap = {}; // <-- ИЗМЕНЕНИЕ: Сбрасываем карту тем при ошибке
         this.state.currentWord = null;
         this.state.availableLevels = [];
         this.state.availableThemes = [];
@@ -155,7 +185,7 @@ class VocabularyApp {
 
         const availableThemes = [...new Set(words.map(w => w.theme).filter(Boolean))].sort();
         this.state.availableThemes = availableThemes;
-        this.renderThemeButtons();
+        this.renderThemeButtons(); // <-- ИЗМЕНЕНИЕ: Вызываем после определения тем
 
         if (this.state.selectedTheme !== 'all' && !availableThemes.includes(this.state.selectedTheme)) {
             this.state.selectedTheme = 'all';
@@ -447,8 +477,11 @@ class VocabularyApp {
 
         if (this.state.availableThemes.length > 0) {
             wrapper.appendChild(createBtn('all', 'Все темы'));
+
+            // <-- ИЗМЕНЕНИЕ: Используем this.themeMap для получения названий
             this.state.availableThemes.forEach(theme => {
-                const themeName = theme.charAt(0).toUpperCase() + theme.slice(1);
+                // Если в карте есть красивое имя - используем его, иначе - показываем ID темы.
+                const themeName = this.themeMap[theme] || theme.charAt(0).toUpperCase() + theme.slice(1);
                 wrapper.appendChild(createBtn(theme, themeName));
             });
         }
