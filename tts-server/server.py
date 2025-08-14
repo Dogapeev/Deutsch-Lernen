@@ -1,5 +1,5 @@
 # Файл: tts-server/server.py
-# ВЕРСИЯ 1.5.2 (DEFINITIVE FINAL): Исправлена ошибка TypeError при обработке старых форматов словарей.
+# ВЕРСИЯ 1.5.4 (FINAL & CLEAN): Корректный порядок инициализации и регистрации обработчиков.
 
 import os
 import json
@@ -48,7 +48,6 @@ class AutoVocabularySystem:
         self.gtts_lock = threading.Lock()
         self._initialized = False
         self.file_observer = None
-
         os.makedirs(AUDIO_DIR, exist_ok=True)
         os.makedirs(VOCABULARIES_DIR, exist_ok=True)
         self.vocabulary_registry = self.load_manifest()
@@ -56,13 +55,13 @@ class AutoVocabularySystem:
 
     def ensure_initialized(self):
         if self._initialized: return
-        logger.info("🚀 [INIT] Выполняю отложенную инициализацию...")
+        logger.info("🚀 [INIT] Выполняю инициализацию при старте...")
         if not self.background_thread.is_alive():
             self.background_thread.start()
         self.scan_vocabularies(auto_process=True)
         if self.config.get('auto_watch_enabled', True): self.start_file_watcher()
         self._initialized = True
-        logger.info("✅ [INIT] Отложенная инициализация завершена.")
+        logger.info("✅ [INIT] Инициализация завершена.")
 
     def load_config(self):
         default_config = {"auto_watch_enabled": True, "auto_process_on_startup": True}
@@ -90,31 +89,24 @@ class AutoVocabularySystem:
     def scan_vocabularies(self, auto_process=None):
         logger.info("🔍 [SCAN] Сканирование словарей...")
         if auto_process is None: auto_process = self.config.get('auto_process_on_startup', True)
-        
         new_or_changed = []
         for vocab_file in self.vocabularies_dir.glob("*.json"):
             try:
                 vocab_name = vocab_file.stem
                 current_mtime = vocab_file.stat().st_mtime
                 if (vocab_name not in self.vocabulary_registry or self.vocabulary_registry[vocab_name].get('last_modified', 0) < current_mtime):
-                    with open(vocab_file, 'r', encoding='utf-8') as f:
-                        vocab_data = json.load(f)
-                    
-                    # --- ИСПРАВЛЕНИЕ: "Железобетонная" проверка формата ---
-                    word_count = 0
+                    with open(vocab_file, 'r', encoding='utf-8') as f: vocab_data = json.load(f)
                     if isinstance(vocab_data, dict) and 'words' in vocab_data:
-                        word_count = len(vocab_data['words']) # Новый формат
+                        word_count = len(vocab_data['words'])
                     elif isinstance(vocab_data, list):
-                        word_count = len(vocab_data) # Старый формат
+                        word_count = len(vocab_data)
                     else:
-                        logger.error(f"❌ [SCAN] Неверный формат словаря в файле {vocab_file.name}. Пропускаем.")
-                        continue # Пропустить этот файл
-
+                        logger.error(f"❌ [SCAN] Неверный формат словаря: {vocab_file.name}. Пропускаем.")
+                        continue
                     self.vocabulary_registry[vocab_name] = {'word_count': word_count, 'last_modified': current_mtime, 'status': 'detected'}
                     new_or_changed.append(vocab_name)
             except Exception as e:
                 logger.error(f"❌ [SCAN] Ошибка обработки словаря {vocab_file.name}: {e}", exc_info=True)
-        
         if new_or_changed:
             self.save_manifest()
             if auto_process:
@@ -130,7 +122,6 @@ class AutoVocabularySystem:
                 task = self.processing_queue.get()
                 if task is None:
                     logger.info("[BG_THREAD] Получен сигнал на остановку."); break
-                
                 if task.get('action') == 'pregenerate':
                     vocab_name = task['vocab_name']
                     logger.info(f"🎵 [GEN] Начинаем автогенерацию для: {vocab_name}")
@@ -149,7 +140,6 @@ class AutoVocabularySystem:
                 if not event.is_directory and event.src_path.endswith(".json"):
                     if self.timer: self.timer.cancel()
                     self.timer = threading.Timer(2.0, self.system.scan_vocabularies, args=[True]); self.timer.start()
-        
         self.file_observer = Observer()
         self.file_observer.schedule(VocabularyFileHandler(self), str(self.vocabularies_dir), recursive=True)
         self.file_observer.start()
@@ -162,10 +152,7 @@ class AutoVocabularySystem:
     def pregenerate_vocabulary_audio(self, vocab_name: str):
         with open(Path(self.vocabularies_dir, f"{vocab_name}.json"), 'r', encoding='utf-8') as f:
             vocab_data = json.load(f)
-        
-        # --- ИСПРАВЛЕНИЕ: Безопасное извлечение списка слов ---
         words_list = vocab_data['words'] if isinstance(vocab_data, dict) and 'words' in vocab_data else vocab_data
-        
         for entry in words_list:
             for field, lang in [('german', 'de'), ('russian', 'ru'), ('sentence', 'de'), ('sentence_ru', 'ru')]:
                 if text := entry.get(field): self.generate_audio_sync(lang, text)
@@ -197,7 +184,6 @@ auto_system = AutoVocabularySystem()
 @app.route('/synthesize', methods=['GET'])
 @limiter.limit("30 per minute")
 def synthesize_speech():
-    auto_system.ensure_initialized()
     text = request.args.get('text', '').strip()
     lang = request.args.get('lang', '').lower()
     if not (1 < len(text) <= 500 and lang in SUPPORTED_LANGUAGES):
@@ -216,17 +202,15 @@ def serve_audio(filename):
 
 @app.route('/api/vocabularies/list')
 def get_vocabularies_list():
-    auto_system.ensure_initialized()
     return jsonify([{"name": name, "word_count": data.get('word_count', 0)} for name, data in auto_system.vocabulary_registry.items()])
 
 @app.route('/api/vocabulary/<vocab_name>')
 def get_vocabulary(vocab_name):
-    auto_system.ensure_initialized()
     return send_from_directory(str(auto_system.vocabularies_dir), f"{vocab_name}.json")
 
 @app.route('/status')
 def system_status():
-    return jsonify({"version": "1.5.2-final-fix", "initialized": auto_system._initialized})
+    return jsonify({"version": "1.5.4-final-clean", "initialized": auto_system._initialized})
 
 def graceful_shutdown():
     logger.info("🛑 [SHUTDOWN] Инициирована корректная остановка сервера...")
@@ -236,12 +220,16 @@ def graceful_shutdown():
         auto_system.background_thread.join(timeout=5)
     logger.info("✅ [SHUTDOWN] Сервер остановлен.")
 
+# ПРАВИЛЬНЫЙ ПОРЯДОК:
+# 1. Зарегистрировать обработчики завершения. Они должны быть готовы к работе.
 atexit.register(graceful_shutdown)
 signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda s, f: sys.exit(0))
 
+# 2. Теперь запустить основную логику. Этот код выполнится один раз при старте Gunicorn.
+auto_system.ensure_initialized()
+
+# 3. Блок __main__ для локального запуска (Gunicorn его игнорирует).
 if __name__ == '__main__':
-    logger.info("🤖 [MAIN] Запуск системы TTS...")
-    auto_system.ensure_initialized()
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
