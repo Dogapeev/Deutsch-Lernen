@@ -1,4 +1,5 @@
 # Файл: tts-server/server.py
+# ВЕРСИЯ 1.3.1: Финальная версия с исправленным логированием
 
 import os
 import json
@@ -41,7 +42,6 @@ logger = logging.getLogger(__name__)
 start_time = time.time()
 
 class AutoVocabularySystem:
-    # ... (вся внутренняя логика класса остается без изменений) ...
     def __init__(self):
         self.audio_dir = Path(AUDIO_DIR)
         self.vocabularies_dir = Path(VOCABULARIES_DIR)
@@ -66,25 +66,57 @@ class AutoVocabularySystem:
 
     def load_config(self):
         default_config = {
-            "auto_watch_enabled": True, "auto_process_on_change": True,
-            "auto_process_on_startup": True, "retry_failed": True,
-            "cleanup_on_startup": False, "auto_cleanup_enabled": True,
-            "cleanup_interval_hours": 24, "min_access_count_protect": 2,
-            "max_cache_files": 1000, "max_cache_size_mb": 500,
-            "check_interval_seconds": 300, "supported_extensions": [".json"],
-            "exclude_patterns": [".*", "_*"]
+            "auto_watch_enabled": True,
+            "auto_process_on_change": True,
+            "auto_process_on_startup": True,
+            "retry_failed": True,
+            "cleanup_on_startup": False,
+            "auto_cleanup_enabled": True,
+            "cleanup_interval_hours": 24,
+            "min_access_count_protect": 2,
+            "max_cache_files": 1000,
+            "max_cache_size_mb": 500,
+            "check_interval_seconds": 300,
+            "supported_extensions": [".json"],
+            "exclude_patterns": [
+                ".*",      # файлы начинающиеся с точки (.gitignore, .DS_Store и т.д.)
+                "~*",      # временные файлы (~vocabulary.json)
+                "*~",      # backup файлы (vocabulary.json~)
+                "*.bak",   # backup файлы (vocabulary.json.bak)
+                "*.tmp"    # временные файлы (vocabulary.json.tmp)
+            ]
         }
+        
         try:
             if os.path.exists(CONFIG_FILE):
                 with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-                    default_config.update(json.load(f))
-                logger.info("🔧 Конфигурация загружена")
+                    loaded_config = json.load(f)
+                    loaded_config.pop('_comments', None)
+                    default_config.update(loaded_config)
+                logger.info("🔧 Конфигурация загружена из файла")
             else:
+                config_with_comments = {
+                    **default_config,
+                    "_comments": {
+                        "exclude_patterns": [
+                            "Паттерны для исключения файлов при сканировании:",
+                            "  '.*' - файлы начинающиеся с точки",
+                            "  '~*' - файлы начинающиеся с тильды", 
+                            "  '*~' - файлы заканчивающиеся тильдой",
+                            "  '*.bak' - backup файлы",
+                            "  '*.tmp' - временные файлы",
+                        ]
+                    }
+                }
+                
                 with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-                    json.dump(default_config, f, indent=2, ensure_ascii=False)
+                    json.dump(config_with_comments, f, indent=2, ensure_ascii=False)
                 logger.info("🔧 Создана конфигурация по умолчанию")
+                
         except Exception as e:
             logger.error(f"Ошибка загрузки конфигурации: {e}", exc_info=not PRODUCTION)
+        
+        logger.info(f"📋 Паттерны исключений: {default_config['exclude_patterns']}")
         return default_config
 
     def load_manifest(self):
@@ -107,27 +139,95 @@ class AutoVocabularySystem:
 
     def scan_vocabularies(self, auto_process=None):
         logger.info("🔍 Сканирование словарей...")
-        if auto_process is None: auto_process = self.config.get('auto_process_on_startup', True)
-        vocab_files = [p for ext in self.config['supported_extensions'] for p in self.vocabularies_dir.glob(f"*{ext}")]
+        if auto_process is None: 
+            auto_process = self.config.get('auto_process_on_startup', True)
+        
+        vocab_files = []
+        if not self.vocabularies_dir.exists():
+            logger.error(f"❌ Директория словарей не найдена: {self.vocabularies_dir}")
+            return []
+            
+        for ext in self.config['supported_extensions']:
+            vocab_files.extend(self.vocabularies_dir.glob(f"*{ext}"))
+        
+        logger.info(f"📁 Найдено файлов для анализа: {len(vocab_files)}")
+        
         new_or_changed = []
+        
         for vocab_file in vocab_files:
             vocab_name = vocab_file.stem
-            if any(vocab_name.startswith(p.strip('*._')) for p in self.config['exclude_patterns']): continue
+            
+            # --- ИСПРАВЛЕННАЯ ЛОГИКА ИСКЛЮЧЕНИЙ И ЛОГИРОВАНИЯ ---
+            should_exclude = False
+            matched_pattern = "" # Переменная для хранения совпавшего паттерна
+            for pattern in self.config['exclude_patterns']:
+                is_match = False
+                if pattern.startswith('*') and vocab_file.name.endswith(pattern[1:]):
+                    is_match = True
+                elif pattern.endswith('*') and vocab_file.name.startswith(pattern[:-1]):
+                    is_match = True
+                elif '*' not in pattern and pattern == vocab_file.name:
+                    is_match = True
+                
+                if is_match:
+                    should_exclude = True
+                    matched_pattern = pattern
+                    break
+            
+            if should_exclude:
+                logger.info(f"⏭️ Пропускаем файл по правилу исключения '{matched_pattern}': {vocab_file.name}")
+                continue
+            # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                
             try:
                 current_mtime = vocab_file.stat().st_mtime
-                if vocab_name not in self.vocabulary_registry or self.vocabulary_registry[vocab_name].get('last_modified', 0) < current_mtime:
-                    with open(vocab_file, 'r', encoding='utf-8') as f: vocab_data = json.load(f)
-                    self.vocabulary_registry[vocab_name] = {'file_path': str(vocab_file), 'word_count': len(vocab_data), 'last_modified': current_mtime, 'status': 'detected', 'detection_time': datetime.now().isoformat()}
+                
+                needs_update = (
+                    vocab_name not in self.vocabulary_registry or 
+                    self.vocabulary_registry[vocab_name].get('last_modified', 0) < current_mtime
+                )
+                
+                if needs_update:
+                    logger.info(f"📖 Обнаружен новый/измененный словарь. Загрузка: {vocab_name}")
+                    
+                    with open(vocab_file, 'r', encoding='utf-8') as f:
+                        vocab_data = json.load(f)
+                    
+                    if not isinstance(vocab_data, list):
+                        logger.error(f"❌ Словарь {vocab_name} не является массивом (list)")
+                        continue
+                        
+                    self.vocabulary_registry[vocab_name] = {
+                        'file_path': str(vocab_file),
+                        'word_count': len(vocab_data),
+                        'last_modified': current_mtime,
+                        'status': 'detected',
+                        'detection_time': datetime.now().isoformat()
+                    }
+                    
                     new_or_changed.append(vocab_name)
-                    logger.info(f"📖 Обнаружен/обновлен словарь: {vocab_name} ({len(vocab_data)} слов)")
+                    logger.info(f"✅ Словарь {vocab_name} успешно добавлен/обновлен ({len(vocab_data)} слов)")
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ Ошибка декодирования JSON в файле {vocab_file.name}: {e}")
             except Exception as e:
-                logger.error(f"Ошибка обработки словаря {vocab_file}: {e}", exc_info=not PRODUCTION)
+                logger.error(f"❌ Неизвестная ошибка обработки словаря {vocab_file.name}: {e}", exc_info=not PRODUCTION)
+        
+        if new_or_changed:
+            self.save_manifest()
+            logger.info(f"💾 Реестр обновлен. Новых/измененных словарей: {len(new_or_changed)}")
         
         if auto_process and new_or_changed:
             for vocab_name in new_or_changed:
                 if hasattr(self, 'loop') and self.loop.is_running():
-                    asyncio.run_coroutine_threadsafe(self.add_to_processing_queue(vocab_name), self.loop)
-            logger.info(f"🔄 Добавлено в очередь обработки: {new_or_changed}")
+                    asyncio.run_coroutine_threadsafe(
+                        self.add_to_processing_queue(vocab_name), 
+                        self.loop
+                    )
+            logger.info(f"🔄 Добавлено в очередь на автогенерацию аудио: {new_or_changed}")
+        
+        logger.info(f"📊 Итого словарей в реестре: {len(self.vocabulary_registry)}")
+        return new_or_changed
 
     async def add_to_processing_queue(self, vocab_name):
         await self.processing_queue.put({'action': 'pregenerate', 'vocab_name': vocab_name})
@@ -345,8 +445,6 @@ def serve_audio(filename):
     auto_system.record_file_access(filename)
     return send_from_directory(str(auto_system.audio_dir), filename)
 
-
-# --- НОВЫЙ МАРШРУТ: Отдает список всех словарей ---
 @app.route('/api/vocabularies/list')
 def get_vocabularies_list():
     """
@@ -357,25 +455,21 @@ def get_vocabularies_list():
             "name": name,
             "word_count": data.get('word_count', 0),
             "last_modified": data.get('last_modified', 0),
-            "url": f"/api/vocabulary/{name}" # Формируем URL для запроса конкретного словаря
+            "url": f"/api/vocabulary/{name}"
         }
         for name, data in auto_system.vocabulary_registry.items()
     ]
     
     if not vocab_list:
-        logger.warning("Запрошен список словарей, но ни одного не найдено.")
+        logger.warning("Запрошен список словарей, но ни одного не найдено в реестре.")
     
     return jsonify(vocab_list)
-# --- КОНЕЦ НОВОГО МАРШРУТА ---
 
-
-# --- ИЗМЕНЕНИЕ: Маршрут стал динамическим ---
 @app.route('/api/vocabulary/<vocab_name>')
 def get_vocabulary(vocab_name):
     """
     Отдает конкретный файл словаря по его имени (без .json).
     """
-    # Проверка безопасности, что словарь зарегистрирован системой
     if vocab_name not in auto_system.vocabulary_registry:
         logger.error(f"Попытка доступа к незарегистрированному словарю: {vocab_name}")
         return jsonify({"error": f"Vocabulary '{vocab_name}' not found."}), 404
@@ -383,8 +477,6 @@ def get_vocabulary(vocab_name):
     vocab_filename = f"{vocab_name}.json"
     logger.info(f"Отправляем файл словаря: {vocab_filename} из {auto_system.vocabularies_dir}")
     return send_from_directory(str(auto_system.vocabularies_dir), vocab_filename)
-# --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
 
 @app.route('/health')
 def health_check():
@@ -399,7 +491,7 @@ def health_check():
 def system_status():
     return jsonify({
         "system": "AutoVocabularySystem",
-        "version": "1.2.0", # Обновим версию для себя
+        "version": "1.3.1-final",
         "status": "running",
         "production_mode": PRODUCTION,
         "background_processor_active": auto_system.background_thread.is_alive(),
@@ -416,6 +508,21 @@ def cache_stats():
         "protected_files": protected_count, 
         "orphan_files": len(audio_files) - protected_count, 
         "total_size_mb": round(sum(f.stat().st_size for f in audio_files) / (1024 * 1024), 2) if audio_files else 0
+    })
+
+@app.route('/debug/quick')
+def quick_debug():
+    """Быстрая диагностика текущего состояния"""
+    json_files_count = 0
+    if auto_system.vocabularies_dir.exists():
+        json_files_count = len(list(auto_system.vocabularies_dir.glob("*.json")))
+
+    return jsonify({
+        "vocabularies_dir_exists": auto_system.vocabularies_dir.exists(),
+        "json_files_in_dir_count": json_files_count,
+        "current_registry_count": len(auto_system.vocabulary_registry),
+        "current_registry_keys": list(auto_system.vocabulary_registry.keys()),
+        "exclude_patterns_in_use": auto_system.config['exclude_patterns']
     })
 
 # --- Graceful Shutdown ---
