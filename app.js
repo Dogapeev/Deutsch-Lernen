@@ -4,7 +4,7 @@
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
 const APP_VERSION = '2.8.3'; // Обновляем версию
-const TTS_API_BASE_URL = 'https://deutsch-lernen-0qxe.onrender.com';
+const TTS_API_BASE_URL = 'https://deutsch-lernen-blnp.onrender.com';
 
 const DELAYS = {
     INITIAL_WORD: 500,
