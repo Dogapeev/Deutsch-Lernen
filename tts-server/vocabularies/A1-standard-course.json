@@ -1,2072 +1,2271 @@
-[
-    {
-        "id": "word_a1_001",
-        "german": "Hallo",
-        "russian": "Привет",
-        "pronunciation": "[хало́]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Hallo, wie geht's?",
-        "sentence_ru": "Привет, как дела?"
-    },
-    {
-        "id": "word_a1_002",
-        "german": "Guten Tag",
-        "russian": "Добрый день",
-        "pronunciation": "[гу́тэн так]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Guten Tag, Herr Schmidt.",
-        "sentence_ru": "Добрый день, господин Шмидт."
-    },
-    {
-        "id": "word_a1_003",
-        "german": "Auf Wiedersehen",
-        "russian": "До свидания",
-        "pronunciation": "[ауф ви́дерзеен]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Auf Wiedersehen, bis morgen.",
-        "sentence_ru": "До свидания, до завтра."
-    },
-    {
-        "id": "word_a1_004",
-        "german": "heißen",
-        "russian": "называться",
-        "pronunciation": "[ха́йсэн]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Ich heiße Anna.",
-        "sentence_ru": "Меня зовут Анна.",
-        "morphemes": [
-            { "m": "heiß", "t": "зваться (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_005",
-        "german": "kommen",
-        "russian": "приходить / быть родом",
-        "pronunciation": "[ко́мэн]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Du kommst aus Berlin.",
-        "sentence_ru": "Ты из Берлина.",
-        "morphemes": [
-            { "m": "komm", "t": "приходить (основа)" },
-            { "m": "st", "t": "окончание (du)" }
-        ]
-    },
-    {
-        "id": "word_a1_006",
-        "german": "sein",
-        "russian": "быть",
-        "pronunciation": "[зайн]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Er ist Student.",
-        "sentence_ru": "Он студент."
-    },
-    {
-        "id": "word_a1_007",
-        "german": "der Name",
-        "russian": "имя",
-        "pronunciation": "[дер на́мэ]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Mein Name ist Paul.",
-        "sentence_ru": "Мое имя Пауль."
-    },
-    {
-        "id": "word_a1_008",
-        "german": "sprechen",
-        "russian": "говорить",
-        "pronunciation": "[шпре́хэн]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Sie spricht Deutsch.",
-        "sentence_ru": "Она говорит по-немецки.",
-        "morphemes": [
-            { "m": "sprich", "t": "говорить (основа)" },
-            { "m": "t", "t": "окончание (sie)" }
-        ]
-    },
-    {
-        "id": "word_a1_009",
-        "german": "wohnen",
-        "russian": "проживать",
-        "pronunciation": "[во́нэн]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Wir wohnen hier.",
-        "sentence_ru": "Мы живем здесь.",
-        "morphemes": [
-            { "m": "wohn", "t": "жить (основа)" },
-            { "m": "en", "t": "окончание (wir)" }
-        ]
-    },
-    {
-        "id": "word_a1_010",
-        "german": "die Sprache",
-        "russian": "язык",
-        "pronunciation": "[ди шпра́хэ]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Das ist eine Sprache.",
-        "sentence_ru": "Это один язык."
-    },
-    {
-        "id": "word_a1_011",
-        "german": "danke",
-        "russian": "спасибо",
-        "pronunciation": "[да́нкэ]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Danke für die Hilfe.",
-        "sentence_ru": "Спасибо за помощь."
-    },
-    {
-        "id": "word_a1_012",
-        "german": "bitte",
-        "russian": "пожалуйста",
-        "pronunciation": "[би́тэ]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Bitte, gern geschehen.",
-        "sentence_ru": "Пожалуйста, не за что."
-    },
-    {
-        "id": "word_a1_013",
-        "german": "ja",
-        "russian": "да",
-        "pronunciation": "[я]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Ja, das stimmt.",
-        "sentence_ru": "Да, это верно."
-    },
-    {
-        "id": "word_a1_014",
-        "german": "nein",
-        "russian": "нет",
-        "pronunciation": "[найн]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Nein, das ist falsch.",
-        "sentence_ru": "Нет, это неверно."
-    },
-    {
-        "id": "word_a1_015",
-        "german": "wer",
-        "russian": "кто",
-        "pronunciation": "[вэа]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Wer ist das?",
-        "sentence_ru": "Кто это?"
-    },
-    {
-        "id": "word_a1_016",
-        "german": "was",
-        "russian": "что",
-        "pronunciation": "[вас]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Was ist das?",
-        "sentence_ru": "Что это?"
-    },
-    {
-        "id": "word_a1_017",
-        "german": "wo",
-        "russian": "где",
-        "pronunciation": "[во]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Wo wohnen Sie?",
-        "sentence_ru": "Где Вы живете?"
-    },
-    {
-        "id": "word_a1_018",
-        "german": "woher",
-        "russian": "откуда",
-        "pronunciation": "[вохе́а]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Woher kommst du?",
-        "sentence_ru": "Откуда ты?"
-    },
-    {
-        "id": "word_a1_019",
-        "german": "wie",
-        "russian": "как",
-        "pronunciation": "[ви]",
-        "level": "A1",
-        "theme": "greetings",
-        "sentence": "Wie geht es Ihnen?",
-        "sentence_ru": "Как у Вас дела?"
-    },
-    {
-        "id": "word_a1_020",
-        "german": "die Familie",
-        "russian": "семья",
-        "pronunciation": "[ди фами́лье]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Das ist meine Familie.",
-        "sentence_ru": "Это моя семья."
-    },
-    {
-        "id": "word_a1_021",
-        "german": "der Vater",
-        "russian": "отец",
-        "pronunciation": "[дер фа́тер]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Mein Vater ist Arzt.",
-        "sentence_ru": "Мой отец - врач."
-    },
-    {
-        "id": "word_a1_022",
-        "german": "die Mutter",
-        "russian": "мать",
-        "pronunciation": "[ди му́тер]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Meine Mutter ist hier.",
-        "sentence_ru": "Моя мама здесь."
-    },
-    {
-        "id": "word_a1_023",
-        "german": "die Eltern",
-        "russian": "родители",
-        "pronunciation": "[ди э́льтерн]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Meine Eltern sind nett.",
-        "sentence_ru": "Мои родители милые."
-    },
-    {
-        "id": "word_a1_024",
-        "german": "der Sohn",
-        "russian": "сын",
-        "pronunciation": "[дер зон]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Das ist mein Sohn.",
-        "sentence_ru": "Это мой сын."
-    },
-    {
-        "id": "word_a1_025",
-        "german": "die Tochter",
-        "russian": "дочь",
-        "pronunciation": "[ди то́хтер]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Das ist meine Tochter.",
-        "sentence_ru": "Это моя дочь."
-    },
-    {
-        "id": "word_a1_026",
-        "german": "der Bruder",
-        "russian": "брат",
-        "pronunciation": "[дер бру́дер]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Ich habe einen Bruder.",
-        "sentence_ru": "У меня есть брат."
-    },
-    {
-        "id": "word_a1_027",
-        "german": "die Schwester",
-        "russian": "сестра",
-        "pronunciation": "[ди шве́стер]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Du hast eine Schwester.",
-        "sentence_ru": "У тебя есть сестра."
-    },
-    {
-        "id": "word_a1_028",
-        "german": "der Großvater",
-        "russian": "дедушка",
-        "pronunciation": "[дер гро́сфатер]",
-        "level": "A1",
-        "theme": "family",
-        "morphemes": [
-            { "m": "Groß", "t": "старший" },
-            { "m": "vater", "t": "отец" }
-        ],
-        "sentence": "Mein Großvater ist alt.",
-        "sentence_ru": "Мой дедушка старый."
-    },
-    {
-        "id": "word_a1_029",
-        "german": "die Großmutter",
-        "russian": "бабушка",
-        "pronunciation": "[ди гро́смутер]",
-        "level": "A1",
-        "theme": "family",
-        "morphemes": [
-            { "m": "Groß", "t": "старшая" },
-            { "m": "mutter", "t": "мать" }
-        ],
-        "sentence": "Meine Großmutter kocht gut.",
-        "sentence_ru": "Моя бабушка хорошо готовит."
-    },
-    {
-        "id": "word_a1_030",
-        "german": "das Kind",
-        "russian": "ребенок",
-        "pronunciation": "[дас кинд]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Das Kind spielt gern.",
-        "sentence_ru": "Ребенок любит играть."
-    },
-    {
-        "id": "word_a1_031",
-        "german": "der Mann",
-        "russian": "мужчина, муж",
-        "pronunciation": "[дер ман]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Der Mann liest Zeitung.",
-        "sentence_ru": "Мужчина читает газету."
-    },
-    {
-        "id": "word_a1_032",
-        "german": "die Frau",
-        "russian": "женщина, жена",
-        "pronunciation": "[ди фрау]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Die Frau trinkt Kaffee.",
-        "sentence_ru": "Женщина пьет кофе."
-    },
-    {
-        "id": "word_a1_033",
-        "german": "der Freund",
-        "russian": "друг",
-        "pronunciation": "[дер фройнд]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Mein Freund heißt Peter.",
-        "sentence_ru": "Моего друга зовут Петер."
-    },
-    {
-        "id": "word_a1_034",
-        "german": "die Freundin",
-        "russian": "подруга",
-        "pronunciation": "[ди фро́йндин]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Meine Freundin ist hier.",
-        "sentence_ru": "Моя подруга здесь."
-    },
-    {
-        "id": "word_a1_035",
-        "german": "die Leute",
-        "russian": "люди",
-        "pronunciation": "[ди ло́йтэ]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Die Leute sind freundlich.",
-        "sentence_ru": "Люди дружелюбные."
-    },
-    {
-        "id": "word_a1_036",
-        "german": "das Baby",
-        "russian": "младенец",
-        "pronunciation": "[дас бэ́йби]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Das Baby schläft jetzt.",
-        "sentence_ru": "Младенец сейчас спит."
-    },
-    {
-        "id": "word_a1_037",
-        "german": "haben",
-        "russian": "иметь",
-        "pronunciation": "[ха́бэн]",
-        "level": "A1",
-        "theme": "family",
-        "sentence": "Wir haben ein Auto.",
-        "sentence_ru": "У нас есть машина.",
-        "morphemes": [
-            { "m": "hab", "t": "иметь (основа)" },
-            { "m": "en", "t": "окончание (wir)" }
-        ]
-    },
-    {
-        "id": "word_a1_038",
-        "german": "essen",
-        "russian": "есть, кушать",
-        "pronunciation": "[э́сэн]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Ich esse einen Apfel.",
-        "sentence_ru": "Я ем яблоко.",
-        "morphemes": [
-            { "m": "ess", "t": "есть (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_039",
-        "german": "trinken",
-        "russian": "пить",
-        "pronunciation": "[три́нкен]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Du trinkst Wasser.",
-        "sentence_ru": "Ты пьешь воду.",
-        "morphemes": [
-            { "m": "trink", "t": "пить (основа)" },
-            { "m": "st", "t": "окончание (du)" }
-        ]
-    },
-    {
-        "id": "word_a1_040",
-        "german": "das Essen",
-        "russian": "еда",
-        "pronunciation": "[дас э́сэн]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Das Essen ist lecker.",
-        "sentence_ru": "Еда вкусная."
-    },
-    {
-        "id": "word_a1_041",
-        "german": "das Wasser",
-        "russian": "вода",
-        "pronunciation": "[дас ва́сэр]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Ich trinke viel Wasser.",
-        "sentence_ru": "Я пью много воды."
-    },
-    {
-        "id": "word_a1_042",
-        "german": "der Tee",
-        "russian": "чай",
-        "pronunciation": "[дер те]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Er trinkt Tee.",
-        "sentence_ru": "Он пьет чай."
-    },
-    {
-        "id": "word_a1_043",
-        "german": "der Kaffee",
-        "russian": "кофе",
-        "pronunciation": "[дер ка́фе]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Sie trinkt Kaffee.",
-        "sentence_ru": "Она пьет кофе."
-    },
-    {
-        "id": "word_a1_044",
-        "german": "die Milch",
-        "russian": "молоко",
-        "pronunciation": "[ди мильхь]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Das Kind trinkt Milch.",
-        "sentence_ru": "Ребенок пьет молоко."
-    },
-    {
-        "id": "word_a1_045",
-        "german": "das Brot",
-        "russian": "хлеб",
-        "pronunciation": "[дас брот]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Wir essen Brot.",
-        "sentence_ru": "Мы едим хлеб."
-    },
-    {
-        "id": "word_a1_046",
-        "german": "der Käse",
-        "russian": "сыр",
-        "pronunciation": "[дер кэ́зэ]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Ich mag Käse.",
-        "sentence_ru": "Я люблю сыр."
-    },
-    {
-        "id": "word_a1_047",
-        "german": "der Fisch",
-        "russian": "рыба",
-        "pronunciation": "[дер фиш]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Er isst gern Fisch.",
-        "sentence_ru": "Он любит есть рыбу."
-    },
-    {
-        "id": "word_a1_048",
-        "german": "das Fleisch",
-        "russian": "мясо",
-        "pronunciation": "[дас фляйш]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Sie isst kein Fleisch.",
-        "sentence_ru": "Она не ест мясо."
-    },
-    {
-        "id": "word_a1_049",
-        "german": "das Obst",
-        "russian": "фрукты",
-        "pronunciation": "[дас опст]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Obst ist gesund.",
-        "sentence_ru": "Фрукты полезны."
-    },
-    {
-        "id": "word_a1_050",
-        "german": "das Gemüse",
-        "russian": "овощи",
-        "pronunciation": "[дас гемю́зэ]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Ich esse viel Gemüse.",
-        "sentence_ru": "Я ем много овощей."
-    },
-    {
-        "id": "word_a1_051",
-        "german": "der Apfel",
-        "russian": "яблоко",
-        "pronunciation": "[дер а́пфэль]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Der Apfel ist rot.",
-        "sentence_ru": "Яблоко красное."
-    },
-    {
-        "id": "word_a1_052",
-        "german": "die Banane",
-        "russian": "банан",
-        "pronunciation": "[ди бана́нэ]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Die Banane ist gelb.",
-        "sentence_ru": "Банан желтый."
-    },
-    {
-        "id": "word_a1_053",
-        "german": "die Kartoffel",
-        "russian": "картофель",
-        "pronunciation": "[ди карто́фэль]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Ich koche eine Kartoffel.",
-        "sentence_ru": "Я варю картофелину."
-    },
-    {
-        "id": "word_a1_054",
-        "german": "der Zucker",
-        "russian": "сахар",
-        "pronunciation": "[дер цу́кер]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Kaffee mit Zucker, bitte.",
-        "sentence_ru": "Кофе с сахаром, пожалуйста."
-    },
-    {
-        "id": "word_a1_055",
-        "german": "das Salz",
-        "russian": "соль",
-        "pronunciation": "[дас зальц]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Gib mir das Salz.",
-        "sentence_ru": "Дай мне соль."
-    },
-    {
-        "id": "word_a1_056",
-        "german": "kaufen",
-        "russian": "покупать",
-        "pronunciation": "[ка́уфэн]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Ich kaufe Brot.",
-        "sentence_ru": "Я покупаю хлеб.",
-        "morphemes": [
-            { "m": "kauf", "t": "покупать (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_057",
-        "german": "bezahlen",
-        "russian": "платить",
-        "pronunciation": "[беца́лен]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Wir bezahlen zusammen.",
-        "sentence_ru": "Мы платим вместе.",
-        "morphemes": [
-            { "m": "bezahl", "t": "платить (основа)" },
-            { "m": "en", "t": "окончание (wir)" }
-        ]
-    },
-    {
-        "id": "word_a1_058",
-        "german": "die Rechnung",
-        "russian": "счет",
-        "pronunciation": "[ди ре́хьнунг]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Die Rechnung, bitte.",
-        "sentence_ru": "Счет, пожалуйста."
-    },
-    {
-        "id": "word_a1_059",
-        "german": "der Hunger",
-        "russian": "голод",
-        "pronunciation": "[дер ху́нгер]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Ich habe Hunger.",
-        "sentence_ru": "Я голоден."
-    },
-    {
-        "id": "word_a1_060",
-        "german": "der Durst",
-        "russian": "жажда",
-        "pronunciation": "[дер дурст]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Hast du Durst?",
-        "sentence_ru": "Ты хочешь пить?"
-    },
-    {
-        "id": "word_a1_061",
-        "german": "lecker",
-        "russian": "вкусный",
-        "pronunciation": "[ле́кер]",
-        "level": "A1",
-        "theme": "food",
-        "sentence": "Das Essen ist lecker.",
-        "sentence_ru": "Еда вкусная."
-    },
-    {
-        "id": "word_a1_062",
-        "german": "die Stadt",
-        "russian": "город",
-        "pronunciation": "[ди штат]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Das ist eine Stadt.",
-        "sentence_ru": "Это один город."
-    },
-    {
-        "id": "word_a1_063",
-        "german": "die Straße",
-        "russian": "улица",
-        "pronunciation": "[ди штра́сэ]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Das ist die Hauptstraße.",
-        "sentence_ru": "Это главная улица."
-    },
-    {
-        "id": "word_a1_064",
-        "german": "der Platz",
-        "russian": "площадь",
-        "pronunciation": "[дер плац]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Der Platz ist groß.",
-        "sentence_ru": "Площадь большая."
-    },
-    {
-        "id": "word_a1_065",
-        "german": "das Auto",
-        "russian": "автомобиль",
-        "pronunciation": "[дас а́уто]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Ich habe ein Auto.",
-        "sentence_ru": "У меня есть машина."
-    },
-    {
-        "id": "word_a1_066",
-        "german": "der Bus",
-        "russian": "автобус",
-        "pronunciation": "[дер бус]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Der Bus kommt.",
-        "sentence_ru": "Автобус едет."
-    },
-    {
-        "id": "word_a1_067",
-        "german": "der Zug",
-        "russian": "поезд",
-        "pronunciation": "[дер цук]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Der Zug fährt ab.",
-        "sentence_ru": "Поезд отправляется."
-    },
-    {
-        "id": "word_a1_068",
-        "german": "fahren",
-        "russian": "ехать",
-        "pronunciation": "[фа́рэн]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Er fährt schnell.",
-        "sentence_ru": "Он едет быстро.",
-        "morphemes": [
-            { "m": "fähr", "t": "ехать (основа)" },
-            { "m": "t", "t": "окончание (er/sie/es)" }
-        ]
-    },
-    {
-        "id": "word_a1_069",
-        "german": "gehen",
-        "russian": "идти",
-        "pronunciation": "[ге́ен]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Wir gehen zu Fuß.",
-        "sentence_ru": "Мы идем пешком.",
-        "morphemes": [
-            { "m": "geh", "t": "идти (основа)" },
-            { "m": "en", "t": "окончание (wir)" }
-        ]
-    },
-    {
-        "id": "word_a1_070",
-        "german": "der Bahnhof",
-        "russian": "вокзал",
-        "pronunciation": "[дер ба́нхоф]",
-        "level": "A1",
-        "theme": "city",
-        "morphemes": [
-            { "m": "Bahn", "t": "железная дорога" },
-            { "m": "hof", "t": "двор" }
-        ],
-        "sentence": "Der Bahnhof ist da.",
-        "sentence_ru": "Вокзал там."
-    },
-    {
-        "id": "word_a1_071",
-        "german": "der Flughafen",
-        "russian": "аэропорт",
-        "pronunciation": "[дер флу́кхафэн]",
-        "level": "A1",
-        "theme": "city",
-        "morphemes": [
-            { "m": "Flug", "t": "полет" },
-            { "m": "hafen", "t": "порт" }
-        ],
-        "sentence": "Wo ist der Flughafen?",
-        "sentence_ru": "Где аэропорт?"
-    },
-    {
-        "id": "word_a1_072",
-        "german": "das Hotel",
-        "russian": "отель",
-        "pronunciation": "[дас хотэ́ль]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Das Hotel ist teuer.",
-        "sentence_ru": "Отель дорогой."
-    },
-    {
-        "id": "word_a1_073",
-        "german": "das Restaurant",
-        "russian": "ресторан",
-        "pronunciation": "[дас рэстора́н]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Das Restaurant ist gut.",
-        "sentence_ru": "Ресторан хороший."
-    },
-    {
-        "id": "word_a1_074",
-        "german": "die Bank",
-        "russian": "банк",
-        "pronunciation": "[ди банк]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Die Bank ist zu.",
-        "sentence_ru": "Банк закрыт."
-    },
-    {
-        "id": "word_a1_075",
-        "german": "die Post",
-        "russian": "почта",
-        "pronunciation": "[ди пост]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Ich gehe zur Post.",
-        "sentence_ru": "Я иду на почту."
-    },
-    {
-        "id": "word_a1_076",
-        "german": "der Supermarkt",
-        "russian": "супермаркет",
-        "pronunciation": "[дер зу́пермаркт]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Der Supermarkt ist offen.",
-        "sentence_ru": "Супермаркет открыт."
-    },
-    {
-        "id": "word_a1_077",
-        "german": "links",
-        "russian": "налево",
-        "pronunciation": "[линкс]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Gehen Sie nach links.",
-        "sentence_ru": "Идите налево."
-    },
-    {
-        "id": "word_a1_078",
-        "german": "rechts",
-        "russian": "направо",
-        "pronunciation": "[рехьтс]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Fahren Sie nach rechts.",
-        "sentence_ru": "Езжайте направо."
-    },
-    {
-        "id": "word_a1_079",
-        "german": "geradeaus",
-        "russian": "прямо",
-        "pronunciation": "[гера́деаус]",
-        "level": "A1",
-        "theme": "city",
-        "sentence": "Gehen Sie geradeaus.",
-        "sentence_ru": "Идите прямо."
-    },
-    {
-        "id": "word_a1_080",
-        "german": "das Haus",
-        "russian": "дом",
-        "pronunciation": "[дас хаус]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Das ist unser Haus.",
-        "sentence_ru": "Это наш дом."
-    },
-    {
-        "id": "word_a1_081",
-        "german": "die Wohnung",
-        "russian": "квартира",
-        "pronunciation": "[ди во́нунг]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Die Wohnung ist neu.",
-        "sentence_ru": "Квартира новая."
-    },
-    {
-        "id": "word_a1_082",
-        "german": "das Zimmer",
-        "russian": "комната",
-        "pronunciation": "[дас ци́мэр]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Mein Zimmer ist klein.",
-        "sentence_ru": "Моя комната маленькая."
-    },
-    {
-        "id": "word_a1_083",
-        "german": "die Küche",
-        "russian": "кухня",
-        "pronunciation": "[ди кю́хе]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Die Küche ist modern.",
-        "sentence_ru": "Кухня современная."
-    },
-    {
-        "id": "word_a1_084",
-        "german": "das Bad",
-        "russian": "ванная",
-        "pronunciation": "[дас бат]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Das Bad ist sauber.",
-        "sentence_ru": "Ванная чистая."
-    },
-    {
-        "id": "word_a1_085",
-        "german": "das Bett",
-        "russian": "кровать",
-        "pronunciation": "[дас бэт]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Das Bett ist weich.",
-        "sentence_ru": "Кровать мягкая."
-    },
-    {
-        "id": "word_a1_086",
-        "german": "der Tisch",
-        "russian": "стол",
-        "pronunciation": "[дер тиш]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Der Tisch ist aus Holz.",
-        "sentence_ru": "Стол из дерева."
-    },
-    {
-        "id": "word_a1_087",
-        "german": "der Stuhl",
-        "russian": "стул",
-        "pronunciation": "[дер штуль]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Der Stuhl ist bequem.",
-        "sentence_ru": "Стул удобный."
-    },
-    {
-        "id": "word_a1_088",
-        "german": "der Schrank",
-        "russian": "шкаф",
-        "pronunciation": "[дер шранк]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Der Schrank ist groß.",
-        "sentence_ru": "Шкаф большой."
-    },
-    {
-        "id": "word_a1_089",
-        "german": "das Fenster",
-        "russian": "окно",
-        "pronunciation": "[дас фэ́нстер]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Das Fenster ist offen.",
-        "sentence_ru": "Окно открыто."
-    },
-    {
-        "id": "word_a1_090",
-        "german": "die Tür",
-        "russian": "дверь",
-        "pronunciation": "[ди тюр]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Die Tür ist geschlossen.",
-        "sentence_ru": "Дверь закрыта."
-    },
-    {
-        "id": "word_a1_091",
-        "german": "die Lampe",
-        "russian": "лампа",
-        "pronunciation": "[ди ла́мпэ]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Die Lampe ist an.",
-        "sentence_ru": "Лампа включена."
-    },
-    {
-        "id": "word_a1_092",
-        "german": "der Schlüssel",
-        "russian": "ключ",
-        "pronunciation": "[дер шлю́сэль]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Ich habe den Schlüssel.",
-        "sentence_ru": "У меня есть ключ."
-    },
-    {
-        "id": "word_a1_093",
-        "german": "das Sofa",
-        "russian": "диван",
-        "pronunciation": "[дас зо́фа]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Das Sofa ist neu.",
-        "sentence_ru": "Диван новый."
-    },
-    {
-        "id": "word_a1_094",
-        "german": "der Teppich",
-        "russian": "ковер",
-        "pronunciation": "[дер тэ́пихь]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Der Teppich ist weich.",
-        "sentence_ru": "Ковер мягкий."
-    },
-    {
-        "id": "word_a1_095",
-        "german": "die Wand",
-        "russian": "стена",
-        "pronunciation": "[ди вант]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Die Wand ist weiß.",
-        "sentence_ru": "Стена белая."
-    },
-    {
-        "id": "word_a1_096",
-        "german": "der Boden",
-        "russian": "пол",
-        "pronunciation": "[дер бо́дэн]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Der Boden ist sauber.",
-        "sentence_ru": "Пол чистый."
-    },
-    {
-        "id": "word_a1_097",
-        "german": "die Decke",
-        "russian": "потолок / одеяло",
-        "pronunciation": "[ди дэ́кэ]",
-        "level": "A1",
-        "theme": "home",
-        "sentence": "Die Decke ist hoch.",
-        "sentence_ru": "Потолок высокий."
-    },
-    {
-        "id": "word_a1_098",
-        "german": "arbeiten",
-        "russian": "работать",
-        "pronunciation": "[а́рбайтэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Ich arbeite hier.",
-        "sentence_ru": "Я работаю здесь.",
-        "morphemes": [
-            { "m": "arbeit", "t": "работать (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_099",
-        "german": "lernen",
-        "russian": "учить",
-        "pronunciation": "[ле́рнэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Du lernst Deutsch.",
-        "sentence_ru": "Ты учишь немецкий.",
-        "morphemes": [
-            { "m": "lern", "t": "учить (основа)" },
-            { "m": "st", "t": "окончание (du)" }
-        ]
-    },
-    {
-        "id": "word_a1_100",
-        "german": "schlafen",
-        "russian": "спать",
-        "pronunciation": "[шла́фэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Er schläft lange.",
-        "sentence_ru": "Он спит долго.",
-        "morphemes": [
-            { "m": "schläf", "t": "спать (основа)" },
-            { "m": "t", "t": "окончание (er/sie/es)" }
-        ]
-    },
-    {
-        "id": "word_a1_101",
-        "german": "kochen",
-        "russian": "готовить (еду)",
-        "pronunciation": "[ко́хэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Sie kocht Suppe.",
-        "sentence_ru": "Она готовит суп.",
-        "morphemes": [
-            { "m": "koch", "t": "готовить (основа)" },
-            { "m": "t", "t": "окончание (sie)" }
-        ]
-    },
-    {
-        "id": "word_a1_102",
-        "german": "lesen",
-        "russian": "читать",
-        "pronunciation": "[ле́зэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Ich lese ein Buch.",
-        "sentence_ru": "Я читаю книгу.",
-        "morphemes": [
-            { "m": "les", "t": "читать (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_103",
-        "german": "schreiben",
-        "russian": "писать",
-        "pronunciation": "[шра́йбэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Du schreibst einen Brief.",
-        "sentence_ru": "Ты пишешь письмо.",
-        "morphemes": [
-            { "m": "schreib", "t": "писать (основа)" },
-            { "m": "st", "t": "окончание (du)" }
-        ]
-    },
-    {
-        "id": "word_a1_104",
-        "german": "hören",
-        "russian": "слушать",
-        "pronunciation": "[хёрэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Wir hören Musik.",
-        "sentence_ru": "Мы слушаем музыку.",
-        "morphemes": [
-            { "m": "hör", "t": "слушать (основа)" },
-            { "m": "en", "t": "окончание (wir)" }
-        ]
-    },
-    {
-        "id": "word_a1_105",
-        "german": "sehen",
-        "russian": "видеть, смотреть",
-        "pronunciation": "[зе́ен]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Sie sehen einen Film.",
-        "sentence_ru": "Вы (вежл.) смотрите фильм.",
-        "morphemes": [
-            { "m": "seh", "t": "видеть (основа)" },
-            { "m": "en", "t": "окончание (Sie)" }
-        ]
-    },
-    {
-        "id": "word_a1_106",
-        "german": "machen",
-        "russian": "делать",
-        "pronunciation": "[ма́хэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Ich mache meine Arbeit.",
-        "sentence_ru": "Я делаю свою работу.",
-        "morphemes": [
-            { "m": "mach", "t": "делать (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_107",
-        "german": "fragen",
-        "russian": "спрашивать",
-        "pronunciation": "[фра́гэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Er fragt den Lehrer.",
-        "sentence_ru": "Он спрашивает учителя.",
-        "morphemes": [
-            { "m": "frag", "t": "спрашивать (основа)" },
-            { "m": "t", "t": "окончание (er)" }
-        ]
-    },
-    {
-        "id": "word_a1_108",
-        "german": "antworten",
-        "russian": "отвечать",
-        "pronunciation": "[а́нтвортэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Sie antwortet schnell.",
-        "sentence_ru": "Она отвечает быстро.",
-        "morphemes": [
-            { "m": "antwort", "t": "отвечать (основа)" },
-            { "m": "et", "t": "окончание (sie)" }
-        ]
-    },
-    {
-        "id": "word_a1_109",
-        "german": "helfen",
-        "russian": "помогать",
-        "pronunciation": "[хе́льфэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Du hilfst mir.",
-        "sentence_ru": "Ты помогаешь мне.",
-        "morphemes": [
-            { "m": "hilf", "t": "помогать (основа)" },
-            { "m": "st", "t": "окончание (du)" }
-        ]
-    },
-    {
-        "id": "word_a1_110",
-        "german": "suchen",
-        "russian": "искать",
-        "pronunciation": "[зу́хэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Ich suche meinen Schlüssel.",
-        "sentence_ru": "Я ищу свой ключ.",
-        "morphemes": [
-            { "m": "such", "t": "искать (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_111",
-        "german": "finden",
-        "russian": "находить",
-        "pronunciation": "[фи́ндэн]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Wir finden den Weg.",
-        "sentence_ru": "Мы находим дорогу.",
-        "morphemes": [
-            { "m": "find", "t": "находить (основа)" },
-            { "m": "en", "t": "окончание (wir)" }
-        ]
-    },
-    {
-        "id": "word_a1_112",
-        "german": "der Morgen",
-        "russian": "утро",
-        "pronunciation": "[дер мо́рген]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Am Morgen trinke ich Kaffee.",
-        "sentence_ru": "Утром я пью кофе."
-    },
-    {
-        "id": "word_a1_113",
-        "german": "der Abend",
-        "russian": "вечер",
-        "pronunciation": "[дер а́бэнт]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Am Abend lese ich.",
-        "sentence_ru": "Вечером я читаю."
-    },
-    {
-        "id": "word_a1_114",
-        "german": "die Nacht",
-        "russian": "ночь",
-        "pronunciation": "[ди нахт]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "In der Nacht schlafe ich.",
-        "sentence_ru": "Ночью я сплю."
-    },
-    {
-        "id": "word_a1_115",
-        "german": "der Tag",
-        "russian": "день",
-        "pronunciation": "[дер так]",
-        "level": "A1",
-        "theme": "daily_routine",
-        "sentence": "Der Tag ist schön.",
-        "sentence_ru": "День прекрасный."
-    },
-    {
-        "id": "word_a1_116",
-        "german": "die Kleidung",
-        "russian": "одежда",
-        "pronunciation": "[ди кля́йдунг]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Das ist neue Kleidung.",
-        "sentence_ru": "Это новая одежда."
-    },
-    {
-        "id": "word_a1_117",
-        "german": "die Hose",
-        "russian": "брюки",
-        "pronunciation": "[ди хо́зэ]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Die Hose ist blau.",
-        "sentence_ru": "Брюки синие."
-    },
-    {
-        "id": "word_a1_118",
-        "german": "das Hemd",
-        "russian": "рубашка",
-        "pronunciation": "[дас хэмт]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Das Hemd ist weiß.",
-        "sentence_ru": "Рубашка белая."
-    },
-    {
-        "id": "word_a1_119",
-        "german": "der Pullover",
-        "russian": "свитер",
-        "pronunciation": "[дер пуло́вэр]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Der Pullover ist warm.",
-        "sentence_ru": "Свитер теплый."
-    },
-    {
-        "id": "word_a1_120",
-        "german": "die Jacke",
-        "russian": "куртка",
-        "pronunciation": "[ди я́кэ]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Die Jacke ist teuer.",
-        "sentence_ru": "Куртка дорогая."
-    },
-    {
-        "id": "word_a1_121",
-        "german": "die Schuhe",
-        "russian": "обувь",
-        "pronunciation": "[ди шу́э]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Die Schuhe sind neu.",
-        "sentence_ru": "Обувь новая."
-    },
-    {
-        "id": "word_a1_122",
-        "german": "der Rock",
-        "russian": "юбка",
-        "pronunciation": "[дер рок]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Der Rock ist kurz.",
-        "sentence_ru": "Юбка короткая."
-    },
-    {
-        "id": "word_a1_123",
-        "german": "das Kleid",
-        "russian": "платье",
-        "pronunciation": "[дас кляйт]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Das Kleid ist schön.",
-        "sentence_ru": "Платье красивое."
-    },
-    {
-        "id": "word_a1_124",
-        "german": "der Hut",
-        "russian": "шляпа",
-        "pronunciation": "[дер хут]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Er trägt einen Hut.",
-        "sentence_ru": "Он носит шляпу."
-    },
-    {
-        "id": "word_a1_125",
-        "german": "die Mütze",
-        "russian": "шапка",
-        "pronunciation": "[ди мю́цэ]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Die Mütze ist rot.",
-        "sentence_ru": "Шапка красная."
-    },
-    {
-        "id": "word_a1_126",
-        "german": "tragen",
-        "russian": "носить (одежду)",
-        "pronunciation": "[тра́гэн]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Ich trage eine Jacke.",
-        "sentence_ru": "Я ношу куртку.",
-        "morphemes": [
-            { "m": "trag", "t": "носить (основа)" },
-            { "m": "e", "t": "окончание (ich)" }
-        ]
-    },
-    {
-        "id": "word_a1_127",
-        "german": "die Farbe",
-        "russian": "цвет",
-        "pronunciation": "[ди фа́рбэ]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Das ist meine Farbe.",
-        "sentence_ru": "Это мой цвет."
-    },
-    {
-        "id": "word_a1_128",
-        "german": "rot",
-        "russian": "красный",
-        "pronunciation": "[рот]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Das Auto ist rot.",
-        "sentence_ru": "Машина красная."
-    },
-    {
-        "id": "word_a1_129",
-        "german": "blau",
-        "russian": "синий",
-        "pronunciation": "[блау]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Der Himmel ist blau.",
-        "sentence_ru": "Небо синее."
-    },
-    {
-        "id": "word_a1_130",
-        "german": "grün",
-        "russian": "зеленый",
-        "pronunciation": "[грюн]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Das Gras ist grün.",
-        "sentence_ru": "Трава зеленая."
-    },
-    {
-        "id": "word_a1_131",
-        "german": "gelb",
-        "russian": "желтый",
-        "pronunciation": "[гельп]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Die Sonne ist gelb.",
-        "sentence_ru": "Солнце желтое."
-    },
-    {
-        "id": "word_a1_132",
-        "german": "schwarz",
-        "russian": "черный",
-        "pronunciation": "[шварц]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Die Katze ist schwarz.",
-        "sentence_ru": "Кошка черная."
-    },
-    {
-        "id": "word_a1_133",
-        "german": "weiß",
-        "russian": "белый",
-        "pronunciation": "[вайс]",
-        "level": "A1",
-        "theme": "clothing",
-        "sentence": "Der Schnee ist weiß.",
-        "sentence_ru": "Снег белый."
-    },
-    {
-        "id": "word_a1_134",
-        "german": "eins",
-        "russian": "один",
-        "pronunciation": "[айнс]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Ich habe einen Hund.",
-        "sentence_ru": "У меня одна собака."
-    },
-    {
-        "id": "word_a1_135",
-        "german": "zwei",
-        "russian": "два",
-        "pronunciation": "[цвай]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Du hast zwei Katzen.",
-        "sentence_ru": "У тебя две кошки."
-    },
-    {
-        "id": "word_a1_136",
-        "german": "drei",
-        "russian": "три",
-        "pronunciation": "[драй]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Er hat drei Bücher.",
-        "sentence_ru": "У него три книги."
-    },
-    {
-        "id": "word_a1_137",
-        "german": "vier",
-        "russian": "четыре",
-        "pronunciation": "[фир]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Es gibt vier Stühle.",
-        "sentence_ru": "Есть четыре стула."
-    },
-    {
-        "id": "word_a1_138",
-        "german": "fünf",
-        "russian": "пять",
-        "pronunciation": "[фюнф]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Wir sind fünf Personen.",
-        "sentence_ru": "Нас пять человек."
-    },
-    {
-        "id": "word_a1_139",
-        "german": "zehn",
-        "russian": "десять",
-        "pronunciation": "[цен]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Ich habe zehn Finger.",
-        "sentence_ru": "У меня десять пальцев."
-    },
-    {
-        "id": "word_a1_140",
-        "german": "die Zahl",
-        "russian": "число",
-        "pronunciation": "[ди цаль]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Das ist eine Zahl.",
-        "sentence_ru": "Это число."
-    },
-    {
-        "id": "word_a1_141",
-        "german": "die Zeit",
-        "russian": "время",
-        "pronunciation": "[ди цайт]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Ich habe keine Zeit.",
-        "sentence_ru": "У меня нет времени."
-    },
-    {
-        "id": "word_a1_142",
-        "german": "die Uhr",
-        "russian": "час (время на часах)",
-        "pronunciation": "[ди у́а]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Es ist drei Uhr.",
-        "sentence_ru": "Сейчас три часа."
-    },
-    {
-        "id": "word_a1_143",
-        "german": "die Stunde",
-        "russian": "час (60 минут)",
-        "pronunciation": "[ди шту́ндэ]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Ich warte eine Stunde.",
-        "sentence_ru": "Я жду один час."
-    },
-    {
-        "id": "word_a1_144",
-        "german": "die Minute",
-        "russian": "минута",
-        "pronunciation": "[ди мину́тэ]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Warte eine Minute.",
-        "sentence_ru": "Подожди минуту."
-    },
-    {
-        "id": "word_a1_145",
-        "german": "heute",
-        "russian": "сегодня",
-        "pronunciation": "[хо́йтэ]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Heute ist Montag.",
-        "sentence_ru": "Сегодня понедельник."
-    },
-    {
-        "id": "word_a1_146",
-        "german": "morgen",
-        "russian": "завтра",
-        "pronunciation": "[мо́рген]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Morgen ist Dienstag.",
-        "sentence_ru": "Завтра вторник."
-    },
-    {
-        "id": "word_a1_147",
-        "german": "gestern",
-        "russian": "вчера",
-        "pronunciation": "[ге́стерн]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Gestern war Sonntag.",
-        "sentence_ru": "Вчера было воскресенье."
-    },
-    {
-        "id": "word_a1_148",
-        "german": "die Woche",
-        "russian": "неделя",
-        "pronunciation": "[ди во́хэ]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Die Woche hat sieben Tage.",
-        "sentence_ru": "В неделе семь дней."
-    },
-    {
-        "id": "word_a1_149",
-        "german": "der Monat",
-        "russian": "месяц",
-        "pronunciation": "[дер мо́нат]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Der Monat hat 30 Tage.",
-        "sentence_ru": "В месяце 30 дней."
-    },
-    {
-        "id": "word_a1_150",
-        "german": "das Jahr",
-        "russian": "год",
-        "pronunciation": "[дас яр]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Das Jahr ist bald zu Ende.",
-        "sentence_ru": "Год скоро закончится."
-    },
-    {
-        "id": "word_a1_151",
-        "german": "das Datum",
-        "russian": "дата",
-        "pronunciation": "[дас да́тум]",
-        "level": "A1",
-        "theme": "time_date",
-        "sentence": "Was ist das Datum?",
-        "sentence_ru": "Какая сегодня дата?"
-    },
-    {
-        "id": "word_a1_152",
-        "german": "das Wetter",
-        "russian": "погода",
-        "pronunciation": "[дас вэ́тэр]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Das Wetter ist gut.",
-        "sentence_ru": "Погода хорошая."
-    },
-    {
-        "id": "word_a1_153",
-        "german": "die Sonne",
-        "russian": "солнце",
-        "pronunciation": "[ди зо́нэ]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Die Sonne scheint.",
-        "sentence_ru": "Солнце светит."
-    },
-    {
-        "id": "word_a1_154",
-        "german": "der Regen",
-        "russian": "дождь",
-        "pronunciation": "[дер ре́ген]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Es gibt Regen.",
-        "sentence_ru": "Идет дождь."
-    },
-    {
-        "id": "word_a1_155",
-        "german": "der Schnee",
-        "russian": "снег",
-        "pronunciation": "[дер шне]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Ich mag Schnee.",
-        "sentence_ru": "Я люблю снег."
-    },
-    {
-        "id": "word_a1_156",
-        "german": "der Wind",
-        "russian": "ветер",
-        "pronunciation": "[дер винт]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Der Wind ist stark.",
-        "sentence_ru": "Ветер сильный."
-    },
-    {
-        "id": "word_a1_157",
-        "german": "die Wolke",
-        "russian": "облако",
-        "pronunciation": "[ди во́лькэ]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Da ist eine Wolke.",
-        "sentence_ru": "Там облако."
-    },
-    {
-        "id": "word_a1_158",
-        "german": "warm",
-        "russian": "теплый",
-        "pronunciation": "[варм]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Heute ist es warm.",
-        "sentence_ru": "Сегодня тепло."
-    },
-    {
-        "id": "word_a1_159",
-        "german": "kalt",
-        "russian": "холодный",
-        "pronunciation": "[кальт]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Draußen ist es kalt.",
-        "sentence_ru": "На улице холодно."
-    },
-    {
-        "id": "word_a1_160",
-        "german": "der Himmel",
-        "russian": "небо",
-        "pronunciation": "[дер хи́мэль]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Der Himmel ist blau.",
-        "sentence_ru": "Небо синее."
-    },
-    {
-        "id": "word_a1_161",
-        "german": "die Temperatur",
-        "russian": "температура",
-        "pronunciation": "[ди температу́р]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Die Temperatur ist hoch.",
-        "sentence_ru": "Температура высокая."
-    },
-    {
-        "id": "word_a1_162",
-        "german": "der Sommer",
-        "russian": "лето",
-        "pronunciation": "[дер зо́мэр]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Im Sommer ist es warm.",
-        "sentence_ru": "Летом тепло."
-    },
-    {
-        "id": "word_a1_163",
-        "german": "der Winter",
-        "russian": "зима",
-        "pronunciation": "[дер ви́нтэр]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Im Winter ist es kalt.",
-        "sentence_ru": "Зимой холодно."
-    },
-    {
-        "id": "word_a1_164",
-        "german": "der Frühling",
-        "russian": "весна",
-        "pronunciation": "[дер фрю́линг]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Der Frühling ist schön.",
-        "sentence_ru": "Весна прекрасна."
-    },
-    {
-        "id": "word_a1_165",
-        "german": "der Herbst",
-        "russian": "осень",
-        "pronunciation": "[дер херпст]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Der Herbst ist bunt.",
-        "sentence_ru": "Осень разноцветная."
-    },
-    {
-        "id": "word_a1_166",
-        "german": "regnen",
-        "russian": "идти (о дожде)",
-        "pronunciation": "[ре́гнэн]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Es regnet heute.",
-        "sentence_ru": "Сегодня идет дождь."
-    },
-    {
-        "id": "word_a1_167",
-        "german": "scheinen",
-        "russian": "светить",
-        "pronunciation": "[ша́йнэн]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Die Sonne scheint.",
-        "sentence_ru": "Солнце светит."
-    },
-    {
-        "id": "word_a1_168",
-        "german": "schneien",
-        "russian": "идти (о снеге)",
-        "pronunciation": "[шна́йен]",
-        "level": "A1",
-        "theme": "weather",
-        "sentence": "Es schneit im Winter.",
-        "sentence_ru": "Зимой идет снег."
-    },
-    {
-        "id": "word_a1_169",
-        "german": "gut",
-        "russian": "хороший",
-        "pronunciation": "[гут]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das ist sehr gut.",
-        "sentence_ru": "Это очень хорошо."
-    },
-    {
-        "id": "word_a1_170",
-        "german": "schlecht",
-        "russian": "плохой",
-        "pronunciation": "[шлехьт]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das Wetter ist schlecht.",
-        "sentence_ru": "Погода плохая."
-    },
-    {
-        "id": "word_a1_171",
-        "german": "groß",
-        "russian": "большой",
-        "pronunciation": "[грос]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das Haus ist groß.",
-        "sentence_ru": "Дом большой."
-    },
-    {
-        "id": "word_a1_172",
-        "german": "klein",
-        "russian": "маленький",
-        "pronunciation": "[кляйн]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das Auto ist klein.",
-        "sentence_ru": "Машина маленькая."
-    },
-    {
-        "id": "word_a1_173",
-        "german": "neu",
-        "russian": "новый",
-        "pronunciation": "[ной]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Mein Handy ist neu.",
-        "sentence_ru": "Мой телефон новый."
-    },
-    {
-        "id": "word_a1_174",
-        "german": "alt",
-        "russian": "старый",
-        "pronunciation": "[альт]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das Buch ist alt.",
-        "sentence_ru": "Книга старая."
-    },
-    {
-        "id": "word_a1_175",
-        "german": "schön",
-        "russian": "красивый",
-        "pronunciation": "[шён]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Du bist schön.",
-        "sentence_ru": "Ты красивая."
-    },
-    {
-        "id": "word_a1_176",
-        "german": "hässlich",
-        "russian": "уродливый",
-        "pronunciation": "[хе́слихь]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das ist hässlich.",
-        "sentence_ru": "Это уродливо."
-    },
-    {
-        "id": "word_a1_177",
-        "german": "teuer",
-        "russian": "дорогой",
-        "pronunciation": "[то́йер]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das Hotel ist teuer.",
-        "sentence_ru": "Отель дорогой."
-    },
-    {
-        "id": "word_a1_178",
-        "german": "billig",
-        "russian": "дешевый",
-        "pronunciation": "[би́лихь]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das T-Shirt ist billig.",
-        "sentence_ru": "Футболка дешевая."
-    },
-    {
-        "id": "word_a1_179",
-        "german": "schnell",
-        "russian": "быстрый",
-        "pronunciation": "[шнэль]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das Auto fährt schnell.",
-        "sentence_ru": "Машина едет быстро."
-    },
-    {
-        "id": "word_a1_180",
-        "german": "langsam",
-        "russian": "медленный",
-        "pronunciation": "[ла́нгзам]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Die Schnecke ist langsam.",
-        "sentence_ru": "Улитка медленная."
-    },
-    {
-        "id": "word_a1_181",
-        "german": "richtig",
-        "russian": "правильный",
-        "pronunciation": "[ри́хьтихь]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Die Antwort ist richtig.",
-        "sentence_ru": "Ответ правильный."
-    },
-    {
-        "id": "word_a1_182",
-        "german": "falsch",
-        "russian": "неправильный",
-        "pronunciation": "[фальш]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das ist falsch.",
-        "sentence_ru": "Это неправильно."
-    },
-    {
-        "id": "word_a1_183",
-        "german": "glücklich",
-        "russian": "счастливый",
-        "pronunciation": "[глю́клихь]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Ich bin glücklich.",
-        "sentence_ru": "Я счастлив."
-    },
-    {
-        "id": "word_a1_184",
-        "german": "traurig",
-        "russian": "грустный",
-        "pronunciation": "[тра́урихь]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Warum bist du traurig?",
-        "sentence_ru": "Почему ты грустный?"
-    },
-    {
-        "id": "word_a1_185",
-        "german": "müde",
-        "russian": "уставший",
-        "pronunciation": "[мю́дэ]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Ich bin sehr müde.",
-        "sentence_ru": "Я очень устал."
-    },
-    {
-        "id": "word_a1_186",
-        "german": "krank",
-        "russian": "больной",
-        "pronunciation": "[кранк]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Er ist heute krank.",
-        "sentence_ru": "Он сегодня болен."
-    },
-    {
-        "id": "word_a1_187",
-        "german": "gesund",
-        "russian": "здоровый",
-        "pronunciation": "[гезу́нт]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Sie ist wieder gesund.",
-        "sentence_ru": "Она снова здорова."
-    },
-    {
-        "id": "word_a1_188",
-        "german": "frei",
-        "russian": "свободный",
-        "pronunciation": "[фрай]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Der Platz ist frei.",
-        "sentence_ru": "Место свободно."
-    },
-    {
-        "id": "word_a1_189",
-        "german": "besetzt",
-        "russian": "занятый",
-        "pronunciation": "[безэ́цт]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Der Tisch ist besetzt.",
-        "sentence_ru": "Стол занят."
-    },
-    {
-        "id": "word_a1_190",
-        "german": "interessant",
-        "russian": "интересный",
-        "pronunciation": "[интреса́нт]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Das Buch ist interessant.",
-        "sentence_ru": "Книга интересная."
-    },
-    {
-        "id": "word_a1_191",
-        "german": "langweilig",
-        "russian": "скучный",
-        "pronunciation": "[ла́нгвайлихь]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Der Film ist langweilig.",
-        "sentence_ru": "Фильм скучный."
-    },
-    {
-        "id": "word_a1_192",
-        "german": "einfach",
-        "russian": "простой",
-        "pronunciation": "[а́йнфах]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Die Frage ist einfach.",
-        "sentence_ru": "Вопрос простой."
-    },
-    {
-        "id": "word_a1_193",
-        "german": "schwierig",
-        "russian": "сложный",
-        "pronunciation": "[шви́рихь]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Die Aufgabe ist schwierig.",
-        "sentence_ru": "Задание сложное."
-    },
-    {
-        "id": "word_a1_194",
-        "german": "laut",
-        "russian": "громкий",
-        "pronunciation": "[лаут]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Die Musik ist zu laut.",
-        "sentence_ru": "Музыка слишком громкая."
-    },
-    {
-        "id": "word_a1_195",
-        "german": "leise",
-        "russian": "тихий",
-        "pronunciation": "[ля́йзэ]",
-        "level": "A1",
-        "theme": "adjectives",
-        "sentence": "Bitte, seid leise.",
-        "sentence_ru": "Пожалуйста, будьте тихими."
-    }
-]
+{
+    "meta": {
+        "version": "1.0",
+        "level": "A1",
+        "name": "Стандартный курс A1",
+        "themes": {
+            "greetings": "Приветствия и знакомство",
+            "family": "Семья",
+            "food": "Еда и напитки",
+            "city": "Город и транспорт",
+            "home": "Дом и быт",
+            "daily_routine": "Распорядок дня",
+            "clothing": "Одежда и цвета",
+            "time_date": "Время и числа",
+            "weather": "Погода",
+            "adjectives": "Основные прилагательные"
+        }
+    },
+    "words": [
+        {
+            "id": "word_a1_001",
+            "german": "Hallo",
+            "russian": "Привет",
+            "pronunciation": "[хало́]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Hallo, wie geht's?",
+            "sentence_ru": "Привет, как дела?"
+        },
+        {
+            "id": "word_a1_002",
+            "german": "Guten Tag",
+            "russian": "Добрый день",
+            "pronunciation": "[гу́тэн так]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Guten Tag, Herr Schmidt.",
+            "sentence_ru": "Добрый день, господин Шмидт."
+        },
+        {
+            "id": "word_a1_003",
+            "german": "Auf Wiedersehen",
+            "russian": "До свидания",
+            "pronunciation": "[ауф ви́дерзеен]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Auf Wiedersehen, bis morgen.",
+            "sentence_ru": "До свидания, до завтра."
+        },
+        {
+            "id": "word_a1_004",
+            "german": "heißen",
+            "russian": "называться",
+            "pronunciation": "[ха́йсэн]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Ich heiße Anna.",
+            "sentence_ru": "Меня зовут Анна.",
+            "morphemes": [
+                {
+                    "m": "heiß",
+                    "t": "зваться (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_005",
+            "german": "kommen",
+            "russian": "приходить / быть родом",
+            "pronunciation": "[ко́мэн]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Du kommst aus Berlin.",
+            "sentence_ru": "Ты из Берлина.",
+            "morphemes": [
+                {
+                    "m": "komm",
+                    "t": "приходить (основа)"
+                },
+                {
+                    "m": "st",
+                    "t": "окончание (du)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_006",
+            "german": "sein",
+            "russian": "быть",
+            "pronunciation": "[зайн]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Er ist Student.",
+            "sentence_ru": "Он студент."
+        },
+        {
+            "id": "word_a1_007",
+            "german": "der Name",
+            "russian": "имя",
+            "pronunciation": "[дер на́мэ]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Mein Name ist Paul.",
+            "sentence_ru": "Мое имя Пауль."
+        },
+        {
+            "id": "word_a1_008",
+            "german": "sprechen",
+            "russian": "говорить",
+            "pronunciation": "[шпре́хэн]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Sie spricht Deutsch.",
+            "sentence_ru": "Она говорит по-немецки.",
+            "morphemes": [
+                {
+                    "m": "sprich",
+                    "t": "говорить (основа)"
+                },
+                {
+                    "m": "t",
+                    "t": "окончание (sie)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_009",
+            "german": "wohnen",
+            "russian": "проживать",
+            "pronunciation": "[во́нэн]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Wir wohnen hier.",
+            "sentence_ru": "Мы живем здесь.",
+            "morphemes": [
+                {
+                    "m": "wohn",
+                    "t": "жить (основа)"
+                },
+                {
+                    "m": "en",
+                    "t": "окончание (wir)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_010",
+            "german": "die Sprache",
+            "russian": "язык",
+            "pronunciation": "[ди шпра́хэ]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Das ist eine Sprache.",
+            "sentence_ru": "Это один язык."
+        },
+        {
+            "id": "word_a1_011",
+            "german": "danke",
+            "russian": "спасибо",
+            "pronunciation": "[да́нкэ]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Danke für die Hilfe.",
+            "sentence_ru": "Спасибо за помощь."
+        },
+        {
+            "id": "word_a1_012",
+            "german": "bitte",
+            "russian": "пожалуйста",
+            "pronunciation": "[би́тэ]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Bitte, gern geschehen.",
+            "sentence_ru": "Пожалуйста, не за что."
+        },
+        {
+            "id": "word_a1_013",
+            "german": "ja",
+            "russian": "да",
+            "pronunciation": "[я]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Ja, das stimmt.",
+            "sentence_ru": "Да, это верно."
+        },
+        {
+            "id": "word_a1_014",
+            "german": "nein",
+            "russian": "нет",
+            "pronunciation": "[найн]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Nein, das ist falsch.",
+            "sentence_ru": "Нет, это неверно."
+        },
+        {
+            "id": "word_a1_015",
+            "german": "wer",
+            "russian": "кто",
+            "pronunciation": "[вэа]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Wer ist das?",
+            "sentence_ru": "Кто это?"
+        },
+        {
+            "id": "word_a1_016",
+            "german": "was",
+            "russian": "что",
+            "pronunciation": "[вас]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Was ist das?",
+            "sentence_ru": "Что это?"
+        },
+        {
+            "id": "word_a1_017",
+            "german": "wo",
+            "russian": "где",
+            "pronunciation": "[во]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Wo wohnen Sie?",
+            "sentence_ru": "Где Вы живете?"
+        },
+        {
+            "id": "word_a1_018",
+            "german": "woher",
+            "russian": "откуда",
+            "pronunciation": "[вохе́а]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Woher kommst du?",
+            "sentence_ru": "Откуда ты?"
+        },
+        {
+            "id": "word_a1_019",
+            "german": "wie",
+            "russian": "как",
+            "pronunciation": "[ви]",
+            "level": "A1",
+            "theme": "greetings",
+            "sentence": "Wie geht es Ihnen?",
+            "sentence_ru": "Как у Вас дела?"
+        },
+        {
+            "id": "word_a1_020",
+            "german": "die Familie",
+            "russian": "семья",
+            "pronunciation": "[ди фами́лье]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Das ist meine Familie.",
+            "sentence_ru": "Это моя семья."
+        },
+        {
+            "id": "word_a1_021",
+            "german": "der Vater",
+            "russian": "отец",
+            "pronunciation": "[дер фа́тер]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Mein Vater ist Arzt.",
+            "sentence_ru": "Мой отец - врач."
+        },
+        {
+            "id": "word_a1_022",
+            "german": "die Mutter",
+            "russian": "мать",
+            "pronunciation": "[ди му́тер]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Meine Mutter ist hier.",
+            "sentence_ru": "Моя мама здесь."
+        },
+        {
+            "id": "word_a1_023",
+            "german": "die Eltern",
+            "russian": "родители",
+            "pronunciation": "[ди э́льтерн]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Meine Eltern sind nett.",
+            "sentence_ru": "Мои родители милые."
+        },
+        {
+            "id": "word_a1_024",
+            "german": "der Sohn",
+            "russian": "сын",
+            "pronunciation": "[дер зон]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Das ist mein Sohn.",
+            "sentence_ru": "Это мой сын."
+        },
+        {
+            "id": "word_a1_025",
+            "german": "die Tochter",
+            "russian": "дочь",
+            "pronunciation": "[ди то́хтер]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Das ist meine Tochter.",
+            "sentence_ru": "Это моя дочь."
+        },
+        {
+            "id": "word_a1_026",
+            "german": "der Bruder",
+            "russian": "брат",
+            "pronunciation": "[дер бру́дер]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Ich habe einen Bruder.",
+            "sentence_ru": "У меня есть брат."
+        },
+        {
+            "id": "word_a1_027",
+            "german": "die Schwester",
+            "russian": "сестра",
+            "pronunciation": "[ди шве́стер]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Du hast eine Schwester.",
+            "sentence_ru": "У тебя есть сестра."
+        },
+        {
+            "id": "word_a1_028",
+            "german": "der Großvater",
+            "russian": "дедушка",
+            "pronunciation": "[дер гро́сфатер]",
+            "level": "A1",
+            "theme": "family",
+            "morphemes": [
+                {
+                    "m": "Groß",
+                    "t": "старший"
+                },
+                {
+                    "m": "vater",
+                    "t": "отец"
+                }
+            ],
+            "sentence": "Mein Großvater ist alt.",
+            "sentence_ru": "Мой дедушка старый."
+        },
+        {
+            "id": "word_a1_029",
+            "german": "die Großmutter",
+            "russian": "бабушка",
+            "pronunciation": "[ди гро́смутер]",
+            "level": "A1",
+            "theme": "family",
+            "morphemes": [
+                {
+                    "m": "Groß",
+                    "t": "старшая"
+                },
+                {
+                    "m": "mutter",
+                    "t": "мать"
+                }
+            ],
+            "sentence": "Meine Großmutter kocht gut.",
+            "sentence_ru": "Моя бабушка хорошо готовит."
+        },
+        {
+            "id": "word_a1_030",
+            "german": "das Kind",
+            "russian": "ребенок",
+            "pronunciation": "[дас кинд]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Das Kind spielt gern.",
+            "sentence_ru": "Ребенок любит играть."
+        },
+        {
+            "id": "word_a1_031",
+            "german": "der Mann",
+            "russian": "мужчина, муж",
+            "pronunciation": "[дер ман]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Der Mann liest Zeitung.",
+            "sentence_ru": "Мужчина читает газету."
+        },
+        {
+            "id": "word_a1_032",
+            "german": "die Frau",
+            "russian": "женщина, жена",
+            "pronunciation": "[ди фрау]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Die Frau trinkt Kaffee.",
+            "sentence_ru": "Женщина пьет кофе."
+        },
+        {
+            "id": "word_a1_033",
+            "german": "der Freund",
+            "russian": "друг",
+            "pronunciation": "[дер фройнд]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Mein Freund heißt Peter.",
+            "sentence_ru": "Моего друга зовут Петер."
+        },
+        {
+            "id": "word_a1_034",
+            "german": "die Freundin",
+            "russian": "подруга",
+            "pronunciation": "[ди фро́йндин]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Meine Freundin ist hier.",
+            "sentence_ru": "Моя подруга здесь."
+        },
+        {
+            "id": "word_a1_035",
+            "german": "die Leute",
+            "russian": "люди",
+            "pronunciation": "[ди ло́йтэ]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Die Leute sind freundlich.",
+            "sentence_ru": "Люди дружелюбные."
+        },
+        {
+            "id": "word_a1_036",
+            "german": "das Baby",
+            "russian": "младенец",
+            "pronunciation": "[дас бэ́йби]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Das Baby schläft jetzt.",
+            "sentence_ru": "Младенец сейчас спит."
+        },
+        {
+            "id": "word_a1_037",
+            "german": "haben",
+            "russian": "иметь",
+            "pronunciation": "[ха́бэн]",
+            "level": "A1",
+            "theme": "family",
+            "sentence": "Wir haben ein Auto.",
+            "sentence_ru": "У нас есть машина.",
+            "morphemes": [
+                {
+                    "m": "hab",
+                    "t": "иметь (основа)"
+                },
+                {
+                    "m": "en",
+                    "t": "окончание (wir)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_038",
+            "german": "essen",
+            "russian": "есть, кушать",
+            "pronunciation": "[э́сэн]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Ich esse einen Apfel.",
+            "sentence_ru": "Я ем яблоко.",
+            "morphemes": [
+                {
+                    "m": "ess",
+                    "t": "есть (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_039",
+            "german": "trinken",
+            "russian": "пить",
+            "pronunciation": "[три́нкен]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Du trinkst Wasser.",
+            "sentence_ru": "Ты пьешь воду.",
+            "morphemes": [
+                {
+                    "m": "trink",
+                    "t": "пить (основа)"
+                },
+                {
+                    "m": "st",
+                    "t": "окончание (du)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_040",
+            "german": "das Essen",
+            "russian": "еда",
+            "pronunciation": "[дас э́сэн]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Das Essen ist lecker.",
+            "sentence_ru": "Еда вкусная."
+        },
+        {
+            "id": "word_a1_041",
+            "german": "das Wasser",
+            "russian": "вода",
+            "pronunciation": "[дас ва́сэр]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Ich trinke viel Wasser.",
+            "sentence_ru": "Я пью много воды."
+        },
+        {
+            "id": "word_a1_042",
+            "german": "der Tee",
+            "russian": "чай",
+            "pronunciation": "[дер те]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Er trinkt Tee.",
+            "sentence_ru": "Он пьет чай."
+        },
+        {
+            "id": "word_a1_043",
+            "german": "der Kaffee",
+            "russian": "кофе",
+            "pronunciation": "[дер ка́фе]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Sie trinkt Kaffee.",
+            "sentence_ru": "Она пьет кофе."
+        },
+        {
+            "id": "word_a1_044",
+            "german": "die Milch",
+            "russian": "молоко",
+            "pronunciation": "[ди мильхь]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Das Kind trinkt Milch.",
+            "sentence_ru": "Ребенок пьет молоко."
+        },
+        {
+            "id": "word_a1_045",
+            "german": "das Brot",
+            "russian": "хлеб",
+            "pronunciation": "[дас брот]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Wir essen Brot.",
+            "sentence_ru": "Мы едим хлеб."
+        },
+        {
+            "id": "word_a1_046",
+            "german": "der Käse",
+            "russian": "сыр",
+            "pronunciation": "[дер кэ́зэ]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Ich mag Käse.",
+            "sentence_ru": "Я люблю сыр."
+        },
+        {
+            "id": "word_a1_047",
+            "german": "der Fisch",
+            "russian": "рыба",
+            "pronunciation": "[дер фиш]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Er isst gern Fisch.",
+            "sentence_ru": "Он любит есть рыбу."
+        },
+        {
+            "id": "word_a1_048",
+            "german": "das Fleisch",
+            "russian": "мясо",
+            "pronunciation": "[дас фляйш]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Sie isst kein Fleisch.",
+            "sentence_ru": "Она не ест мясо."
+        },
+        {
+            "id": "word_a1_049",
+            "german": "das Obst",
+            "russian": "фрукты",
+            "pronunciation": "[дас опст]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Obst ist gesund.",
+            "sentence_ru": "Фрукты полезны."
+        },
+        {
+            "id": "word_a1_050",
+            "german": "das Gemüse",
+            "russian": "овощи",
+            "pronunciation": "[дас гемю́зэ]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Ich esse viel Gemüse.",
+            "sentence_ru": "Я ем много овощей."
+        },
+        {
+            "id": "word_a1_051",
+            "german": "der Apfel",
+            "russian": "яблоко",
+            "pronunciation": "[дер а́пфэль]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Der Apfel ist rot.",
+            "sentence_ru": "Яблоко красное."
+        },
+        {
+            "id": "word_a1_052",
+            "german": "die Banane",
+            "russian": "банан",
+            "pronunciation": "[ди бана́нэ]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Die Banane ist gelb.",
+            "sentence_ru": "Банан желтый."
+        },
+        {
+            "id": "word_a1_053",
+            "german": "die Kartoffel",
+            "russian": "картофель",
+            "pronunciation": "[ди карто́фэль]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Ich koche eine Kartoffel.",
+            "sentence_ru": "Я варю картофелину."
+        },
+        {
+            "id": "word_a1_054",
+            "german": "der Zucker",
+            "russian": "сахар",
+            "pronunciation": "[дер цу́кер]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Kaffee mit Zucker, bitte.",
+            "sentence_ru": "Кофе с сахаром, пожалуйста."
+        },
+        {
+            "id": "word_a1_055",
+            "german": "das Salz",
+            "russian": "соль",
+            "pronunciation": "[дас зальц]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Gib mir das Salz.",
+            "sentence_ru": "Дай мне соль."
+        },
+        {
+            "id": "word_a1_056",
+            "german": "kaufen",
+            "russian": "покупать",
+            "pronunciation": "[ка́уфэн]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Ich kaufe Brot.",
+            "sentence_ru": "Я покупаю хлеб.",
+            "morphemes": [
+                {
+                    "m": "kauf",
+                    "t": "покупать (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_057",
+            "german": "bezahlen",
+            "russian": "платить",
+            "pronunciation": "[беца́лен]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Wir bezahlen zusammen.",
+            "sentence_ru": "Мы платим вместе.",
+            "morphemes": [
+                {
+                    "m": "bezahl",
+                    "t": "платить (основа)"
+                },
+                {
+                    "m": "en",
+                    "t": "окончание (wir)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_058",
+            "german": "die Rechnung",
+            "russian": "счет",
+            "pronunciation": "[ди ре́хьнунг]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Die Rechnung, bitte.",
+            "sentence_ru": "Счет, пожалуйста."
+        },
+        {
+            "id": "word_a1_059",
+            "german": "der Hunger",
+            "russian": "голод",
+            "pronunciation": "[дер ху́нгер]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Ich habe Hunger.",
+            "sentence_ru": "Я голоден."
+        },
+        {
+            "id": "word_a1_060",
+            "german": "der Durst",
+            "russian": "жажда",
+            "pronunciation": "[дер дурст]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Hast du Durst?",
+            "sentence_ru": "Ты хочешь пить?"
+        },
+        {
+            "id": "word_a1_061",
+            "german": "lecker",
+            "russian": "вкусный",
+            "pronunciation": "[ле́кер]",
+            "level": "A1",
+            "theme": "food",
+            "sentence": "Das Essen ist lecker.",
+            "sentence_ru": "Еда вкусная."
+        },
+        {
+            "id": "word_a1_062",
+            "german": "die Stadt",
+            "russian": "город",
+            "pronunciation": "[ди штат]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Das ist eine Stadt.",
+            "sentence_ru": "Это один город."
+        },
+        {
+            "id": "word_a1_063",
+            "german": "die Straße",
+            "russian": "улица",
+            "pronunciation": "[ди штра́сэ]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Das ist die Hauptstraße.",
+            "sentence_ru": "Это главная улица."
+        },
+        {
+            "id": "word_a1_064",
+            "german": "der Platz",
+            "russian": "площадь",
+            "pronunciation": "[дер плац]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Der Platz ist groß.",
+            "sentence_ru": "Площадь большая."
+        },
+        {
+            "id": "word_a1_065",
+            "german": "das Auto",
+            "russian": "автомобиль",
+            "pronunciation": "[дас а́уто]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Ich habe ein Auto.",
+            "sentence_ru": "У меня есть машина."
+        },
+        {
+            "id": "word_a1_066",
+            "german": "der Bus",
+            "russian": "автобус",
+            "pronunciation": "[дер бус]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Der Bus kommt.",
+            "sentence_ru": "Автобус едет."
+        },
+        {
+            "id": "word_a1_067",
+            "german": "der Zug",
+            "russian": "поезд",
+            "pronunciation": "[дер цук]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Der Zug fährt ab.",
+            "sentence_ru": "Поезд отправляется."
+        },
+        {
+            "id": "word_a1_068",
+            "german": "fahren",
+            "russian": "ехать",
+            "pronunciation": "[фа́рэн]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Er fährt schnell.",
+            "sentence_ru": "Он едет быстро.",
+            "morphemes": [
+                {
+                    "m": "fähr",
+                    "t": "ехать (основа)"
+                },
+                {
+                    "m": "t",
+                    "t": "окончание (er/sie/es)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_069",
+            "german": "gehen",
+            "russian": "идти",
+            "pronunciation": "[ге́ен]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Wir gehen zu Fuß.",
+            "sentence_ru": "Мы идем пешком.",
+            "morphemes": [
+                {
+                    "m": "geh",
+                    "t": "идти (основа)"
+                },
+                {
+                    "m": "en",
+                    "t": "окончание (wir)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_070",
+            "german": "der Bahnhof",
+            "russian": "вокзал",
+            "pronunciation": "[дер ба́нхоф]",
+            "level": "A1",
+            "theme": "city",
+            "morphemes": [
+                {
+                    "m": "Bahn",
+                    "t": "железная дорога"
+                },
+                {
+                    "m": "hof",
+                    "t": "двор"
+                }
+            ],
+            "sentence": "Der Bahnhof ist da.",
+            "sentence_ru": "Вокзал там."
+        },
+        {
+            "id": "word_a1_071",
+            "german": "der Flughafen",
+            "russian": "аэропорт",
+            "pronunciation": "[дер флу́кхафэн]",
+            "level": "A1",
+            "theme": "city",
+            "morphemes": [
+                {
+                    "m": "Flug",
+                    "t": "полет"
+                },
+                {
+                    "m": "hafen",
+                    "t": "порт"
+                }
+            ],
+            "sentence": "Wo ist der Flughafen?",
+            "sentence_ru": "Где аэропорт?"
+        },
+        {
+            "id": "word_a1_072",
+            "german": "das Hotel",
+            "russian": "отель",
+            "pronunciation": "[дас хотэ́ль]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Das Hotel ist teuer.",
+            "sentence_ru": "Отель дорогой."
+        },
+        {
+            "id": "word_a1_073",
+            "german": "das Restaurant",
+            "russian": "ресторан",
+            "pronunciation": "[дас рэстора́н]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Das Restaurant ist gut.",
+            "sentence_ru": "Ресторан хороший."
+        },
+        {
+            "id": "word_a1_074",
+            "german": "die Bank",
+            "russian": "банк",
+            "pronunciation": "[ди банк]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Die Bank ist zu.",
+            "sentence_ru": "Банк закрыт."
+        },
+        {
+            "id": "word_a1_075",
+            "german": "die Post",
+            "russian": "почта",
+            "pronunciation": "[ди пост]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Ich gehe zur Post.",
+            "sentence_ru": "Я иду на почту."
+        },
+        {
+            "id": "word_a1_076",
+            "german": "der Supermarkt",
+            "russian": "супермаркет",
+            "pronunciation": "[дер зу́пермаркт]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Der Supermarkt ist offen.",
+            "sentence_ru": "Супермаркет открыт."
+        },
+        {
+            "id": "word_a1_077",
+            "german": "links",
+            "russian": "налево",
+            "pronunciation": "[линкс]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Gehen Sie nach links.",
+            "sentence_ru": "Идите налево."
+        },
+        {
+            "id": "word_a1_078",
+            "german": "rechts",
+            "russian": "направо",
+            "pronunciation": "[рехьтс]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Fahren Sie nach rechts.",
+            "sentence_ru": "Езжайте направо."
+        },
+        {
+            "id": "word_a1_079",
+            "german": "geradeaus",
+            "russian": "прямо",
+            "pronunciation": "[гера́деаус]",
+            "level": "A1",
+            "theme": "city",
+            "sentence": "Gehen Sie geradeaus.",
+            "sentence_ru": "Идите прямо."
+        },
+        {
+            "id": "word_a1_080",
+            "german": "das Haus",
+            "russian": "дом",
+            "pronunciation": "[дас хаус]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Das ist unser Haus.",
+            "sentence_ru": "Это наш дом."
+        },
+        {
+            "id": "word_a1_081",
+            "german": "die Wohnung",
+            "russian": "квартира",
+            "pronunciation": "[ди во́нунг]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Die Wohnung ist neu.",
+            "sentence_ru": "Квартира новая."
+        },
+        {
+            "id": "word_a1_082",
+            "german": "das Zimmer",
+            "russian": "комната",
+            "pronunciation": "[дас ци́мэр]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Mein Zimmer ist klein.",
+            "sentence_ru": "Моя комната маленькая."
+        },
+        {
+            "id": "word_a1_083",
+            "german": "die Küche",
+            "russian": "кухня",
+            "pronunciation": "[ди кю́хе]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Die Küche ist modern.",
+            "sentence_ru": "Кухня современная."
+        },
+        {
+            "id": "word_a1_084",
+            "german": "das Bad",
+            "russian": "ванная",
+            "pronunciation": "[дас бат]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Das Bad ist sauber.",
+            "sentence_ru": "Ванная чистая."
+        },
+        {
+            "id": "word_a1_085",
+            "german": "das Bett",
+            "russian": "кровать",
+            "pronunciation": "[дас бэт]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Das Bett ist weich.",
+            "sentence_ru": "Кровать мягкая."
+        },
+        {
+            "id": "word_a1_086",
+            "german": "der Tisch",
+            "russian": "стол",
+            "pronunciation": "[дер тиш]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Der Tisch ist aus Holz.",
+            "sentence_ru": "Стол из дерева."
+        },
+        {
+            "id": "word_a1_087",
+            "german": "der Stuhl",
+            "russian": "стул",
+            "pronunciation": "[дер штуль]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Der Stuhl ist bequem.",
+            "sentence_ru": "Стул удобный."
+        },
+        {
+            "id": "word_a1_088",
+            "german": "der Schrank",
+            "russian": "шкаф",
+            "pronunciation": "[дер шранк]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Der Schrank ist groß.",
+            "sentence_ru": "Шкаф большой."
+        },
+        {
+            "id": "word_a1_089",
+            "german": "das Fenster",
+            "russian": "окно",
+            "pronunciation": "[дас фэ́нстер]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Das Fenster ist offen.",
+            "sentence_ru": "Окно открыто."
+        },
+        {
+            "id": "word_a1_090",
+            "german": "die Tür",
+            "russian": "дверь",
+            "pronunciation": "[ди тюр]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Die Tür ist geschlossen.",
+            "sentence_ru": "Дверь закрыта."
+        },
+        {
+            "id": "word_a1_091",
+            "german": "die Lampe",
+            "russian": "лампа",
+            "pronunciation": "[ди ла́мпэ]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Die Lampe ist an.",
+            "sentence_ru": "Лампа включена."
+        },
+        {
+            "id": "word_a1_092",
+            "german": "der Schlüssel",
+            "russian": "ключ",
+            "pronunciation": "[дер шлю́сэль]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Ich habe den Schlüssel.",
+            "sentence_ru": "У меня есть ключ."
+        },
+        {
+            "id": "word_a1_093",
+            "german": "das Sofa",
+            "russian": "диван",
+            "pronunciation": "[дас зо́фа]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Das Sofa ist neu.",
+            "sentence_ru": "Диван новый."
+        },
+        {
+            "id": "word_a1_094",
+            "german": "der Teppich",
+            "russian": "ковер",
+            "pronunciation": "[дер тэ́пихь]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Der Teppich ist weich.",
+            "sentence_ru": "Ковер мягкий."
+        },
+        {
+            "id": "word_a1_095",
+            "german": "die Wand",
+            "russian": "стена",
+            "pronunciation": "[ди вант]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Die Wand ist weiß.",
+            "sentence_ru": "Стена белая."
+        },
+        {
+            "id": "word_a1_096",
+            "german": "der Boden",
+            "russian": "пол",
+            "pronunciation": "[дер бо́дэн]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Der Boden ist sauber.",
+            "sentence_ru": "Пол чистый."
+        },
+        {
+            "id": "word_a1_097",
+            "german": "die Decke",
+            "russian": "потолок / одеяло",
+            "pronunciation": "[ди дэ́кэ]",
+            "level": "A1",
+            "theme": "home",
+            "sentence": "Die Decke ist hoch.",
+            "sentence_ru": "Потолок высокий."
+        },
+        {
+            "id": "word_a1_098",
+            "german": "arbeiten",
+            "russian": "работать",
+            "pronunciation": "[а́рбайтэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Ich arbeite hier.",
+            "sentence_ru": "Я работаю здесь.",
+            "morphemes": [
+                {
+                    "m": "arbeit",
+                    "t": "работать (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_099",
+            "german": "lernen",
+            "russian": "учить",
+            "pronunciation": "[ле́рнэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Du lernst Deutsch.",
+            "sentence_ru": "Ты учишь немецкий.",
+            "morphemes": [
+                {
+                    "m": "lern",
+                    "t": "учить (основа)"
+                },
+                {
+                    "m": "st",
+                    "t": "окончание (du)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_100",
+            "german": "schlafen",
+            "russian": "спать",
+            "pronunciation": "[шла́фэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Er schläft lange.",
+            "sentence_ru": "Он спит долго.",
+            "morphemes": [
+                {
+                    "m": "schläf",
+                    "t": "спать (основа)"
+                },
+                {
+                    "m": "t",
+                    "t": "окончание (er/sie/es)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_101",
+            "german": "kochen",
+            "russian": "готовить (еду)",
+            "pronunciation": "[ко́хэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Sie kocht Suppe.",
+            "sentence_ru": "Она готовит суп.",
+            "morphemes": [
+                {
+                    "m": "koch",
+                    "t": "готовить (основа)"
+                },
+                {
+                    "m": "t",
+                    "t": "окончание (sie)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_102",
+            "german": "lesen",
+            "russian": "читать",
+            "pronunciation": "[ле́зэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Ich lese ein Buch.",
+            "sentence_ru": "Я читаю книгу.",
+            "morphemes": [
+                {
+                    "m": "les",
+                    "t": "читать (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_103",
+            "german": "schreiben",
+            "russian": "писать",
+            "pronunciation": "[шра́йбэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Du schreibst einen Brief.",
+            "sentence_ru": "Ты пишешь письмо.",
+            "morphemes": [
+                {
+                    "m": "schreib",
+                    "t": "писать (основа)"
+                },
+                {
+                    "m": "st",
+                    "t": "окончание (du)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_104",
+            "german": "hören",
+            "russian": "слушать",
+            "pronunciation": "[хёрэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Wir hören Musik.",
+            "sentence_ru": "Мы слушаем музыку.",
+            "morphemes": [
+                {
+                    "m": "hör",
+                    "t": "слушать (основа)"
+                },
+                {
+                    "m": "en",
+                    "t": "окончание (wir)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_105",
+            "german": "sehen",
+            "russian": "видеть, смотреть",
+            "pronunciation": "[зе́ен]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Sie sehen einen Film.",
+            "sentence_ru": "Вы (вежл.) смотрите фильм.",
+            "morphemes": [
+                {
+                    "m": "seh",
+                    "t": "видеть (основа)"
+                },
+                {
+                    "m": "en",
+                    "t": "окончание (Sie)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_106",
+            "german": "machen",
+            "russian": "делать",
+            "pronunciation": "[ма́хэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Ich mache meine Arbeit.",
+            "sentence_ru": "Я делаю свою работу.",
+            "morphemes": [
+                {
+                    "m": "mach",
+                    "t": "делать (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_107",
+            "german": "fragen",
+            "russian": "спрашивать",
+            "pronunciation": "[фра́гэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Er fragt den Lehrer.",
+            "sentence_ru": "Он спрашивает учителя.",
+            "morphemes": [
+                {
+                    "m": "frag",
+                    "t": "спрашивать (основа)"
+                },
+                {
+                    "m": "t",
+                    "t": "окончание (er)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_108",
+            "german": "antworten",
+            "russian": "отвечать",
+            "pronunciation": "[а́нтвортэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Sie antwortet schnell.",
+            "sentence_ru": "Она отвечает быстро.",
+            "morphemes": [
+                {
+                    "m": "antwort",
+                    "t": "отвечать (основа)"
+                },
+                {
+                    "m": "et",
+                    "t": "окончание (sie)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_109",
+            "german": "helfen",
+            "russian": "помогать",
+            "pronunciation": "[хе́льфэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Du hilfst mir.",
+            "sentence_ru": "Ты помогаешь мне.",
+            "morphemes": [
+                {
+                    "m": "hilf",
+                    "t": "помогать (основа)"
+                },
+                {
+                    "m": "st",
+                    "t": "окончание (du)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_110",
+            "german": "suchen",
+            "russian": "искать",
+            "pronunciation": "[зу́хэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Ich suche meinen Schlüssel.",
+            "sentence_ru": "Я ищу свой ключ.",
+            "morphemes": [
+                {
+                    "m": "such",
+                    "t": "искать (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_111",
+            "german": "finden",
+            "russian": "находить",
+            "pronunciation": "[фи́ндэн]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Wir finden den Weg.",
+            "sentence_ru": "Мы находим дорогу.",
+            "morphemes": [
+                {
+                    "m": "find",
+                    "t": "находить (основа)"
+                },
+                {
+                    "m": "en",
+                    "t": "окончание (wir)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_112",
+            "german": "der Morgen",
+            "russian": "утро",
+            "pronunciation": "[дер мо́рген]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Am Morgen trinke ich Kaffee.",
+            "sentence_ru": "Утром я пью кофе."
+        },
+        {
+            "id": "word_a1_113",
+            "german": "der Abend",
+            "russian": "вечер",
+            "pronunciation": "[дер а́бэнт]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Am Abend lese ich.",
+            "sentence_ru": "Вечером я читаю."
+        },
+        {
+            "id": "word_a1_114",
+            "german": "die Nacht",
+            "russian": "ночь",
+            "pronunciation": "[ди нахт]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "In der Nacht schlafe ich.",
+            "sentence_ru": "Ночью я сплю."
+        },
+        {
+            "id": "word_a1_115",
+            "german": "der Tag",
+            "russian": "день",
+            "pronunciation": "[дер так]",
+            "level": "A1",
+            "theme": "daily_routine",
+            "sentence": "Der Tag ist schön.",
+            "sentence_ru": "День прекрасный."
+        },
+        {
+            "id": "word_a1_116",
+            "german": "die Kleidung",
+            "russian": "одежда",
+            "pronunciation": "[ди кля́йдунг]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Das ist neue Kleidung.",
+            "sentence_ru": "Это новая одежда."
+        },
+        {
+            "id": "word_a1_117",
+            "german": "die Hose",
+            "russian": "брюки",
+            "pronunciation": "[ди хо́зэ]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Die Hose ist blau.",
+            "sentence_ru": "Брюки синие."
+        },
+        {
+            "id": "word_a1_118",
+            "german": "das Hemd",
+            "russian": "рубашка",
+            "pronunciation": "[дас хэмт]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Das Hemd ist weiß.",
+            "sentence_ru": "Рубашка белая."
+        },
+        {
+            "id": "word_a1_119",
+            "german": "der Pullover",
+            "russian": "свитер",
+            "pronunciation": "[дер пуло́вэр]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Der Pullover ist warm.",
+            "sentence_ru": "Свитер теплый."
+        },
+        {
+            "id": "word_a1_120",
+            "german": "die Jacke",
+            "russian": "куртка",
+            "pronunciation": "[ди я́кэ]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Die Jacke ist teuer.",
+            "sentence_ru": "Куртка дорогая."
+        },
+        {
+            "id": "word_a1_121",
+            "german": "die Schuhe",
+            "russian": "обувь",
+            "pronunciation": "[ди шу́э]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Die Schuhe sind neu.",
+            "sentence_ru": "Обувь новая."
+        },
+        {
+            "id": "word_a1_122",
+            "german": "der Rock",
+            "russian": "юбка",
+            "pronunciation": "[дер рок]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Der Rock ist kurz.",
+            "sentence_ru": "Юбка короткая."
+        },
+        {
+            "id": "word_a1_123",
+            "german": "das Kleid",
+            "russian": "платье",
+            "pronunciation": "[дас кляйт]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Das Kleid ist schön.",
+            "sentence_ru": "Платье красивое."
+        },
+        {
+            "id": "word_a1_124",
+            "german": "der Hut",
+            "russian": "шляпа",
+            "pronunciation": "[дер хут]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Er trägt einen Hut.",
+            "sentence_ru": "Он носит шляпу."
+        },
+        {
+            "id": "word_a1_125",
+            "german": "die Mütze",
+            "russian": "шапка",
+            "pronunciation": "[ди мю́цэ]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Die Mütze ist rot.",
+            "sentence_ru": "Шапка красная."
+        },
+        {
+            "id": "word_a1_126",
+            "german": "tragen",
+            "russian": "носить (одежду)",
+            "pronunciation": "[тра́гэн]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Ich trage eine Jacke.",
+            "sentence_ru": "Я ношу куртку.",
+            "morphemes": [
+                {
+                    "m": "trag",
+                    "t": "носить (основа)"
+                },
+                {
+                    "m": "e",
+                    "t": "окончание (ich)"
+                }
+            ]
+        },
+        {
+            "id": "word_a1_127",
+            "german": "die Farbe",
+            "russian": "цвет",
+            "pronunciation": "[ди фа́рбэ]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Das ist meine Farbe.",
+            "sentence_ru": "Это мой цвет."
+        },
+        {
+            "id": "word_a1_128",
+            "german": "rot",
+            "russian": "красный",
+            "pronunciation": "[рот]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Das Auto ist rot.",
+            "sentence_ru": "Машина красная."
+        },
+        {
+            "id": "word_a1_129",
+            "german": "blau",
+            "russian": "синий",
+            "pronunciation": "[блау]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Der Himmel ist blau.",
+            "sentence_ru": "Небо синее."
+        },
+        {
+            "id": "word_a1_130",
+            "german": "grün",
+            "russian": "зеленый",
+            "pronunciation": "[грюн]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Das Gras ist grün.",
+            "sentence_ru": "Трава зеленая."
+        },
+        {
+            "id": "word_a1_131",
+            "german": "gelb",
+            "russian": "желтый",
+            "pronunciation": "[гельп]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Die Sonne ist gelb.",
+            "sentence_ru": "Солнце желтое."
+        },
+        {
+            "id": "word_a1_132",
+            "german": "schwarz",
+            "russian": "черный",
+            "pronunciation": "[шварц]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Die Katze ist schwarz.",
+            "sentence_ru": "Кошка черная."
+        },
+        {
+            "id": "word_a1_133",
+            "german": "weiß",
+            "russian": "белый",
+            "pronunciation": "[вайс]",
+            "level": "A1",
+            "theme": "clothing",
+            "sentence": "Der Schnee ist weiß.",
+            "sentence_ru": "Снег белый."
+        },
+        {
+            "id": "word_a1_134",
+            "german": "eins",
+            "russian": "один",
+            "pronunciation": "[айнс]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Ich habe einen Hund.",
+            "sentence_ru": "У меня одна собака."
+        },
+        {
+            "id": "word_a1_135",
+            "german": "zwei",
+            "russian": "два",
+            "pronunciation": "[цвай]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Du hast zwei Katzen.",
+            "sentence_ru": "У тебя две кошки."
+        },
+        {
+            "id": "word_a1_136",
+            "german": "drei",
+            "russian": "три",
+            "pronunciation": "[драй]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Er hat drei Bücher.",
+            "sentence_ru": "У него три книги."
+        },
+        {
+            "id": "word_a1_137",
+            "german": "vier",
+            "russian": "четыре",
+            "pronunciation": "[фир]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Es gibt vier Stühle.",
+            "sentence_ru": "Есть четыре стула."
+        },
+        {
+            "id": "word_a1_138",
+            "german": "fünf",
+            "russian": "пять",
+            "pronunciation": "[фюнф]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Wir sind fünf Personen.",
+            "sentence_ru": "Нас пять человек."
+        },
+        {
+            "id": "word_a1_139",
+            "german": "zehn",
+            "russian": "десять",
+            "pronunciation": "[цен]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Ich habe zehn Finger.",
+            "sentence_ru": "У меня десять пальцев."
+        },
+        {
+            "id": "word_a1_140",
+            "german": "die Zahl",
+            "russian": "число",
+            "pronunciation": "[ди цаль]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Das ist eine Zahl.",
+            "sentence_ru": "Это число."
+        },
+        {
+            "id": "word_a1_141",
+            "german": "die Zeit",
+            "russian": "время",
+            "pronunciation": "[ди цайт]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Ich habe keine Zeit.",
+            "sentence_ru": "У меня нет времени."
+        },
+        {
+            "id": "word_a1_142",
+            "german": "die Uhr",
+            "russian": "час (время на часах)",
+            "pronunciation": "[ди у́а]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Es ist drei Uhr.",
+            "sentence_ru": "Сейчас три часа."
+        },
+        {
+            "id": "word_a1_143",
+            "german": "die Stunde",
+            "russian": "час (60 минут)",
+            "pronunciation": "[ди шту́ндэ]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Ich warte eine Stunde.",
+            "sentence_ru": "Я жду один час."
+        },
+        {
+            "id": "word_a1_144",
+            "german": "die Minute",
+            "russian": "минута",
+            "pronunciation": "[ди мину́тэ]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Warte eine Minute.",
+            "sentence_ru": "Подожди минуту."
+        },
+        {
+            "id": "word_a1_145",
+            "german": "heute",
+            "russian": "сегодня",
+            "pronunciation": "[хо́йтэ]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Heute ist Montag.",
+            "sentence_ru": "Сегодня понедельник."
+        },
+        {
+            "id": "word_a1_146",
+            "german": "morgen",
+            "russian": "завтра",
+            "pronunciation": "[мо́рген]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Morgen ist Dienstag.",
+            "sentence_ru": "Завтра вторник."
+        },
+        {
+            "id": "word_a1_147",
+            "german": "gestern",
+            "russian": "вчера",
+            "pronunciation": "[ге́стерн]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Gestern war Sonntag.",
+            "sentence_ru": "Вчера было воскресенье."
+        },
+        {
+            "id": "word_a1_148",
+            "german": "die Woche",
+            "russian": "неделя",
+            "pronunciation": "[ди во́хэ]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Die Woche hat sieben Tage.",
+            "sentence_ru": "В неделе семь дней."
+        },
+        {
+            "id": "word_a1_149",
+            "german": "der Monat",
+            "russian": "месяц",
+            "pronunciation": "[дер мо́нат]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Der Monat hat 30 Tage.",
+            "sentence_ru": "В месяце 30 дней."
+        },
+        {
+            "id": "word_a1_150",
+            "german": "das Jahr",
+            "russian": "год",
+            "pronunciation": "[дас яр]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Das Jahr ist bald zu Ende.",
+            "sentence_ru": "Год скоро закончится."
+        },
+        {
+            "id": "word_a1_151",
+            "german": "das Datum",
+            "russian": "дата",
+            "pronunciation": "[дас да́тум]",
+            "level": "A1",
+            "theme": "time_date",
+            "sentence": "Was ist das Datum?",
+            "sentence_ru": "Какая сегодня дата?"
+        },
+        {
+            "id": "word_a1_152",
+            "german": "das Wetter",
+            "russian": "погода",
+            "pronunciation": "[дас вэ́тэр]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Das Wetter ist gut.",
+            "sentence_ru": "Погода хорошая."
+        },
+        {
+            "id": "word_a1_153",
+            "german": "die Sonne",
+            "russian": "солнце",
+            "pronunciation": "[ди зо́нэ]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Die Sonne scheint.",
+            "sentence_ru": "Солнце светит."
+        },
+        {
+            "id": "word_a1_154",
+            "german": "der Regen",
+            "russian": "дождь",
+            "pronunciation": "[дер ре́ген]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Es gibt Regen.",
+            "sentence_ru": "Идет дождь."
+        },
+        {
+            "id": "word_a1_155",
+            "german": "der Schnee",
+            "russian": "снег",
+            "pronunciation": "[дер шне]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Ich mag Schnee.",
+            "sentence_ru": "Я люблю снег."
+        },
+        {
+            "id": "word_a1_156",
+            "german": "der Wind",
+            "russian": "ветер",
+            "pronunciation": "[дер винт]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Der Wind ist stark.",
+            "sentence_ru": "Ветер сильный."
+        },
+        {
+            "id": "word_a1_157",
+            "german": "die Wolke",
+            "russian": "облако",
+            "pronunciation": "[ди во́лькэ]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Da ist eine Wolke.",
+            "sentence_ru": "Там облако."
+        },
+        {
+            "id": "word_a1_158",
+            "german": "warm",
+            "russian": "теплый",
+            "pronunciation": "[варм]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Heute ist es warm.",
+            "sentence_ru": "Сегодня тепло."
+        },
+        {
+            "id": "word_a1_159",
+            "german": "kalt",
+            "russian": "холодный",
+            "pronunciation": "[кальт]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Draußen ist es kalt.",
+            "sentence_ru": "На улице холодно."
+        },
+        {
+            "id": "word_a1_160",
+            "german": "der Himmel",
+            "russian": "небо",
+            "pronunciation": "[дер хи́мэль]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Der Himmel ist blau.",
+            "sentence_ru": "Небо синее."
+        },
+        {
+            "id": "word_a1_161",
+            "german": "die Temperatur",
+            "russian": "температура",
+            "pronunciation": "[ди температу́р]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Die Temperatur ist hoch.",
+            "sentence_ru": "Температура высокая."
+        },
+        {
+            "id": "word_a1_162",
+            "german": "der Sommer",
+            "russian": "лето",
+            "pronunciation": "[дер зо́мэр]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Im Sommer ist es warm.",
+            "sentence_ru": "Летом тепло."
+        },
+        {
+            "id": "word_a1_163",
+            "german": "der Winter",
+            "russian": "зима",
+            "pronunciation": "[дер ви́нтэр]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Im Winter ist es kalt.",
+            "sentence_ru": "Зимой холодно."
+        },
+        {
+            "id": "word_a1_164",
+            "german": "der Frühling",
+            "russian": "весна",
+            "pronunciation": "[дер фрю́линг]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Der Frühling ist schön.",
+            "sentence_ru": "Весна прекрасна."
+        },
+        {
+            "id": "word_a1_165",
+            "german": "der Herbst",
+            "russian": "осень",
+            "pronunciation": "[дер херпст]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Der Herbst ist bunt.",
+            "sentence_ru": "Осень разноцветная."
+        },
+        {
+            "id": "word_a1_166",
+            "german": "regnen",
+            "russian": "идти (о дожде)",
+            "pronunciation": "[ре́гнэн]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Es regnet heute.",
+            "sentence_ru": "Сегодня идет дождь."
+        },
+        {
+            "id": "word_a1_167",
+            "german": "scheinen",
+            "russian": "светить",
+            "pronunciation": "[ша́йнэн]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Die Sonne scheint.",
+            "sentence_ru": "Солнце светит."
+        },
+        {
+            "id": "word_a1_168",
+            "german": "schneien",
+            "russian": "идти (о снеге)",
+            "pronunciation": "[шна́йен]",
+            "level": "A1",
+            "theme": "weather",
+            "sentence": "Es schneit im Winter.",
+            "sentence_ru": "Зимой идет снег."
+        },
+        {
+            "id": "word_a1_169",
+            "german": "gut",
+            "russian": "хороший",
+            "pronunciation": "[гут]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das ist sehr gut.",
+            "sentence_ru": "Это очень хорошо."
+        },
+        {
+            "id": "word_a1_170",
+            "german": "schlecht",
+            "russian": "плохой",
+            "pronunciation": "[шлехьт]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das Wetter ist schlecht.",
+            "sentence_ru": "Погода плохая."
+        },
+        {
+            "id": "word_a1_171",
+            "german": "groß",
+            "russian": "большой",
+            "pronunciation": "[грос]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das Haus ist groß.",
+            "sentence_ru": "Дом большой."
+        },
+        {
+            "id": "word_a1_172",
+            "german": "klein",
+            "russian": "маленький",
+            "pronunciation": "[кляйн]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das Auto ist klein.",
+            "sentence_ru": "Машина маленькая."
+        },
+        {
+            "id": "word_a1_173",
+            "german": "neu",
+            "russian": "новый",
+            "pronunciation": "[ной]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Mein Handy ist neu.",
+            "sentence_ru": "Мой телефон новый."
+        },
+        {
+            "id": "word_a1_174",
+            "german": "alt",
+            "russian": "старый",
+            "pronunciation": "[альт]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das Buch ist alt.",
+            "sentence_ru": "Книга старая."
+        },
+        {
+            "id": "word_a1_175",
+            "german": "schön",
+            "russian": "красивый",
+            "pronunciation": "[шён]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Du bist schön.",
+            "sentence_ru": "Ты красивая."
+        },
+        {
+            "id": "word_a1_176",
+            "german": "hässlich",
+            "russian": "уродливый",
+            "pronunciation": "[хе́слихь]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das ist hässlich.",
+            "sentence_ru": "Это уродливо."
+        },
+        {
+            "id": "word_a1_177",
+            "german": "teuer",
+            "russian": "дорогой",
+            "pronunciation": "[то́йер]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das Hotel ist teuer.",
+            "sentence_ru": "Отель дорогой."
+        },
+        {
+            "id": "word_a1_178",
+            "german": "billig",
+            "russian": "дешевый",
+            "pronunciation": "[би́лихь]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das T-Shirt ist billig.",
+            "sentence_ru": "Футболка дешевая."
+        },
+        {
+            "id": "word_a1_179",
+            "german": "schnell",
+            "russian": "быстрый",
+            "pronunciation": "[шнэль]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das Auto fährt schnell.",
+            "sentence_ru": "Машина едет быстро."
+        },
+        {
+            "id": "word_a1_180",
+            "german": "langsam",
+            "russian": "медленный",
+            "pronunciation": "[ла́нгзам]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Die Schnecke ist langsam.",
+            "sentence_ru": "Улитка медленная."
+        },
+        {
+            "id": "word_a1_181",
+            "german": "richtig",
+            "russian": "правильный",
+            "pronunciation": "[ри́хьтихь]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Die Antwort ist richtig.",
+            "sentence_ru": "Ответ правильный."
+        },
+        {
+            "id": "word_a1_182",
+            "german": "falsch",
+            "russian": "неправильный",
+            "pronunciation": "[фальш]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das ist falsch.",
+            "sentence_ru": "Это неправильно."
+        },
+        {
+            "id": "word_a1_183",
+            "german": "glücklich",
+            "russian": "счастливый",
+            "pronunciation": "[глю́клихь]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Ich bin glücklich.",
+            "sentence_ru": "Я счастлив."
+        },
+        {
+            "id": "word_a1_184",
+            "german": "traurig",
+            "russian": "грустный",
+            "pronunciation": "[тра́урихь]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Warum bist du traurig?",
+            "sentence_ru": "Почему ты грустный?"
+        },
+        {
+            "id": "word_a1_185",
+            "german": "müde",
+            "russian": "уставший",
+            "pronunciation": "[мю́дэ]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Ich bin sehr müde.",
+            "sentence_ru": "Я очень устал."
+        },
+        {
+            "id": "word_a1_186",
+            "german": "krank",
+            "russian": "больной",
+            "pronunciation": "[кранк]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Er ist heute krank.",
+            "sentence_ru": "Он сегодня болен."
+        },
+        {
+            "id": "word_a1_187",
+            "german": "gesund",
+            "russian": "здоровый",
+            "pronunciation": "[гезу́нт]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Sie ist wieder gesund.",
+            "sentence_ru": "Она снова здорова."
+        },
+        {
+            "id": "word_a1_188",
+            "german": "frei",
+            "russian": "свободный",
+            "pronunciation": "[фрай]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Der Platz ist frei.",
+            "sentence_ru": "Место свободно."
+        },
+        {
+            "id": "word_a1_189",
+            "german": "besetzt",
+            "russian": "занятый",
+            "pronunciation": "[безэ́цт]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Der Tisch ist besetzt.",
+            "sentence_ru": "Стол занят."
+        },
+        {
+            "id": "word_a1_190",
+            "german": "interessant",
+            "russian": "интересный",
+            "pronunciation": "[интреса́нт]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Das Buch ist interessant.",
+            "sentence_ru": "Книга интересная."
+        },
+        {
+            "id": "word_a1_191",
+            "german": "langweilig",
+            "russian": "скучный",
+            "pronunciation": "[ла́нгвайлихь]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Der Film ist langweilig.",
+            "sentence_ru": "Фильм скучный."
+        },
+        {
+            "id": "word_a1_192",
+            "german": "einfach",
+            "russian": "простой",
+            "pronunciation": "[а́йнфах]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Die Frage ist einfach.",
+            "sentence_ru": "Вопрос простой."
+        },
+        {
+            "id": "word_a1_193",
+            "german": "schwierig",
+            "russian": "сложный",
+            "pronunciation": "[шви́рихь]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Die Aufgabe ist schwierig.",
+            "sentence_ru": "Задание сложное."
+        },
+        {
+            "id": "word_a1_194",
+            "german": "laut",
+            "russian": "громкий",
+            "pronunciation": "[лаут]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Die Musik ist zu laut.",
+            "sentence_ru": "Музыка слишком громкая."
+        },
+        {
+            "id": "word_a1_195",
+            "german": "leise",
+            "russian": "тихий",
+            "pronunciation": "[ля́йзэ]",
+            "level": "A1",
+            "theme": "adjectives",
+            "sentence": "Bitte, seid leise.",
+            "sentence_ru": "Пожалуйста, будьте тихими."
+        }
+    ]
+}
