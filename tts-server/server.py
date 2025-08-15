@@ -1,19 +1,18 @@
-# Файл: tts-server/server.py
-# ВЕРСИЯ 2.3.1 (PEP 8 Compliant):
-# Финальная версия с полным набором метрик, health-чеков,
-# административных эндпоинтов и чистым, профессиональным форматированием.
+# Файл: server.py
+# ВЕРСИЯ 2.3.4 (Final Production):
+# Объединяет простоту 2.3.2, безопасность 2.3.1 и стабильность 2.3.3
+# с полной реализацией всех функций.
 
 import os
 import json
 import hashlib
 import time
 from pathlib import Path
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from gtts import gTTS
 import logging
 import threading
-import queue
 from datetime import datetime, timedelta
 from collections import deque
 import sys
@@ -21,10 +20,16 @@ import atexit
 import signal
 from io import BytesIO
 
-# --- Библиотеки для работы с Google Drive и Limiter ---
-from googleapiclient.discovery import build
-from google.oauth2.service_account import Credentials
-from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
+# --- Библиотеки для работы с Google Drive ---
+try:
+    from googleapiclient.discovery import build
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
+    GDRIVE_AVAILABLE = True
+except ImportError:
+    GDRIVE_AVAILABLE = False
+    logging.warning("Google Drive libraries not available. Running in local-only mode.")
+
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -39,13 +44,21 @@ class Config:
     LOCAL_CACHE_DIR = "/tmp/audio_cache"
     SUPPORTED_LANGUAGES = {'de', 'ru', 'en', 'fr', 'es'}
     MAX_TEXT_LENGTH = 250
+    
+    # Platform detection
+    IS_RENDER = os.getenv('RENDER') == 'true'
+    IS_HEROKU = 'DYNO' in os.environ
+    IS_RAILWAY = 'RAILWAY_ENVIRONMENT' in os.environ
+    IS_CLOUD = IS_RENDER or IS_HEROKU or IS_RAILWAY
 
-# --- Настройка логирования и Flask ---
+# --- Настройка логирования ---
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# --- Flask App ---
 app = Flask(__name__)
 CORS(app, origins=Config.CORS_ORIGINS.split(','))
 limiter = Limiter(
@@ -54,114 +67,181 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"]
 )
 
-# === ДОБАВЛЕНО: Класс для сбора метрик ===
-class SystemMetrics:
+# === Gevent-safe метрики ===
+class ThreadSafeMetrics:
     def __init__(self):
         self.start_time = time.time()
-        self.request_count = 0
-        self.tts_generation_count = 0
-        self.cache_hits = 0
-        self.cache_misses = 0
-        self.gdrive_uploads = 0
-        self.gdrive_downloads = 0
-        self.errors = 0
-        self.lock = threading.Lock()
+        self._data = {
+            'request_count': 0,
+            'tts_generation_count': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'gdrive_uploads': 0,
+            'gdrive_downloads': 0,
+            'errors': 0
+        }
+        self._lock = threading.RLock()
+
+    def _safe_increment(self, key):
+        try:
+            with self._lock:
+                self._data[key] += 1
+        except Exception:
+            # Fallback для случаев конфликта с gevent
+            self._data[key] += 1
 
     def record_request(self):
-        with self.lock:
-            self.request_count += 1
+        self._safe_increment('request_count')
 
     def record_tts_generation(self):
-        with self.lock:
-            self.tts_generation_count += 1
+        self._safe_increment('tts_generation_count')
 
     def record_cache_hit(self):
-        with self.lock:
-            self.cache_hits += 1
+        self._safe_increment('cache_hits')
 
     def record_cache_miss(self):
-        with self.lock:
-            self.cache_misses += 1
+        self._safe_increment('cache_misses')
 
     def record_gdrive_upload(self):
-        with self.lock:
-            self.gdrive_uploads += 1
+        self._safe_increment('gdrive_uploads')
 
     def record_gdrive_download(self):
-        with self.lock:
-            self.gdrive_downloads += 1
+        self._safe_increment('gdrive_downloads')
 
     def record_error(self):
-        with self.lock:
-            self.errors += 1
+        self._safe_increment('errors')
 
     def get_stats(self):
-        with self.lock:
-            uptime = time.time() - self.start_time
-            if (self.cache_hits + self.cache_misses) > 0:
-                hit_rate = (self.cache_hits / (self.cache_hits + self.cache_misses)) * 100
-            else:
-                hit_rate = 0
+        try:
+            with self._lock:
+                data = self._data.copy()
+                uptime = time.time() - self.start_time
+                
+                total_cache_ops = data['cache_hits'] + data['cache_misses']
+                hit_rate = (data['cache_hits'] / total_cache_ops * 100) if total_cache_ops > 0 else 0
 
+                return {
+                    "uptime_seconds": round(uptime, 2),
+                    "requests_total": data['request_count'],
+                    "tts_generations_total": data['tts_generation_count'],
+                    "cache_hit_rate_percent": round(hit_rate, 2),
+                    "cache_hits": data['cache_hits'],
+                    "cache_misses": data['cache_misses'],
+                    "gdrive_uploads": data['gdrive_uploads'],
+                    "gdrive_downloads": data['gdrive_downloads'],
+                    "errors_total": data['errors'],
+                    "requests_per_minute": round((data['request_count'] / uptime) * 60, 2) if uptime > 0 else 0
+                }
+        except Exception as e:
+            logger.error(f"Error getting stats: {e}")
             return {
-                "uptime_seconds": round(uptime, 2),
-                "requests_total": self.request_count,
-                "tts_generations_total": self.tts_generation_count,
-                "cache_hit_rate_percent": round(hit_rate, 2),
-                "cache_hits": self.cache_hits,
-                "cache_misses": self.cache_misses,
-                "gdrive_uploads": self.gdrive_uploads,
-                "gdrive_downloads": self.gdrive_downloads,
-                "errors_total": self.errors,
-                "requests_per_minute": round((self.request_count / uptime) * 60, 2) if uptime > 0 else 0
+                "uptime_seconds": round(time.time() - self.start_time, 2),
+                "error": "Stats collection issue"
             }
 
-# --- Класс кэша с режимом отката (Fallback) ---
-class GDriveCacheWithFallback:
+# === Rate Limiter ===
+class SmartTTSRateLimiter:
+    def __init__(self, max_requests_per_minute=6, max_requests_per_hour=60):
+        self.max_per_minute = max_requests_per_minute
+        self.max_per_hour = max_requests_per_hour
+        self.minute_requests = deque()
+        self.hour_requests = deque()
+        self._lock = threading.RLock()
+
+    def can_make_request(self):
+        try:
+            with self._lock:
+                now = datetime.now()
+                one_minute_ago = now - timedelta(minutes=1)
+                one_hour_ago = now - timedelta(hours=1)
+                
+                while self.minute_requests and self.minute_requests[0] < one_minute_ago:
+                    self.minute_requests.popleft()
+                while self.hour_requests and self.hour_requests[0] < one_hour_ago:
+                    self.hour_requests.popleft()
+
+                if len(self.minute_requests) >= self.max_per_minute:
+                    return False, "minute_limit"
+                if len(self.hour_requests) >= self.max_per_hour:
+                    return False, "hour_limit"
+                return True, "ok"
+        except Exception:
+            # Fallback при проблемах с threading
+            return True, "ok"
+
+    def record_request(self):
+        try:
+            with self._lock:
+                now = datetime.now()
+                self.minute_requests.append(now)
+                self.hour_requests.append(now)
+        except Exception:
+            pass  # Игнорируем ошибки в облачном окружении
+
+# === Google Drive Cache ===
+class GoogleDriveCache:
     def __init__(self):
         self.gdrive_enabled = False
         self.service = None
         self.folder_id = None
         self.file_cache = {}
-        self._initialize()
+        self._init_lock = threading.Lock()
+        self._initialized = False
 
     def _initialize(self):
-        try:
-            if Config.FOLDER_ID and os.path.exists(Config.CREDENTIALS_FILE):
-                creds = Credentials.from_service_account_file(
-                    Config.CREDENTIALS_FILE, scopes=Config.SCOPES
-                )
-                self.service = build('drive', 'v3', credentials=creds)
-                self.folder_id = Config.FOLDER_ID
-                self._populate_initial_cache()
-                self.gdrive_enabled = True
-                logger.info("☁️ [CACHE] Google Drive успешно подключен. Режим: hybrid.")
-            else:
-                logger.warning("⚠️ [CACHE] Google Drive не настроен. Работаем в режиме только локального кэша.")
-        except Exception as e:
-            logger.error(f"❌ [CACHE] Ошибка подключения к Google Drive: {e}")
-            logger.warning("🔄 [CACHE] Переключаемся в режим только локального кэширования.")
+        with self._init_lock:
+            if self._initialized:
+                return
+            
+            if not GDRIVE_AVAILABLE:
+                logger.warning("⚠️ Google Drive libraries not installed. Local-only mode.")
+                self._initialized = True
+                return
+                
+            try:
+                if Config.FOLDER_ID and os.path.exists(Config.CREDENTIALS_FILE):
+                    creds = Credentials.from_service_account_file(
+                        Config.CREDENTIALS_FILE, scopes=Config.SCOPES
+                    )
+                    self.service = build('drive', 'v3', credentials=creds)
+                    self.folder_id = Config.FOLDER_ID
+                    self._populate_cache()
+                    self.gdrive_enabled = True
+                    logger.info("☁️ Google Drive connected successfully")
+                else:
+                    logger.warning("⚠️ Google Drive not configured. Local-only mode.")
+            except Exception as e:
+                logger.error(f"❌ Google Drive initialization error: {e}")
+                logger.info("🔄 Switching to local-only mode")
+            finally:
+                self._initialized = True
 
-    def _populate_initial_cache(self):
-        logger.info("Загрузка списка файлов из Google Диска...")
-        page_token = None
-        while True:
+    def _populate_cache(self):
+        try:
+            logger.info("📥 Loading file list from Google Drive...")
             response = self.service.files().list(
                 q=f"'{self.folder_id}' in parents and trashed=false",
-                fields="nextPageToken, files(id, name)",
-                pageToken=page_token
+                fields="files(id, name)",
+                pageSize=1000
             ).execute()
+            
             for file in response.get('files', []):
                 self.file_cache[file.get('name')] = file.get('id')
-            page_token = response.get('nextPageToken', None)
-            if page_token is None:
-                break
-        logger.info(f"Найдено {len(self.file_cache)} файлов в кэше Google Диска.")
+            
+            logger.info(f"✅ Found {len(self.file_cache)} files in Google Drive cache")
+        except Exception as e:
+            logger.error(f"Error loading cache: {e}")
+
+    def ensure_initialized(self):
+        if not self._initialized:
+            self._initialize()
 
     def check_exists(self, filename):
-        return self.file_cache.get(filename) is not None if self.gdrive_enabled else False
+        self.ensure_initialized()
+        return self.gdrive_enabled and filename in self.file_cache
 
     def upload(self, in_memory_file, filename):
+        self.ensure_initialized()
         if not self.gdrive_enabled:
             return False
         try:
@@ -174,10 +254,11 @@ class GDriveCacheWithFallback:
             self.file_cache[filename] = file.get('id')
             return True
         except Exception as e:
-            logger.error(f"Ошибка загрузки '{filename}' на GDrive: {e}")
+            logger.error(f"Error uploading to GDrive: {e}")
             return False
 
     def download_to_stream(self, filename):
+        self.ensure_initialized()
         if not self.gdrive_enabled:
             return None
         file_id = self.file_cache.get(filename)
@@ -193,65 +274,37 @@ class GDriveCacheWithFallback:
             fh.seek(0)
             return fh
         except Exception as e:
-            logger.error(f"Ошибка скачивания '{filename}' с GDrive: {e}")
+            logger.error(f"Error downloading from GDrive: {e}")
             return None
 
-# --- Класс защиты от Rate Limiting ---
-class SmartTTSRateLimiter:
-    def __init__(self, max_requests_per_minute=6, max_requests_per_hour=60):
-        self.max_per_minute = max_requests_per_minute
-        self.max_per_hour = max_requests_per_hour
-        self.minute_requests = deque()
-        self.hour_requests = deque()
-        self.lock = threading.Lock()
-
-    def can_make_request(self):
-        with self.lock:
-            now = datetime.now()
-            one_minute_ago = now - timedelta(minutes=1)
-            one_hour_ago = now - timedelta(hours=1)
-            while self.minute_requests and self.minute_requests[0] < one_minute_ago:
-                self.minute_requests.popleft()
-            while self.hour_requests and self.hour_requests[0] < one_hour_ago:
-                self.hour_requests.popleft()
-
-            if len(self.minute_requests) >= self.max_per_minute:
-                return False, "minute_limit"
-            if len(self.hour_requests) >= self.max_per_hour:
-                return False, "hour_limit"
-            return True, "ok"
-
-    def record_request(self):
-        with self.lock:
-            self.minute_requests.append(datetime.now())
-            self.hour_requests.append(datetime.now())
-
-# --- Основная логика TTS сервера ---
-class AutoVocabularySystem:
+# === Main TTS System ===
+class TTSSystem:
     def __init__(self):
         self.local_cache_dir = Path(Config.LOCAL_CACHE_DIR)
         os.makedirs(self.local_cache_dir, exist_ok=True)
-        logger.info(f"📁 [LOCAL CACHE] Локальный кэш (Уровень 1) инициализирован в: {self.local_cache_dir}")
-
-        self.gdrive_cache = GDriveCacheWithFallback()
+        
+        self.gdrive_cache = GoogleDriveCache()
         self.tts_limiter = SmartTTSRateLimiter()
         self.failed_generations = {}
+        self.metrics = ThreadSafeMetrics()
+        
+        # Thread-safe TTS lock
         self.gtts_lock = threading.Lock()
-        self.background_thread = threading.Thread(
-            target=self.background_processor, daemon=True
-        )
-        self.initialization_lock = threading.Lock()
+        
+        # Lazy initialization
         self._initialized = False
-        self.metrics = SystemMetrics()
+        self.initialization_lock = threading.Lock()
+        
+        logger.info(f"📁 Local cache initialized: {self.local_cache_dir}")
 
     def ensure_initialized(self):
         with self.initialization_lock:
             if self._initialized:
                 return
-            logger.info("🚀 [INIT] Выполняю отложенную инициализацию...")
-            self.background_thread.start()
+            logger.info("🚀 Performing lazy initialization...")
+            # Initialize heavy components here if needed
             self._initialized = True
-            logger.info("✅ [INIT] Инициализация завершена.")
+            logger.info("✅ Initialization completed")
 
     def _get_text_hash(self, lang, text):
         return hashlib.md5(f"{lang}:{text}".encode('utf-8')).hexdigest()
@@ -260,9 +313,11 @@ class AutoVocabularySystem:
         filename = f"{self._get_text_hash(lang, text)}.mp3"
         local_filepath = self.local_cache_dir / filename
 
+        # Level 1: Local cache
         if local_filepath.exists():
             return True
 
+        # Level 2: Google Drive cache
         if self.gdrive_cache.check_exists(filename):
             try:
                 audio_stream = self.gdrive_cache.download_to_stream(filename)
@@ -270,111 +325,152 @@ class AutoVocabularySystem:
                     self.metrics.record_gdrive_download()
                     with open(local_filepath, "wb") as f:
                         f.write(audio_stream.getbuffer())
+                    logger.info(f"✅ Restored {filename} from Google Drive")
                     return True
             except Exception as e:
-                logger.error(f"Ошибка восстановления из GDrive: {e}")
+                logger.error(f"Error restoring from GDrive: {e}")
 
+        # Check failed generations
         failure_key = f"{lang}:{text}"
         if failure_key in self.failed_generations:
             _, attempt_count = self.failed_generations[failure_key]
             if attempt_count >= 3:
+                logger.info(f"🚫 Skipping after {attempt_count} failures: {text[:30]}...")
                 return False
 
+        # Rate limiting
         can_request, reason = self.tts_limiter.can_make_request()
         if not can_request:
-            logger.warning(f"⏳ [RATE_LIMIT] Пропускаю генерацию из-за {reason}")
+            logger.warning(f"⏳ Rate limit: {reason}")
             return False
 
+        # Level 3: Generation
         try:
             self.tts_limiter.record_request()
             cleaned_text = ''.join(c for c in text if c.isprintable() and c not in '<>&')
             if not cleaned_text.strip():
+                logger.warning(f"Empty text after cleaning: {text}")
                 return False
 
+            # Thread-safe TTS generation
             with self.gtts_lock:
                 tts = gTTS(text=cleaned_text, lang=lang, slow=False)
                 in_memory_file = BytesIO()
                 tts.write_to_fp(in_memory_file)
 
+            # Save locally
             with open(local_filepath, "wb") as f:
                 f.write(in_memory_file.getbuffer())
             self.metrics.record_tts_generation()
 
+            # Upload to GDrive (best effort)
             if self.gdrive_cache.upload(in_memory_file, filename):
                 self.metrics.record_gdrive_upload()
 
+            # Clear failures on success
             if failure_key in self.failed_generations:
                 del self.failed_generations[failure_key]
+
+            logger.info(f"🔊 Generated: {filename}")
             return True
+            
         except Exception as e:
+            # Record failure
             current_attempt = self.failed_generations.get(failure_key, (0, 0))[1] + 1
             self.failed_generations[failure_key] = (time.time(), current_attempt)
             self.metrics.record_error()
+            
             if any(k in str(e).lower() for k in ['quota', 'limit', '429']):
-                logger.error("🚫 [QUOTA] Превышен лимит Google TTS")
+                logger.error("🚫 TTS quota exceeded")
             else:
-                logger.error(f"❌ [TTS] Ошибка генерации {filename}: {e}")
+                logger.error(f"❌ TTS error: {e}")
             return False
 
-    def background_processor(self):
-        logger.info("🔄 [BG_THREAD] Фоновый процессор запущен")
-        # В будущем здесь может быть логика для отложенных задач
+# Initialize global system
+tts_system = TTSSystem()
 
-auto_system = AutoVocabularySystem()
-
-# --- Middleware и обработчики ошибок ---
+# === Middleware ===
 @app.before_request
 def before_request_middleware():
-    auto_system.metrics.record_request()
-    auto_system.ensure_initialized()
-    # Пропускаем проверку для эндпоинтов мониторинга
-    if request.path in ['/health', '/metrics'] or request.path.startswith('/admin'):
+    tts_system.metrics.record_request()
+    tts_system.ensure_initialized()
+    
+    # Skip validation for monitoring endpoints
+    if request.path in ['/health', '/metrics', '/'] or request.path.startswith('/admin'):
         return
-    if request.content_length and request.content_length > 1024 * 1024:  # 1MB limit
+    
+    # Basic request validation
+    if request.content_length and request.content_length > 1024 * 1024:  # 1MB
         return jsonify({"error": "Request too large"}), 413
 
+# === Error Handlers ===
 @app.errorhandler(500)
 def handle_500(e):
-    auto_system.metrics.record_error()
-    logger.error(f"Internal server error: {e}", exc_info=True)
-    return jsonify(error="Internal server error"), 500
+    tts_system.metrics.record_error()
+    logger.error(f"Internal server error: {e}")
+    return jsonify({
+        "error": "Internal server error",
+        "version": "2.3.4"
+    }), 500
 
 @app.errorhandler(404)
 def handle_404(e):
-    auto_system.metrics.record_error()
-    return jsonify(error="Not found"), 404
+    return jsonify({"error": "Not found"}), 404
 
-# --- API Endpoints ---
+@app.errorhandler(413)
+def handle_413(e):
+    return jsonify({"error": "Request too large"}), 413
+
+# === API Endpoints ===
+@app.route('/')
+def index():
+    return jsonify({
+        "service": "TTS Server",
+        "version": "2.3.4-final",
+        "status": "running",
+        "platform": "cloud" if Config.IS_CLOUD else "local",
+        "features": {
+            "google_drive": tts_system.gdrive_cache.gdrive_enabled,
+            "rate_limiting": True,
+            "metrics": True
+        }
+    })
+
 @app.route('/audio/<filename>')
 def serve_audio(filename):
     try:
         if not filename.endswith('.mp3'):
             return jsonify({"error": "Invalid file format"}), 400
 
-        local_filepath = auto_system.local_cache_dir / filename
+        local_filepath = tts_system.local_cache_dir / filename
+        
+        # Check local cache first
         if local_filepath.exists():
-            auto_system.metrics.record_cache_hit()
-            return send_from_directory(str(auto_system.local_cache_dir), filename)
+            tts_system.metrics.record_cache_hit()
+            return send_from_directory(str(tts_system.local_cache_dir), filename)
 
-        auto_system.metrics.record_cache_miss()
-        if auto_system.gdrive_cache.check_exists(filename):
-            audio_stream = auto_system.gdrive_cache.download_to_stream(filename)
+        # Check Google Drive cache
+        tts_system.metrics.record_cache_miss()
+        if tts_system.gdrive_cache.check_exists(filename):
+            audio_stream = tts_system.gdrive_cache.download_to_stream(filename)
             if audio_stream:
-                auto_system.metrics.record_gdrive_download()
+                tts_system.metrics.record_gdrive_download()
                 with open(local_filepath, "wb") as f:
                     f.write(audio_stream.getbuffer())
-                return send_from_directory(str(auto_system.local_cache_dir), filename)
+                return send_from_directory(str(tts_system.local_cache_dir), filename)
 
         return jsonify({"error": "File not found"}), 404
+        
     except Exception as e:
-        auto_system.metrics.record_error()
-        logger.error(f"Ошибка обслуживания {filename}: {e}")
-        return jsonify(error="Server error"), 500
+        tts_system.metrics.record_error()
+        logger.error(f"Error serving {filename}: {e}")
+        return jsonify({"error": "Server error"}), 500
 
 @app.route('/synthesize', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def synthesize_text():
     try:
+        # Parse parameters
         if request.method == 'GET':
             text = request.args.get('text', '').strip()
             lang = request.args.get('lang', 'de').strip()
@@ -383,89 +479,114 @@ def synthesize_text():
             text = data.get('text', '').strip()
             lang = data.get('lang', 'de').strip()
 
+        # Validation
         if not text or not lang:
-            return jsonify(error="Parameters 'text' and 'lang' are required"), 400
+            return jsonify({"error": "Parameters 'text' and 'lang' are required"}), 400
         if len(text) > Config.MAX_TEXT_LENGTH:
-            return jsonify(error=f"Text too long (max {Config.MAX_TEXT_LENGTH})"), 400
+            return jsonify({"error": f"Text too long (max {Config.MAX_TEXT_LENGTH})"}), 400
         if lang not in Config.SUPPORTED_LANGUAGES:
-            return jsonify(error=f"Unsupported language: {lang}"), 400
+            return jsonify({"error": f"Unsupported language: {lang}"}), 400
 
-        if auto_system.generate_audio_sync(lang, text):
-            filename = auto_system._get_text_hash(lang, text) + ".mp3"
-            return jsonify(status="success", url=f"/audio/{filename}")
+        # Generate audio
+        if tts_system.generate_audio_sync(lang, text):
+            filename = tts_system._get_text_hash(lang, text) + ".mp3"
+            return jsonify({
+                "status": "success",
+                "url": f"/audio/{filename}",
+                "cached": tts_system.gdrive_cache.gdrive_enabled
+            })
         else:
-            auto_system.metrics.record_error()
-            return jsonify(error="TTS generation failed"), 503
+            tts_system.metrics.record_error()
+            return jsonify({"error": "TTS generation failed"}), 503
+            
     except Exception as e:
-        auto_system.metrics.record_error()
+        tts_system.metrics.record_error()
         logger.error(f"Error in synthesize: {e}")
-        return jsonify(error="Server error"), 500
+        return jsonify({"error": "Server error"}), 500
 
-# --- Эндпоинты мониторинга и администрирования ---
 @app.route('/health')
 def health_check():
     try:
         components = {
-            "system_initialized": auto_system._initialized,
-            "background_processor_alive": auto_system.background_thread.is_alive(),
-            "local_cache_writable": os.access(auto_system.local_cache_dir, os.W_OK),
-            "gdrive_connected": auto_system.gdrive_cache.gdrive_enabled
+            "system_initialized": tts_system._initialized,
+            "local_cache_writable": os.access(tts_system.local_cache_dir, os.W_OK),
+            "gdrive_connected": tts_system.gdrive_cache.gdrive_enabled
         }
-        is_healthy = all(components.values())
-        return jsonify(status="healthy" if is_healthy else "degraded", components=components), 200 if is_healthy else 503
+        
+        is_healthy = components["system_initialized"] and components["local_cache_writable"]
+        
+        return jsonify({
+            "status": "healthy" if is_healthy else "degraded",
+            "version": "2.3.4-final",
+            "components": components,
+            "platform": "cloud" if Config.IS_CLOUD else "local"
+        }), 200 if is_healthy else 503
+        
     except Exception as e:
-        return jsonify(status="unhealthy", error=str(e)), 500
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e),
+            "version": "2.3.4-final"
+        }), 500
 
 @app.route('/metrics')
 def get_metrics():
     try:
-        stats = auto_system.metrics.get_stats()
-        can_request, reason = auto_system.tts_limiter.can_make_request()
+        stats = tts_system.metrics.get_stats()
+        can_request, reason = tts_system.tts_limiter.can_make_request()
+        
         stats["tts_rate_limit_status"] = {
-            "can_generate": can_request, "reason": reason,
-            "minute_requests": len(auto_system.tts_limiter.minute_requests),
-            "hour_requests": len(auto_system.tts_limiter.hour_requests)
+            "can_generate": can_request,
+            "reason": reason
         }
+        stats["platform"] = "cloud" if Config.IS_CLOUD else "local"
+        stats["version"] = "2.3.4-final"
+        
         return jsonify(stats)
     except Exception as e:
-        return jsonify(error=f"Failed to get metrics: {e}"), 500
+        return jsonify({"error": f"Failed to get metrics: {e}"}), 500
 
 @app.route('/admin/stats')
 def admin_stats():
     if not Config.ADMIN_TOKEN or request.headers.get('X-Admin-Token') != Config.ADMIN_TOKEN:
-        return jsonify(error="Unauthorized"), 401
-    return jsonify(
-        metrics=auto_system.metrics.get_stats(),
-        failed_generations=auto_system.failed_generations
-    )
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    return jsonify({
+        "metrics": tts_system.metrics.get_stats(),
+        "failed_generations": len(tts_system.failed_generations),
+        "failed_details": tts_system.failed_generations,
+        "cache_files": len(list(tts_system.local_cache_dir.glob("*.mp3"))),
+        "gdrive_cache_size": len(tts_system.gdrive_cache.file_cache)
+    })
 
 @app.route('/admin/cleanup', methods=['POST'])
 def admin_cleanup():
     if not Config.ADMIN_TOKEN or request.headers.get('X-Admin-Token') != Config.ADMIN_TOKEN:
-        return jsonify(error="Unauthorized"), 401
-    failed_count = len(auto_system.failed_generations)
-    auto_system.failed_generations.clear()
-    return jsonify(status="cleaned", cleared_failed_generations=failed_count)
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    failed_count = len(tts_system.failed_generations)
+    tts_system.failed_generations.clear()
+    
+    return jsonify({
+        "status": "cleaned",
+        "cleared_failed_generations": failed_count,
+        "timestamp": datetime.now().isoformat()
+    })
 
-# --- Управление запуском и остановкой ---
+# === Environment validation ===
 def validate_environment():
-    warnings = []
-    if not Config.FOLDER_ID:
-        warnings.append("GOOGLE_DRIVE_FOLDER_ID не задан - GDrive будет отключен")
-    if not os.path.exists(Config.CREDENTIALS_FILE):
-        warnings.append(f"{Config.CREDENTIALS_FILE} не найден - GDrive будет отключен")
-    if not Config.ADMIN_TOKEN:
-        warnings.append("ADMIN_TOKEN не задан - админ-эндпоинты будут недоступны")
-    if Config.CORS_ORIGINS == '*':
-        warnings.append("CORS_ORIGINS='*' - рекомендуется ограничить для production")
-    for warning in warnings:
-        logger.warning(f"⚠️ [ENV] {warning}")
+    logger.info("🔍 Environment validation:")
+    logger.info(f"  Platform: {'Cloud' if Config.IS_CLOUD else 'Local'}")
+    logger.info(f"  Google Drive available: {GDRIVE_AVAILABLE}")
+    logger.info(f"  Folder ID: {'Set' if Config.FOLDER_ID else 'Not set'}")
+    logger.info(f"  Credentials: {'Found' if os.path.exists(Config.CREDENTIALS_FILE) else 'Not found'}")
+    logger.info(f"  Admin token: {'Set' if Config.ADMIN_TOKEN else 'Not set'}")
 
+# === Graceful shutdown ===
 def graceful_shutdown():
-    logger.info("🛑 [SHUTDOWN] Инициирована корректная остановка сервера...")
-    auto_system.processing_queue.put(None)
-    auto_system.background_thread.join(timeout=5)
-    logger.info("✅ [SHUTDOWN] Сервер остановлен.")
+    logger.info("🛑 Graceful shutdown initiated...")
+    # No background threads to stop in this version
+    logger.info("✅ Server stopped")
 
 atexit.register(graceful_shutdown)
 signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
@@ -474,7 +595,8 @@ signal.signal(signal.SIGTERM, lambda s, f: sys.exit(0))
 if __name__ == '__main__':
     validate_environment()
     port = int(os.getenv('PORT', 5000))
-    debug = Config.DEBUG
-    logger.info(f"🚀 Запуск TTS сервера v2.3.1 (PEP 8) на порту {port}")
-    logger.info(f"📢 Режим отладки: {debug}")
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    
+    logger.info(f"🚀 Starting TTS Server v2.3.4 on port {port}")
+    logger.info(f"📢 Debug mode: {Config.DEBUG}")
+    
+    app.run(host='0.0.0.0', port=port, debug=Config.DEBUG)
