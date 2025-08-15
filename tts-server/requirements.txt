@@ -1,7 +1,6 @@
 Flask
 Flask-Cors
 gTTS
-watchdog
 Flask-Limiter
 gunicorn
 gevent
