@@ -1,7 +1,6 @@
 # Файл: server.py
-# ВЕРСИЯ 2.3.4 (Final Production):
-# Объединяет простоту 2.3.2, безопасность 2.3.1 и стабильность 2.3.3
-# с полной реализацией всех функций.
+# ВЕРСИЯ 2.3.5 (Final Production + Vocabulary API):
+# Добавлена поддержка раздачи JSON-файлов словарей.
 
 import os
 import json
@@ -51,6 +50,10 @@ class Config:
     IS_RAILWAY = 'RAILWAY_ENVIRONMENT' in os.environ
     IS_CLOUD = IS_RENDER or IS_HEROKU or IS_RAILWAY
 
+    # --- НОВАЯ КОНФИГУРАЦИЯ ---
+    VOCABULARIES_DIR = "vocabularies" # Папка со словарями
+
+
 # --- Настройка логирования ---
 logging.basicConfig(
     level=logging.INFO,
@@ -64,9 +67,16 @@ CORS(app, origins=Config.CORS_ORIGINS.split(','))
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["200 per day", "50 per hour"] # Старые лимиты для TTS
 )
 
+# --- НОВЫЙ ДЕКОРАТОР ДЛЯ ОТКЛЮЧЕНИЯ ЛИМИТОВ ---
+# Мы не хотим ограничивать доступ к словарям
+def no_limit():
+    return "unlimited"
+
+# ... (весь ваш существующий код от ThreadSafeMetrics до TTSSystem остается без изменений) ...
+# ...
 # === Gevent-safe метрики ===
 class ThreadSafeMetrics:
     def __init__(self):
@@ -410,7 +420,7 @@ def handle_500(e):
     logger.error(f"Internal server error: {e}")
     return jsonify({
         "error": "Internal server error",
-        "version": "2.3.4"
+        "version": "2.3.5"
     }), 500
 
 @app.errorhandler(404)
@@ -425,16 +435,71 @@ def handle_413(e):
 @app.route('/')
 def index():
     return jsonify({
-        "service": "TTS Server",
-        "version": "2.3.4-final",
+        "service": "TTS & Vocabulary Server", # Обновили название
+        "version": "2.3.5-final",
         "status": "running",
         "platform": "cloud" if Config.IS_CLOUD else "local",
         "features": {
             "google_drive": tts_system.gdrive_cache.gdrive_enabled,
             "rate_limiting": True,
-            "metrics": True
+            "metrics": True,
+            "vocabulary_api": True # Добавили флаг
         }
     })
+
+# === НОВЫЕ ЭНДПОИНТЫ ДЛЯ СЛОВАРЕЙ ===
+
+@app.route('/api/vocabularies/list')
+@limiter.exempt # Отключаем лимиты для этого эндпоинта
+def list_vocabularies():
+    """
+    Сканирует папку `vocabularies`, находит все .json файлы и возвращает их список
+    в формате, который ожидает фронтенд.
+    """
+    vocab_dir = Config.VOCABULARIES_DIR
+    if not os.path.isdir(vocab_dir):
+        logger.error(f"Vocabulary directory '{vocab_dir}' not found.")
+        return jsonify([]) # Возвращаем пустой список, как ожидает клиент
+
+    vocabularies = []
+    for filename in os.listdir(vocab_dir):
+        if filename.endswith('.json'):
+            try:
+                filepath = os.path.join(vocab_dir, filename)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    word_count = len(data.get('words', []))
+                    vocab_name = filename[:-5] # Убираем .json
+                    vocabularies.append({
+                        "name": vocab_name,
+                        "word_count": word_count
+                    })
+            except Exception as e:
+                logger.error(f"Failed to process vocabulary file {filename}: {e}")
+    
+    return jsonify(vocabularies)
+
+@app.route('/api/vocabulary/<vocab_name>')
+@limiter.exempt # Отключаем лимиты для этого эндпоинта
+def get_vocabulary(vocab_name):
+    """
+    Отдает содержимое конкретного файла словаря.
+    Использует `send_from_directory` для безопасности.
+    """
+    # Простая проверка безопасности, чтобы избежать выхода из директории
+    if ".." in vocab_name or "/" in vocab_name:
+        return jsonify({"error": "Invalid vocabulary name"}), 400
+        
+    filename = f"{vocab_name}.json"
+    vocab_dir = Config.VOCABULARIES_DIR
+
+    if not os.path.exists(os.path.join(vocab_dir, filename)):
+        return jsonify({"error": "Vocabulary not found"}), 404
+
+    return send_from_directory(vocab_dir, filename)
+
+
+# === СУЩЕСТВУЮЩИЕ ЭНДПОИНТЫ ДЛЯ TTS ===
 
 @app.route('/audio/<filename>')
 def serve_audio(filename):
@@ -510,14 +575,15 @@ def health_check():
         components = {
             "system_initialized": tts_system._initialized,
             "local_cache_writable": os.access(tts_system.local_cache_dir, os.W_OK),
-            "gdrive_connected": tts_system.gdrive_cache.gdrive_enabled
+            "gdrive_connected": tts_system.gdrive_cache.gdrive_enabled,
+            "vocabularies_dir_exists": os.path.isdir(Config.VOCABULARIES_DIR) # Новая проверка
         }
         
-        is_healthy = components["system_initialized"] and components["local_cache_writable"]
+        is_healthy = components["system_initialized"] and components["local_cache_writable"] and components["vocabularies_dir_exists"]
         
         return jsonify({
             "status": "healthy" if is_healthy else "degraded",
-            "version": "2.3.4-final",
+            "version": "2.3.5-final",
             "components": components,
             "platform": "cloud" if Config.IS_CLOUD else "local"
         }), 200 if is_healthy else 503
@@ -526,7 +592,7 @@ def health_check():
         return jsonify({
             "status": "unhealthy",
             "error": str(e),
-            "version": "2.3.4-final"
+            "version": "2.3.5-final"
         }), 500
 
 @app.route('/metrics')
@@ -540,7 +606,7 @@ def get_metrics():
             "reason": reason
         }
         stats["platform"] = "cloud" if Config.IS_CLOUD else "local"
-        stats["version"] = "2.3.4-final"
+        stats["version"] = "2.3.5-final"
         
         return jsonify(stats)
     except Exception as e:
@@ -581,6 +647,13 @@ def validate_environment():
     logger.info(f"  Folder ID: {'Set' if Config.FOLDER_ID else 'Not set'}")
     logger.info(f"  Credentials: {'Found' if os.path.exists(Config.CREDENTIALS_FILE) else 'Not found'}")
     logger.info(f"  Admin token: {'Set' if Config.ADMIN_TOKEN else 'Not set'}")
+    # --- НОВАЯ ПРОВЕРКА ---
+    if not os.path.isdir(Config.VOCABULARIES_DIR):
+        logger.warning(f"  ⚠️ Vocabulary directory '{Config.VOCABULARIES_DIR}' not found. Creating it.")
+        os.makedirs(Config.VOCABULARIES_DIR, exist_ok=True)
+    else:
+        logger.info(f"  ✅ Vocabulary directory '{Config.VOCABULARIES_DIR}' found.")
+
 
 # === Graceful shutdown ===
 def graceful_shutdown():
@@ -596,7 +669,7 @@ if __name__ == '__main__':
     validate_environment()
     port = int(os.getenv('PORT', 5000))
     
-    logger.info(f"🚀 Starting TTS Server v2.3.4 on port {port}")
+    logger.info(f"🚀 Starting TTS & Vocabulary Server v2.3.5 on port {port}")
     logger.info(f"📢 Debug mode: {Config.DEBUG}")
     
     app.run(host='0.0.0.0', port=port, debug=Config.DEBUG)
