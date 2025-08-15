@@ -328,6 +328,7 @@ def synthesize_text():
 
 # --- Health Check и остальные админ-роуты (Без изменений) ---
 @app.route('/health')
+@limiter.exempt
 def health_check():
     try:
         components = {"system_initialized": tts_system._initialized, "local_cache_writable": os.access(tts_system.local_cache_dir, os.W_OK), "gdrive_connected": tts_system.gdrive_cache.gdrive_enabled, "vocabularies_dir_exists": os.path.isdir(Config.VOCABULARIES_DIR)}
