@@ -7,18 +7,17 @@ monkey.patch_all()
 
 import os
 
-# === Основные настройки Gunicorn ===
+# === Основные настройки Gunicorn (сохраняем ваши настройки) ===
 # Worker class для gevent
 worker_class = 'gevent'
 
-# Количество worker процессов
-# Для Render.com рекомендуется 2-4 worker'а
-workers = int(os.getenv('GUNICORN_WORKERS', 2))
+# Количество worker процессов (как у вас было)
+workers = 4
 
 # Максимальное количество одновременных соединений на worker
 worker_connections = 1000
 
-# Bind адрес - Render автоматически подставит PORT
+# Bind адрес - используем переменную $PORT как у вас было
 bind = f"0.0.0.0:{os.getenv('PORT', 10000)}"
 
 # === Timeout настройки ===
