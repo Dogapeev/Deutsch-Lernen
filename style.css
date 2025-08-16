@@ -172,7 +172,9 @@ body {
 
 .main-content {
     padding: 40px;
+    /* --- ИЗМЕНЕНИЕ 2: Убираем фиксированную высоту, чтобы избежать наложений --- */
     min-height: 450px;
+    /* Задаем минимальную высоту, чтобы верстка не прыгала */
     background: white;
     display: flex;
     align-items: stretch;
@@ -237,8 +239,10 @@ body {
     transition: gap 3.5s ease-in-out;
 }
 
+/* --- ИЗМЕНЕНИЕ 1: Уменьшаем финальное расстояние между морфемами --- */
 .word.show-morphemes .main-word {
     gap: 0.25em;
+    /* Было 0.5em */
 }
 
 .word .morpheme {
@@ -613,153 +617,6 @@ body {
     stroke-width: 0;
     stroke: currentColor;
     fill: currentColor;
-}
-
-/* --- СТИЛИ ДЛЯ ИНТЕРАКТИВНОЙ КАРТОЧКИ ГЛАГОЛОВ --- */
-
-.grammar-prompt-btn {
-    margin-top: 25px;
-    padding: 8px 16px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    background: #f8f8f8;
-    color: #555;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.grammar-prompt-btn:hover {
-    background: #eee;
-    border-color: #ccc;
-}
-
-.card.grammar-mode {
-    text-align: left;
-    justify-content: flex-start;
-    padding: 20px;
-}
-
-.grammar-back-btn {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    background: none;
-    border: none;
-    font-size: 1rem;
-    color: #888;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.grammar-back-btn:hover {
-    color: #333;
-}
-
-.grammar-header {
-    text-align: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 20px;
-}
-
-.grammar-header .word {
-    font-size: 2.2rem;
-    margin-bottom: 5px;
-}
-
-.grammar-header .translation {
-    font-size: 1.2rem;
-    padding: 0;
-    animation: none;
-}
-
-.grammar-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    margin-bottom: 20px;
-}
-
-.grammar-tab {
-    padding: 8px 14px;
-    border: 1px solid #ddd;
-    background: white;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-}
-
-.grammar-tab.active {
-    background: #333;
-    color: white;
-    border-color: #333;
-    font-weight: 500;
-}
-
-.grammar-content {
-    width: 100%;
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.conjugation-table {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.conjugation-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 4px;
-    background: #f9f9f9;
-}
-
-.conjugation-row .person {
-    color: #888;
-    font-family: monospace;
-    font-size: 1rem;
-}
-
-.conjugation-row .form {
-    font-weight: 500;
-    font-size: 1.1rem;
-}
-
-.verb-stem {
-    color: #333;
-}
-
-.verb-ending {
-    color: #cc0066;
-    font-weight: 600;
-}
-
-.verb-prefix {
-    color: #0066cc;
-    font-weight: 600;
-}
-
-.grammar-formula {
-    background: #f0f7ff;
-    border-left: 3px solid #4a90e2;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-}
-
-.grammar-formula p {
-    margin: 0;
-    line-height: 1.5;
-}
-
-.grammar-formula.single-line {
-    text-align: center;
-    font-size: 1.2rem;
 }
 
 /* --- MOBILE-SPECIFIC STYLES --- */
