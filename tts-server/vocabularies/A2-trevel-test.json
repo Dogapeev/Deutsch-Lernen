@@ -1,0 +1,246 @@
+
+{
+    "meta": {
+        "version": "1.0",
+        "level": "A2",
+        "name": "Путешествия (A2)",
+        "themes": {
+            "travel": "Путешествия"
+        }
+    },
+    "words": [
+        {
+            "id": "word_A2_travel_001",
+            "german": "der Flughafen",
+            "russian": "аэропорт",
+            "pronunciation": "[дер флу́кхафен]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "Flug", "t": "полёт" },
+                { "m": "hafen", "t": "порт, гавань" }
+            ],
+            "sentence": "Wir fahren schnell zum Flughafen.",
+            "sentence_ru": "Мы едем быстро в аэропорт.",
+            "grammar_details": {
+                "type": "noun",
+                "genus": "der",
+                "plural": "die Flughäfen"
+            }
+        },
+        {
+            "id": "word_A2_travel_002",
+            "german": "buchen",
+            "russian": "бронировать",
+            "pronunciation": "[бу́хен]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [],
+            "sentence": "Ich buche ein Zimmer online.",
+            "sentence_ru": "Я бронирую номер онлайн.",
+            "grammar_details": {
+                "type": "verb",
+                "praesens_er": "er bucht",
+                "praeteritum": "buchte",
+                "perfekt": "gebucht",
+                "auxiliary": "haben",
+                "praesens_conjugation": [
+                    { "person": "ich", "form": "buche" },
+                    { "person": "du", "form": "buchst" },
+                    { "person": "er/sie/es", "form": "bucht" },
+                    { "person": "wir", "form": "buchen" },
+                    { "person": "ihr", "form": "bucht" },
+                    { "person": "sie/Sie", "form": "buchen" }
+                ],
+                "konjunktiv_ii_er": "er würde buchen / buchte"
+            }
+        },
+        {
+            "id": "word_A2_travel_003",
+            "german": "die Abfahrt",
+            "russian": "отправление, отъезд",
+            "pronunciation": "[ди а́пфарт]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "ab", "t": "от- (приставка)" },
+                { "m": "fahrt", "t": "поездка" }
+            ],
+            "sentence": "Die Abfahrt ist um zehn Uhr.",
+            "sentence_ru": "Отправление в десять часов.",
+            "grammar_details": {
+                "type": "noun",
+                "genus": "die",
+                "plural": "die Abfahrten"
+            }
+        },
+        {
+            "id": "word_A2_travel_004",
+            "german": "die Ankunft",
+            "russian": "прибытие, приезд",
+            "pronunciation": "[ди а́нкунфт]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "an", "t": "при- (приставка)" },
+                { "m": "kunft", "t": "прибытие" }
+            ],
+            "sentence": "Wir warten auf deine Ankunft.",
+            "sentence_ru": "Мы ждем твоего прибытия.",
+            "grammar_details": {
+                "type": "noun",
+                "genus": "die",
+                "plural": "die Ankünfte"
+            }
+        },
+        {
+            "id": "word_A2_travel_005",
+            "german": "einsteigen",
+            "russian": "входить, садиться (в транспорт)",
+            "pronunciation": "[а́йнштайген]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "ein", "t": "в-, внутрь" },
+                { "m": "steigen", "t": "подниматься" }
+            ],
+            "sentence": "Wir steigen in den Zug ein.",
+            "sentence_ru": "Мы садимся в поезд.",
+            "grammar_details": {
+                "type": "verb",
+                "praesens_er": "er steigt ein",
+                "praeteritum": "stieg ein",
+                "perfekt": "eingestiegen",
+                "auxiliary": "sein",
+                "praesens_conjugation": [
+                    { "person": "ich", "form": "steige ein" },
+                    { "person": "du", "form": "steigst ein" },
+                    { "person": "er/sie/es", "form": "steigt ein" },
+                    { "person": "wir", "form": "steigen ein" },
+                    { "person": "ihr", "form": "steigt ein" },
+                    { "person": "sie/Sie", "form": "steigen ein" }
+                ],
+                "konjunktiv_ii_er": "er würde einsteigen / stiege ein"
+            }
+        },
+        {
+            "id": "word_A2_travel_006",
+            "german": "umsteigen",
+            "russian": "пересаживаться",
+            "pronunciation": "[у́мштайген]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "um", "t": "пере- (приставка)" },
+                { "m": "steigen", "t": "подниматься" }
+            ],
+            "sentence": "In Berlin müssen wir umsteigen.",
+            "sentence_ru": "В Берлине нам нужно пересесть.",
+            "grammar_details": {
+                "type": "verb",
+                "praesens_er": "er steigt um",
+                "praeteritum": "stieg um",
+                "perfekt": "umgestiegen",
+                "auxiliary": "sein",
+                "praesens_conjugation": [
+                    { "person": "ich", "form": "steige um" },
+                    { "person": "du", "form": "steigst um" },
+                    { "person": "er/sie/es", "form": "steigt um" },
+                    { "person": "wir", "form": "steigen um" },
+                    { "person": "ihr", "form": "steigt um" },
+                    { "person": "sie/Sie", "form": "steigen um" }
+                ],
+                "konjunktiv_ii_er": "er würde umsteigen / stiege um"
+            }
+        },
+        {
+            "id": "word_A2_travel_007",
+            "german": "die Unterkunft",
+            "russian": "жилье, ночлег",
+            "pronunciation": "[ди у́нтеркунфт]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "unter", "t": "под, среди" },
+                { "m": "kunft", "t": "прибытие" }
+            ],
+            "sentence": "Die Unterkunft war sehr billig.",
+            "sentence_ru": "Жилье было очень дешевым.",
+            "grammar_details": {
+                "type": "noun",
+                "genus": "die",
+                "plural": "die Unterkünfte"
+            }
+        },
+        {
+            "id": "word_A2_travel_008",
+            "german": "das Gleis",
+            "russian": "путь, платформа (ж/д)",
+            "pronunciation": "[дас гляйс]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [],
+            "sentence": "Der Zug fährt von Gleis fünf.",
+            "sentence_ru": "Поезд отправляется с пятого пути.",
+            "grammar_details": {
+                "type": "noun",
+                "genus": "das",
+                "plural": "die Gleise"
+            }
+        },
+        {
+            "id": "word_A2_travel_009",
+            "german": "abfahren",
+            "russian": "отправляться, отъезжать",
+            "pronunciation": "[а́пфарен]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "ab", "t": "от- (приставка)" },
+                { "m": "fahren", "t": "ехать" }
+            ],
+            "sentence": "Wann fährt der Bus ab?",
+            "sentence_ru": "Когда отправляется автобус?",
+            "grammar_details": {
+                "type": "verb",
+                "praesens_er": "er fährt ab",
+                "praeteritum": "fuhr ab",
+                "perfekt": "abgefahren",
+                "auxiliary": "sein",
+                "praesens_conjugation": [
+                    { "person": "ich", "form": "fahre ab" },
+                    { "person": "du", "form": "fährst ab" },
+                    { "person": "er/sie/es", "form": "fährt ab" },
+                    { "person": "wir", "form": "fahren ab" },
+                    { "person": "ihr", "form": "fahrt ab" },
+                    { "person": "sie/Sie", "form": "fahren ab" }
+                ],
+                "konjunktiv_ii_er": "er würde abfahren / führe ab"
+            }
+        },
+        {
+            "id": "word_A2_travel_010",
+            "german": "pünktlich",
+            "russian": "пунктуальный, вовремя",
+            "pronunciation": "[пю́нктлихь]",
+            "level": "A2",
+            "theme": "travel",
+            "morphemes": [
+                { "m": "Punkt", "t": "точка, пункт" },
+                { "m": "lich", "t": "суффикс прил." }
+            ],
+            "sentence": "Der Zug ist heute pünktlich.",
+            "sentence_ru": "Поезд сегодня пришел вовремя.",
+            "grammar_details": {
+                "type": "adjective",
+                "comparative": "pünktlicher",
+                "superlative": "am pünktlichsten",
+                "declension_examples": [
+                    { "case": "Nominativ", "example": "der pünktliche Bus (der)", "translation": "пунктуальный автобус" },
+                    { "case": "Nominativ", "example": "eine pünktliche Bahn (die)", "translation": "пунктуальная электричка" },
+                    { "case": "Nominativ", "example": "ein pünktliches Taxi (das)", "translation": "пунктуальное такси" }
+                ]
+            }
+        }
+    ]
+}
