@@ -113,9 +113,11 @@ body {
 }
 
 .level-btn:disabled {
-    opacity: 0.5;
+    background: none;
+    border-color: transparent;
+    color: #ccc;
     cursor: not-allowed;
-    background: #f5f5f5;
+    opacity: 1;
 }
 
 
@@ -130,8 +132,6 @@ body {
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;
-    /* justify-content: center; */
-    /* Let it be left-aligned */
 }
 
 
@@ -172,8 +172,9 @@ body {
 
 .main-content {
     padding: 40px;
-    height: 450px;
-    /* FIXED HEIGHT TO PREVENT JITTER */
+    /* --- ИЗМЕНЕНИЕ 2: Убираем фиксированную высоту, чтобы избежать наложений --- */
+    min-height: 450px;
+    /* Задаем минимальную высоту, чтобы верстка не прыгала */
     background: white;
     display: flex;
     align-items: stretch;
@@ -207,7 +208,7 @@ body {
 
 .word-container {
     position: relative;
-    transition: all 1.2s ease-in-out;
+    transition: transform 1.5s ease-in-out;
 }
 
 .word {
@@ -231,42 +232,42 @@ body {
 
 .word .main-word {
     font-weight: 300;
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
     align-items: center;
-    transition: all 1.2s ease-in-out;
+    gap: 0em;
+    transition: gap 3.5s ease-in-out;
+}
+
+/* --- ИЗМЕНЕНИЕ 1: Уменьшаем финальное расстояние между морфемами --- */
+.word.show-morphemes .main-word {
+    gap: 0.25em;
+    /* Было 0.5em */
 }
 
 .word .morpheme {
-    transition: all 1.2s ease-in-out;
+    transition: none;
 }
 
 .word .morpheme-separator {
     opacity: 0;
     transform: scaleX(0);
-    transition: all 1.2s ease-in-out;
+    transition: all 3.5s ease-in-out;
     color: #999;
     font-weight: 400;
-    margin: 0 0.1em;
-}
-
-.morpheme-separator-mobile {
-    display: none;
-    font-weight: 300;
-    color: #ccc;
-    vertical-align: middle;
-}
-
-.morpheme-separator-desktop {
-    display: inline;
-}
-
-.word.show-morphemes .morpheme {
-    margin: 0 0.15em;
 }
 
 .word.show-morphemes .morpheme-separator {
     opacity: 1;
     transform: scaleX(1);
+}
+
+.morpheme-separator-mobile {
+    display: none;
+}
+
+.morpheme-separator-desktop {
+    display: inline;
 }
 
 .word.hide-articles .article {
@@ -295,23 +296,6 @@ body {
 
 .word.das .main-word {
     color: #333;
-}
-
-.morpheme-translations {
-    margin-top: 15px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 1.5em;
-    min-height: 40px;
-}
-
-.morpheme-translations.visible {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 .morpheme-translation-item {
@@ -344,27 +328,13 @@ body {
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    transition: opacity 0.4s ease-in-out;
 }
 
-.level-indicator.a1 {
-    background: #666;
-}
-
-.level-indicator.a2 {
-    background: #888;
-}
-
-.level-indicator.b1 {
-    background: #333;
-}
-
+.level-indicator.a1,
+.level-indicator.a2,
+.level-indicator.b1,
 .level-indicator.b2 {
-    background: #000;
-}
-
-.card.final-phase .word-container {
-    transform: translateY(0) scale(1.0);
+    background: #666;
 }
 
 .word-crossfade {
@@ -392,14 +362,35 @@ body {
     animation: slideInFromBottom 0.6s ease-out;
 }
 
-.translation-appear,
-.sentence-appear {
-    animation: slideInFromBottom 0.6s ease-out;
+.pronunciation,
+#translationContainer,
+#morphemeTranslations,
+#sentenceContainer {
+    transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
-.translation-container,
-.sentence-container {
-    min-height: 50px;
+.pronunciation {
+    max-height: 5em;
+    opacity: 1;
+}
+
+#translationContainer,
+#morphemeTranslations,
+#sentenceContainer {
+    max-height: 0;
+    opacity: 0;
+}
+
+#morphemeTranslations {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.5em;
+    padding: 15px 0;
+}
+
+.translation-container {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -409,15 +400,33 @@ body {
 .translation {
     font-size: 1.6rem;
     color: #666;
-    margin-bottom: 12px;
     font-weight: 400;
+    padding: 25px 0;
+    animation: slideInFromBottom 0.6s ease-out;
 }
 
-.pronunciation {
-    font-size: 1.1rem;
-    color: #999;
-    font-style: italic;
-    font-weight: 300;
+.card.phase-morphemes .pronunciation {
+    max-height: 0;
+    opacity: 0;
+}
+
+.card.phase-morphemes #morphemeTranslations {
+    max-height: 10em;
+    opacity: 1;
+}
+
+.card.phase-sentence #sentenceContainer {
+    max-height: 20em;
+    opacity: 1;
+}
+
+.card.phase-translation #translationContainer {
+    max-height: 10em;
+    opacity: 1;
+}
+
+.card.phase-translation .word-container {
+    transform: translateY(70px);
 }
 
 .sentence {
@@ -551,7 +560,7 @@ body {
     transition: all 0.2s ease;
     color: #666;
     font-size: 0.85rem;
-    min-width: 55px;
+    min-width: 60px;
     text-align: center;
 }
 
@@ -601,32 +610,6 @@ body {
     min-width: 250px;
 }
 
-.hidden-input {
-    display: none;
-}
-
-.no-words {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #999;
-    font-size: 1.1rem;
-    padding: 60px 20px;
-    font-weight: 300;
-}
-
-.status-message {
-    background: #f8f8f8;
-    color: #333;
-    padding: 12px 16px;
-    border-radius: 4px;
-    margin: 12px 0;
-    border: 1px solid #e5e5e5;
-    font-size: 0.85rem;
-}
-
 .icon {
     display: inline-block;
     width: 1em;
@@ -648,7 +631,6 @@ body {
 @media (max-width: 768px) {
     body {
         padding: 0 0 120px;
-        /* Space for fixed controls */
     }
 
     .container {
@@ -676,18 +658,15 @@ body {
         font-size: 1.5rem;
     }
 
-    /* Hide Desktop Elements */
     .header,
     .stats,
     .player-controls-desktop,
-    .vocabulary-manager,
-    .status-message {
+    .vocabulary-manager {
         display: none;
     }
 
     .block-label {
         display: none;
-        /* Hide desktop labels in mobile filter bars */
     }
 
     .header-mobile {
@@ -697,7 +676,6 @@ body {
         border-bottom: 1px solid #e9ecef;
         overflow: hidden;
         max-height: 100px;
-        /* Initial height */
         transition: max-height 0.6s ease-out, padding 0.6s ease-out, border-color 0.6s;
         background: white;
     }
@@ -707,10 +685,6 @@ body {
         padding-top: 0;
         padding-bottom: 0;
         border-color: transparent;
-    }
-
-    .level-selector {
-        margin-top: 0;
     }
 
     .level-selector,
@@ -736,6 +710,10 @@ body {
         color: #6c757d;
     }
 
+    .level-btn:disabled {
+        color: #ced4da;
+    }
+
     .level-btn.active,
     .block-btn.active {
         color: #212529;
@@ -749,20 +727,6 @@ body {
 
     .morpheme-separator-mobile {
         display: inline;
-    }
-
-    .card.sentence-phase {
-        transform: scale(1.02);
-    }
-
-    .card.sentence-phase .word-container {
-        transform: translateY(-35px) scale(1.1);
-        transition: all 1.2s ease-in-out;
-    }
-
-    .card.sentence-phase .level-indicator {
-        opacity: 0;
-        transition: opacity 0.4s ease-in-out;
     }
 
     .player-controls-mobile {
@@ -800,6 +764,12 @@ body {
         height: 52px;
         border-color: #dee2e6;
         color: #6c757d;
+    }
+
+    .player-controls-mobile .player-btn:disabled {
+        border-color: #dee2e6;
+        background: white;
+        color: #ced4da;
     }
 
     .player-controls-mobile .play-pause {
