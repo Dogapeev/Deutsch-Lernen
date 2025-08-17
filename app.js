@@ -1,19 +1,18 @@
-// app.js - Версия 2.9.9 (Polished Animations & Timings)
+// app.js - Версия 3.0.0 (Refined Animation Choreography)
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '2.9.9'; // Обновляем версию
-const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
+const APP_VERSION = '3.0.0'; // Обновляем версию
+const TTS_API_BASE_URL = 'https://deutsch-lernen-blnp.onrender.com';
 // ... (остальные константы) ...
 
-// --- ИЗМЕНЕНИЕ 2: Увеличиваем длительность пауз для комфортного просмотра ---
 const DELAYS = {
     INITIAL_WORD: 500,
     BETWEEN_REPEATS: 1500,
     BEFORE_MORPHEMES: 1500,
-    BEFORE_SENTENCE: 4000,      // Было 2500. Больше времени на просмотр морфем.
-    BEFORE_TRANSLATION: 3000,   // Было 1500. Больше времени на чтение примера.
-    BEFORE_NEXT_WORD: 3000,     // Было 2000. Больше времени на финальный просмотр.
+    BEFORE_SENTENCE: 4000,
+    BEFORE_TRANSLATION: 3000,
+    BEFORE_NEXT_WORD: 3000,
     CARD_FADE_OUT: 750,
     CARD_FADE_IN: 300
 };
@@ -594,8 +593,8 @@ class VocabularyApp {
     renderInitialCard(word) {
         if (!word) { this.showNoWordsMessage(); return; }
         const levelHtml = word.level ? `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>` : '';
-        // --- ИЗМЕНЕНИЕ 1: Изменяем порядок элементов в HTML для правильной анимации ---
-        this.elements.studyArea.innerHTML = `<div class="card card-appear" id="wordCard">${levelHtml}<div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div id="translationContainer" class="translation-container"></div><div id="morphemeTranslations" class="morpheme-translations"></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
+        // --- ИЗМЕНЕНИЕ: Новая HTML структура с контейнером "swappable-area" ---
+        this.elements.studyArea.innerHTML = `<div class="card card-appear" id="wordCard">${levelHtml}<div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div class="swappable-area"><div id="morphemeTranslations" class="morpheme-translations"></div><div id="translationContainer" class="translation-container"></div></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
         document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateUI();
     }
