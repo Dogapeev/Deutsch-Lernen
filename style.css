@@ -361,7 +361,6 @@ body {
 .pronunciation,
 #morphemeTranslations,
 #sentenceContainer {
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность общей анимации с 1.5s до 2.0s */
     transition: all 2.0s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
@@ -380,7 +379,6 @@ body {
 
 #translationContainer {
     overflow: hidden;
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность (0.5s) и задержку (0.7s) */
     transition: max-height 0.5s ease-in 0.7s, opacity 0.5s ease-in 0.7s;
 }
 
@@ -427,13 +425,20 @@ body {
     opacity: 0;
     padding: 0;
     margin: 0;
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность исчезновения до 0.5s */
     transition: all 0.5s ease-out;
 }
 
 .card.phase-translation #translationContainer {
     max-height: 10em;
     opacity: 1;
+}
+
+/* --- НОВОЕ ПРАВИЛО: Подтягиваем предложение вверх в финальной фазе --- */
+.card.phase-translation #sentenceContainer {
+    margin-top: -50px;
+    /* Компенсируем высоту, чтобы сбалансировать карточку */
+    transition: margin-top 0.5s ease-out 0.7s;
+    /* Анимируем сдвиг синхронно с появлением перевода */
 }
 
 .sentence {
