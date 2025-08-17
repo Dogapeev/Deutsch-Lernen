@@ -382,6 +382,16 @@ body {
     transition: max-height 0.5s ease-in 0.7s, opacity 0.5s ease-in 0.7s;
 }
 
+/* --- НОВОЕ ПРАВИЛО: Фиксируем высоту контейнера-переключателя --- */
+.swappable-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+    /* Задаем минимальную высоту, чтобы избежать "подпрыгивания" */
+    transition: all 0.5s ease;
+}
+
 #morphemeTranslations {
     display: flex;
     justify-content: center;
@@ -433,13 +443,7 @@ body {
     opacity: 1;
 }
 
-/* --- НОВОЕ ПРАВИЛО: Подтягиваем предложение вверх в финальной фазе --- */
-.card.phase-translation #sentenceContainer {
-    margin-top: -50px;
-    /* Компенсируем высоту, чтобы сбалансировать карточку */
-    transition: margin-top 0.5s ease-out 0.7s;
-    /* Анимируем сдвиг синхронно с появлением перевода */
-}
+/* --- ПРАВИЛО с margin-top УДАЛЕНО --- */
 
 .sentence {
     font-size: 1.4rem;
