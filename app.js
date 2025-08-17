@@ -1,8 +1,8 @@
-// app.js - Версия 3.0.0 (Refined Animation Choreography)
+// app.js - Версия 4.0.0 (Stable Frame & Final UI)
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '3.0.0'; // Обновляем версию
+const APP_VERSION = '4.0.0'; // Обновляем версию
 const TTS_API_BASE_URL = 'https://deutsch-lernen-blnp.onrender.com';
 // ... (остальные константы) ...
 
@@ -51,7 +51,9 @@ class VocabularyApp {
             showMorphemeTranslations: true,
             showSentences: true,
         };
+        // --- ИЗМЕНЕНИЕ 1: Добавляем 'mainContent' в список элементов для доступа к стабильному фрейму ---
         this.elements = {
+            mainContent: document.getElementById('mainContent'),
             studyArea: document.getElementById('studyArea'),
             totalWords: document.getElementById('totalWords'),
             studiedToday: document.getElementById('studiedToday'),
@@ -590,14 +592,46 @@ class VocabularyApp {
         this.runDisplaySequence(nextWord);
         if (wasAutoPlaying) this.startAutoPlay();
     }
+
+    // --- ИЗМЕНЕНИЕ 2: Полностью переработанный метод для раздельной отрисовки индикатора и карточки ---
     renderInitialCard(word) {
-        if (!word) { this.showNoWordsMessage(); return; }
-        const levelHtml = word.level ? `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>` : '';
-        // --- ИЗМЕНЕНИЕ: Новая HTML структура с контейнером "swappable-area" ---
-        this.elements.studyArea.innerHTML = `<div class="card card-appear" id="wordCard">${levelHtml}<div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div class="swappable-area"><div id="morphemeTranslations" class="morpheme-translations"></div><div id="translationContainer" class="translation-container"></div></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
+        if (!word) {
+            this.showNoWordsMessage();
+            return;
+        }
+
+        // 1. Управляем индикатором отдельно, ВНЕ studyArea
+        // Сначала удаляем старый индикатор, если он есть, из стабильного фрейма
+        this.elements.mainContent.querySelector('.level-indicator')?.remove();
+
+        // Затем создаем и вставляем новый индикатор прямо в mainContent (наш стабильный фрейм)
+        if (word.level) {
+            const levelHtml = `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>`;
+            this.elements.mainContent.insertAdjacentHTML('afterbegin', levelHtml);
+        }
+
+        // 2. Генерируем HTML для карточки УЖЕ БЕЗ ИНДИКАТОРА
+        const cardHtml = `
+            <div class="card card-appear" id="wordCard">
+                <div class="word-container">
+                    ${this.formatGermanWord(word)}
+                    <div class="pronunciation">${word.pronunciation || ''}</div>
+                    <div class="swappable-area">
+                        <div id="morphemeTranslations" class="morpheme-translations"></div>
+                        <div id="translationContainer" class="translation-container"></div>
+                    </div>
+                    <div id="sentenceContainer" class="sentence-container"></div>
+                </div>
+            </div>`;
+
+        // 3. Обновляем ТОЛЬКО studyArea, не затрагивая индикатор
+        this.elements.studyArea.innerHTML = cardHtml;
+
+        // 4. Вешаем обработчик как и раньше
         document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateUI();
     }
+
     displayMorphemesAndTranslations(word) {
         const { showMorphemes, showMorphemeTranslations } = this.state;
         const mainWordElement = document.querySelector('.word .main-word');

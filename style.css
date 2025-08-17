@@ -170,6 +170,7 @@ body {
     margin-right: 8px;
 }
 
+/* --- ИЗМЕНЕНИЕ 1: Делаем .main-content стабильным якорем для индикатора --- */
 .main-content {
     padding: 40px;
     height: 500px;
@@ -177,6 +178,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    /* Теперь это наш якорь! */
 }
 
 #studyArea {
@@ -191,7 +194,7 @@ body {
     padding: 70px 40px 20px;
     text-align: center;
     margin-bottom: 0;
-    position: relative;
+    /* position: relative; -- Убрано */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -313,6 +316,7 @@ body {
     font-style: italic;
 }
 
+/* --- ИЗМЕНЕНИЕ 2: Индикатор теперь привязан к .main-content и всегда наверху --- */
 .level-indicator {
     position: absolute;
     top: 15px;
@@ -324,13 +328,15 @@ body {
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    z-index: 10;
+    /* Гарантирует, что индикатор поверх всего */
 }
 
 .level-indicator.a1,
 .level-indicator.a2,
 .level-indicator.b1,
 .level-indicator.b2 {
-    background: #666;
+    background: #aaa;
 }
 
 .word-crossfade {
@@ -361,7 +367,6 @@ body {
 .pronunciation,
 #morphemeTranslations,
 #sentenceContainer {
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность общей анимации с 1.5s до 2.0s */
     transition: all 2.0s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
@@ -380,7 +385,6 @@ body {
 
 #translationContainer {
     overflow: hidden;
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность (0.5s) и задержку (0.7s) */
     transition: max-height 0.5s ease-in 0.7s, opacity 0.5s ease-in 0.7s;
 }
 
@@ -427,7 +431,6 @@ body {
     opacity: 0;
     padding: 0;
     margin: 0;
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность исчезновения до 0.5s */
     transition: all 0.5s ease-out;
 }
 
