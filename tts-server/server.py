@@ -1,6 +1,7 @@
 # Файл: server.py
-# ВЕРСИЯ 2.5.0 (ID-based TTS requests) - ПОЛНАЯ ВЕРСИЯ
-# Добавлен новый эндпоинт /synthesize_by_id для надежной работы.
+# ВЕРСИЯ 2.5.1 (Pagination Fix):
+# Полностью рабочая версия с исправленной загрузкой полного списка файлов
+# с Google Диска и всеми предыдущими улучшениями.
 
 import os
 import json
@@ -39,7 +40,6 @@ class Config:
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*')
     FOLDER_ID = os.getenv('GOOGLE_DRIVE_FOLDER_ID')
     CREDENTIALS_FILE = 'credentials.json'
-    # --- ИЗМЕНЕНИЕ: Используем права только на чтение, это безопаснее ---
     SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
     LOCAL_CACHE_DIR = "/tmp/audio_cache"
     SUPPORTED_LANGUAGES = {'de', 'ru', 'en', 'fr', 'es'}
@@ -47,23 +47,17 @@ class Config:
     IS_RENDER = os.getenv('RENDER') == 'true'
     VOCABULARIES_DIR = "vocabularies"
 
-
-# --- Настройка логирования ---
+# --- Настройка логирования и Flask ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-# --- Flask App ---
 app = Flask(__name__)
 CORS(app, origins=Config.CORS_ORIGINS.split(','))
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
 
-
-# --- Gevent-safe метрики (Без изменений) ---
+# --- Классы метрик, Rate Limiter (без изменений) ---
 class ThreadSafeMetrics:
     def __init__(self):
-        self.start_time = time.time()
-        self._data = {'request_count': 0, 'tts_generation_count': 0, 'cache_hits': 0, 'cache_misses': 0, 'gdrive_uploads': 0, 'gdrive_downloads': 0, 'errors': 0}
-        self._lock = threading.RLock()
+        self.start_time = time.time(); self._data = {'request_count': 0, 'tts_generation_count': 0, 'cache_hits': 0, 'cache_misses': 0, 'gdrive_uploads': 0, 'gdrive_downloads': 0, 'errors': 0}; self._lock = threading.RLock()
     def _safe_increment(self, key):
         try:
             with self._lock: self._data[key] += 1
@@ -78,16 +72,13 @@ class ThreadSafeMetrics:
     def get_stats(self):
         try:
             with self._lock:
-                data = self._data.copy()
-                uptime = time.time() - self.start_time
+                data = self._data.copy(); uptime = time.time() - self.start_time
                 total_cache_ops = data['cache_hits'] + data['cache_misses']
                 hit_rate = (data['cache_hits'] / total_cache_ops * 100) if total_cache_ops > 0 else 0
                 return {"uptime_seconds": round(uptime, 2), "requests_total": data['request_count'], "tts_generations_total": data['tts_generation_count'], "cache_hit_rate_percent": round(hit_rate, 2), "cache_hits": data['cache_hits'], "cache_misses": data['cache_misses'], "gdrive_uploads": data['gdrive_uploads'], "gdrive_downloads": data['gdrive_downloads'], "errors_total": data['errors'], "requests_per_minute": round((data['request_count'] / uptime) * 60, 2) if uptime > 0 else 0}
         except Exception as e:
-            logger.error(f"Error getting stats: {e}")
-            return {"uptime_seconds": round(time.time() - self.start_time, 2), "error": "Stats collection issue"}
+            logger.error(f"Error getting stats: {e}"); return {"uptime_seconds": round(time.time() - self.start_time, 2), "error": "Stats collection issue"}
 
-# --- Rate Limiter (Без изменений) ---
 class SmartTTSRateLimiter:
     def __init__(self, max_requests_per_minute=6, max_requests_per_hour=60):
         self.max_per_minute = max_requests_per_minute; self.max_per_hour = max_requests_per_hour; self.minute_requests = deque(); self.hour_requests = deque(); self._lock = threading.RLock()
@@ -106,10 +97,11 @@ class SmartTTSRateLimiter:
             with self._lock: now = datetime.now(); self.minute_requests.append(now); self.hour_requests.append(now)
         except Exception: pass
 
-# --- Google Drive Cache (Без изменений) ---
+# --- Google Drive Cache с ИСПРАВЛЕННЫМ _populate_cache ---
 class GoogleDriveCache:
     def __init__(self):
         self.gdrive_enabled = False; self.service = None; self.folder_id = None; self.file_cache = {}; self._init_lock = threading.Lock(); self._initialized = False
+    
     def _initialize(self):
         with self._init_lock:
             if self._initialized: return
@@ -119,24 +111,53 @@ class GoogleDriveCache:
                     creds = Credentials.from_service_account_file(Config.CREDENTIALS_FILE, scopes=Config.SCOPES)
                     self.service = build('drive', 'v3', credentials=creds)
                     self.folder_id = Config.FOLDER_ID
-                    self._populate_cache()
+                    self._populate_cache() # Вызов исправленного метода
                     self.gdrive_enabled = True; logger.info("☁️ Google Drive connected successfully")
                 else: logger.warning("⚠️ Google Drive not configured. Local-only mode.")
             except Exception as e: logger.error(f"❌ Google Drive initialization error: {e}"); logger.info("🔄 Switching to local-only mode")
             finally: self._initialized = True
+    
+    # === ИСПРАВЛЕННЫЙ МЕТОД С ПАГИНАЦИЕЙ ===
     def _populate_cache(self):
+        """Загружает ПОЛНЫЙ список файлов с Google Диска, используя пагинацию."""
         try:
-            logger.info("📥 Loading file list from Google Drive...")
-            response = self.service.files().list(q=f"'{self.folder_id}' in parents and trashed=false", fields="files(id, name)", pageSize=1000).execute()
-            for file in response.get('files', []): self.file_cache[file.get('name')] = file.get('id')
-            logger.info(f"✅ Found {len(self.file_cache)} files in Google Drive cache")
-        except Exception as e: logger.error(f"Error loading cache: {e}")
+            logger.info("📥 Loading FULL file list from Google Drive (with pagination)...")
+            page_token = None
+            # Начинаем цикл, который будет работать, пока есть страницы
+            while True:
+                response = self.service.files().list(
+                    q=f"'{self.folder_id}' in parents and trashed=false",
+                    fields="nextPageToken, files(id, name)", # Добавляем nextPageToken в поля
+                    pageSize=1000, # Получаем по 1000 за раз
+                    pageToken=page_token # Передаем токен предыдущей страницы
+                ).execute()
+                
+                for file in response.get('files', []):
+                    self.file_cache[file.get('name')] = file.get('id')
+                
+                # Получаем токен для СЛЕДУЮЩЕЙ страницы
+                page_token = response.get('nextPageToken', None)
+                
+                # Если токена нет, значит, это последняя страница, выходим из цикла
+                if page_token is None:
+                    break
+                    
+                logger.info(f"    ... found {len(self.file_cache)} files, loading next page...")
+
+            logger.info(f"✅ Found a total of {len(self.file_cache)} files in Google Drive cache")
+
+        except Exception as e:
+            logger.error(f"Error loading cache with pagination: {e}")
+
     def ensure_initialized(self):
         if not self._initialized: self._initialize()
+
     def check_exists(self, filename):
         self.ensure_initialized(); return self.gdrive_enabled and filename in self.file_cache
+
     def upload(self, in_memory_file, filename):
         logger.error(f"FATAL: Attempted to call upload() for {filename} from production server. This is not allowed."); return False
+
     def download_to_stream(self, filename):
         self.ensure_initialized();
         if not self.gdrive_enabled: return None
@@ -152,7 +173,7 @@ class GoogleDriveCache:
             return fh
         except Exception as e: logger.error(f"Error downloading from GDrive: {e}"); return None
 
-# --- Main TTS System (Без изменений) ---
+# --- Main TTS System (без изменений) ---
 class TTSSystem:
     def __init__(self):
         self.local_cache_dir = Path(Config.LOCAL_CACHE_DIR); os.makedirs(self.local_cache_dir, exist_ok=True)
@@ -196,32 +217,25 @@ class TTSSystem:
             else: logger.error(f"❌ TTS error: {e}")
             return False
 
-# --- НОВОЕ: Кэш для словарей и функции поиска ---
+# --- Кэш для словарей и функции поиска (без изменений) ---
 vocabulary_cache = {}
 vocab_cache_lock = threading.Lock()
-
 def find_word_in_vocab(vocab_name, word_id):
-    """Находит слово по ID в конкретном, уже кэшированном словаре."""
     with vocab_cache_lock:
         if vocab_name not in vocabulary_cache:
             filepath = os.path.join(Config.VOCABULARIES_DIR, f"{vocab_name}.json")
-            if not os.path.exists(filepath):
-                logger.error(f"Vocabulary file not found: {filepath}")
-                return None
+            if not os.path.exists(filepath): logger.error(f"Vocabulary file not found: {filepath}"); return None
             try:
                 logger.info(f"Loading and caching vocabulary: {vocab_name}")
                 with open(filepath, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     vocabulary_cache[vocab_name] = {word['id']: word for word in data.get('words', [])}
-            except Exception as e:
-                logger.error(f"Failed to load vocabulary {vocab_name}: {e}")
-                vocabulary_cache[vocab_name] = {} # Помечаем, чтобы не пытаться снова
+            except Exception as e: logger.error(f"Failed to load vocabulary {vocab_name}: {e}"); vocabulary_cache[vocab_name] = {}
         return vocabulary_cache[vocab_name].get(word_id)
-
 
 tts_system = TTSSystem()
 
-# --- Middleware, Error Handlers и т.д. (Без изменений) ---
+# --- Middleware, Error Handlers, Endpoints (без изменений) ---
 @app.before_request
 def before_request_middleware(): tts_system.metrics.record_request(); tts_system.ensure_initialized()
 @app.errorhandler(500)
@@ -231,7 +245,7 @@ def handle_404(e): return jsonify({"error": "Not found"}), 404
 @app.errorhandler(413)
 def handle_413(e): return jsonify({"error": "Request too large"}), 413
 @app.route('/')
-def index(): return jsonify({"service": "TTS & Vocabulary Server", "version": "2.5.0-final"})
+def index(): return jsonify({"service": "TTS & Vocabulary Server", "version": "2.5.1-pagination-fix"})
 @app.route('/api/vocabularies/list')
 @limiter.exempt
 def list_vocabularies():
@@ -269,52 +283,30 @@ def serve_audio(filename):
                 return send_from_directory(str(tts_system.local_cache_dir), filename)
         return jsonify({"error": "File not found"}), 404
     except Exception as e: tts_system.metrics.record_error(); logger.error(f"Error serving {filename}: {e}"); return jsonify({"error": "Server error"}), 500
-
-# --- НОВЫЙ ЭНДПОИНТ для работы по ID ---
 @app.route('/synthesize_by_id', methods=['GET'])
 @limiter.exempt
 def synthesize_by_id():
-    word_id = request.args.get('id')
-    part = request.args.get('part')
-    vocab_name = request.args.get('vocab')
-    
-    if not all([word_id, part, vocab_name]):
-        return jsonify({"error": "Parameters 'id', 'part', and 'vocab' are required"}), 400
-
+    word_id = request.args.get('id'); part = request.args.get('part'); vocab_name = request.args.get('vocab')
+    if not all([word_id, part, vocab_name]): return jsonify({"error": "Parameters 'id', 'part', and 'vocab' are required"}), 400
     word_data = find_word_in_vocab(vocab_name, word_id)
-
-    if not word_data:
-        return jsonify({"error": f"Word with id {word_id} not found in vocabulary {vocab_name}"}), 404
-
+    if not word_data: return jsonify({"error": f"Word with id {word_id} not found in vocabulary {vocab_name}"}), 404
     text_to_speak, lang = "", ""
-    if part == 'german':
-        text_to_speak, lang = word_data.get('german'), 'de'
-    elif part == 'russian':
-        text_to_speak, lang = word_data.get('russian'), 'ru'
-    elif part == 'sentence':
-        text_to_speak, lang = word_data.get('sentence'), 'de'
-
-    if not text_to_speak or not lang:
-        return jsonify({"error": f"Part '{part}' not found for word {word_id}"}), 404
-    
+    if part == 'german': text_to_speak, lang = word_data.get('german'), 'de'
+    elif part == 'russian': text_to_speak, lang = word_data.get('russian'), 'ru'
+    elif part == 'sentence': text_to_speak, lang = word_data.get('sentence'), 'de'
+    if not text_to_speak or not lang: return jsonify({"error": f"Part '{part}' not found for word {word_id}"}), 404
     logger.info(f"🎤 ID Synthesis request | ID: {word_id} | Part: {part} | Text: '{text_to_speak}'")
-
     if tts_system.generate_audio_sync(lang, text_to_speak):
         filename = tts_system._get_text_hash(lang, text_to_speak) + ".mp3"
         return jsonify({"status": "success", "url": f"/audio/{filename}"})
-    else:
-        return jsonify({"error": "TTS generation failed or file not in cache"}), 503
-
-# --- Старый эндпоинт /synthesize (остается на месте) ---
+    else: return jsonify({"error": "TTS generation failed or file not in cache"}), 503
 @app.route('/synthesize', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def synthesize_text():
     logger.warning("Legacy /synthesize endpoint was called. Client should be updated to use /synthesize_by_id.")
     try:
-        if request.method == 'GET':
-            text = request.args.get('text', '').strip(); lang = request.args.get('lang', 'de').strip()
-        else:
-            data = request.json or {}; text = data.get('text', '').strip(); lang = data.get('lang', 'de').strip()
+        if request.method == 'GET': text, lang = request.args.get('text', '').strip(), request.args.get('lang', 'de').strip()
+        else: data = request.json or {}; text, lang = data.get('text', '').strip(), data.get('lang', 'de').strip()
         if not text or not lang: return jsonify({"error": "Parameters 'text' and 'lang' are required"}), 400
         if len(text) > Config.MAX_TEXT_LENGTH: return jsonify({"error": f"Text too long (max {Config.MAX_TEXT_LENGTH})"}), 400
         if lang not in Config.SUPPORTED_LANGUAGES: return jsonify({"error": f"Unsupported language: {lang}"}), 400
@@ -323,24 +315,20 @@ def synthesize_text():
             return jsonify({"status": "success", "url": f"/audio/{filename}", "cached": tts_system.gdrive_cache.gdrive_enabled})
         else:
             tts_system.metrics.record_error(); return jsonify({"error": "TTS generation failed"}), 503
-    except Exception as e:
-        tts_system.metrics.record_error(); logger.error(f"Error in legacy /synthesize: {e}"); return jsonify({"error": "Server error"}), 500
-
-# --- Health Check и остальные админ-роуты (Без изменений) ---
+    except Exception as e: tts_system.metrics.record_error(); logger.error(f"Error in legacy /synthesize: {e}"); return jsonify({"error": "Server error"}), 500
 @app.route('/health')
 @limiter.exempt
 def health_check():
     try:
         components = {"system_initialized": tts_system._initialized, "local_cache_writable": os.access(tts_system.local_cache_dir, os.W_OK), "gdrive_connected": tts_system.gdrive_cache.gdrive_enabled, "vocabularies_dir_exists": os.path.isdir(Config.VOCABULARIES_DIR)}
-        is_healthy = components["system_initialized"] and components["local_cache_writable"] and components["vocabularies_dir_exists"]
-        return jsonify({"status": "healthy" if is_healthy else "degraded", "version": "2.5.0-final", "components": components}), 200 if is_healthy else 503
+        is_healthy = all(components.values())
+        return jsonify({"status": "healthy" if is_healthy else "degraded", "version": "2.5.1-pagination-fix", "components": components}), 200 if is_healthy else 503
     except Exception as e: return jsonify({"status": "unhealthy", "error": str(e)}), 500
 @app.route('/metrics')
 def get_metrics():
     try:
         stats = tts_system.metrics.get_stats(); can_request, reason = tts_system.tts_limiter.can_make_request()
-        stats["tts_rate_limit_status"] = {"can_generate": can_request, "reason": reason}
-        stats["platform"] = "cloud" if Config.IS_RENDER else "local"; stats["version"] = "2.5.0-final"
+        stats["tts_rate_limit_status"] = {"can_generate": can_request, "reason": reason}; stats["version"] = "2.5.1-pagination-fix"
         return jsonify(stats)
     except Exception as e: return jsonify({"error": f"Failed to get metrics: {e}"}), 500
 @app.route('/admin/stats')
@@ -352,8 +340,6 @@ def admin_cleanup():
     if not Config.ADMIN_TOKEN or request.headers.get('X-Admin-Token') != Config.ADMIN_TOKEN: return jsonify({"error": "Unauthorized"}), 401
     failed_count = len(tts_system.failed_generations); tts_system.failed_generations.clear()
     return jsonify({"status": "cleaned", "cleared_failed_generations": failed_count, "timestamp": datetime.now().isoformat()})
-
-# --- Запуск (Без изменений) ---
 def validate_environment():
     logger.info("🔍 Environment validation:"); logger.info(f"  Platform: {'Cloud' if Config.IS_RENDER else 'Local'}"); logger.info(f"  Google Drive available: {GDRIVE_AVAILABLE}"); logger.info(f"  Folder ID: {'Set' if Config.FOLDER_ID else 'Not set'}"); logger.info(f"  Credentials: {'Found' if os.path.exists(Config.CREDENTIALS_FILE) else 'Not found'}"); logger.info(f"  Admin token: {'Set' if Config.ADMIN_TOKEN else 'Not set'}")
     if not os.path.isdir(Config.VOCABULARIES_DIR): logger.warning(f"  ⚠️ Vocabulary directory '{Config.VOCABULARIES_DIR}' not found. Creating it."); os.makedirs(Config.VOCABULARIES_DIR, exist_ok=True)
@@ -365,6 +351,6 @@ signal.signal(signal.SIGTERM, lambda s, f: sys.exit(0))
 if __name__ == '__main__':
     validate_environment()
     port = int(os.getenv('PORT', 5000))
-    logger.info(f"🚀 Starting TTS & Vocabulary Server v2.5.0 on port {port}")
+    logger.info(f"🚀 Starting TTS & Vocabulary Server v2.5.1 on port {port}")
     if not Config.IS_RENDER:
         app.run(host='0.0.0.0', port=port, debug=Config.DEBUG)
