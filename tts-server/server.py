@@ -269,6 +269,7 @@ def get_vocabulary(vocab_name):
     if not os.path.exists(os.path.join(vocab_dir, filename)): return jsonify({"error": "Vocabulary not found"}), 404
     return send_from_directory(vocab_dir, filename)
 @app.route('/audio/<filename>')
+@limiter.exempt
 def serve_audio(filename):
     try:
         if not filename.endswith('.mp3'): return jsonify({"error": "Invalid file format"}), 400
