@@ -1,9 +1,10 @@
-// app.js - Версия 4.0.0 (Stable Layout & Final Polish)
+// app.js - Версия 3.0.0 (Refined Animation Choreography)
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '4.0.0'; // Обновляем версию
+const APP_VERSION = '3.0.0'; // Обновляем версию
 const TTS_API_BASE_URL = 'https://deutsch-lernen-blnp.onrender.com';
+// ... (остальные константы) ...
 
 const DELAYS = {
     INITIAL_WORD: 500,
@@ -18,6 +19,8 @@ const DELAYS = {
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 class VocabularyApp {
+    // ... (весь остальной код класса VocabularyApp остается БЕЗ ИЗМЕНЕНИЙ) ...
+    // ... (constructor, setState, init, loadAndSwitchVocabulary... etc.) ...
     constructor() {
         this.appVersion = APP_VERSION;
         this.allWords = [];
@@ -61,35 +64,6 @@ class VocabularyApp {
         this.loadStateFromLocalStorage();
         this.runMigrations();
     }
-    // ... все остальные методы класса остаются без изменений, кроме renderInitialCard ...
-
-    // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
-    renderInitialCard(word) {
-        if (!word) { this.showNoWordsMessage(); return; }
-        const levelHtml = word.level ? `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>` : '';
-
-        // ИЗМЕНЕНИЕ: Полностью новая, более стабильная структура.
-        // Перевод (#translationContainer) теперь находится в самом низу.
-        // Обертка .swappable-area больше не нужна.
-        this.elements.studyArea.innerHTML = `
-            <div class="card card-appear" id="wordCard">
-                ${levelHtml}
-                <div class="word-container">
-                    ${this.formatGermanWord(word)}
-                    <div class="pronunciation">${word.pronunciation || ''}</div>
-                    <div id="morphemeTranslations" class="morpheme-translations"></div>
-                    <div id="sentenceContainer" class.sentence-container"></div>
-                    <div id="translationContainer" class="translation-container"></div>
-                </div>
-            </div>`;
-
-        document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
-        this.updateUI();
-    }
-
-    // ... все остальные методы класса (displayMorphemes, displaySentence и т.д.) остаются без изменений ...
-    // ... просто скопируйте весь остальной код из вашего файла app.js сюда ...
-    // --- НАЧАЛО НЕИЗМЕНЕННОГО КОДА ---
     setState(newState) {
         this.state = { ...this.state, ...newState };
         this.updateUI();
@@ -616,6 +590,14 @@ class VocabularyApp {
         this.runDisplaySequence(nextWord);
         if (wasAutoPlaying) this.startAutoPlay();
     }
+    renderInitialCard(word) {
+        if (!word) { this.showNoWordsMessage(); return; }
+        const levelHtml = word.level ? `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>` : '';
+        // --- ИЗМЕНЕНИЕ: Новая HTML структура с контейнером "swappable-area" ---
+        this.elements.studyArea.innerHTML = `<div class="card card-appear" id="wordCard">${levelHtml}<div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div class="swappable-area"><div id="morphemeTranslations" class="morpheme-translations"></div><div id="translationContainer" class="translation-container"></div></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
+        document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
+        this.updateUI();
+    }
     displayMorphemesAndTranslations(word) {
         const { showMorphemes, showMorphemeTranslations } = this.state;
         const mainWordElement = document.querySelector('.word .main-word');
@@ -763,7 +745,6 @@ class VocabularyApp {
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
         this.setState({ currentWord: null });
     }
-    // --- КОНЕЦ НЕИЗМЕНЕННОГО КОДА ---
 }
 document.addEventListener('DOMContentLoaded', () => {
     try {
