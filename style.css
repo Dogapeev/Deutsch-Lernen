@@ -172,10 +172,10 @@ body {
 
 .main-content {
     padding: 40px;
-    min-height: 500px;
+    min-height: 450px;
     background: white;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
 }
 
@@ -358,11 +358,11 @@ body {
     animation: slideInFromBottom 0.6s ease-out;
 }
 
+/* --- ИЗМЕНЕНИЕ: Настройка анимации --- */
 .pronunciation,
 #morphemeTranslations,
 #sentenceContainer {
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность общей анимации с 1.5s до 2.0s */
-    transition: all 2.0s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
 
@@ -378,10 +378,10 @@ body {
     opacity: 0;
 }
 
+/* Новая хореография для перевода: появляется с задержкой */
 #translationContainer {
     overflow: hidden;
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность (0.5s) и задержку (0.7s) */
-    transition: max-height 0.5s ease-in 0.7s, opacity 0.5s ease-in 0.7s;
+    transition: max-height 0.4s ease-in 0.6s, opacity 0.4s ease-in 0.6s;
 }
 
 #morphemeTranslations {
@@ -422,15 +422,20 @@ body {
     opacity: 1;
 }
 
+/* --- ИЗМЕНЕНИЕ: Убираем старый сдвиг и добавляем новую логику анимации --- */
+/* Старый сдвиг .word-container УДАЛЕН */
+
+/* Прячем морфемы, когда показываем финальный перевод */
 .card.phase-translation #morphemeTranslations {
     max-height: 0;
     opacity: 0;
     padding: 0;
     margin: 0;
-    /* ИЗМЕНЕНИЕ: Увеличиваем длительность исчезновения до 0.5s */
-    transition: all 0.5s ease-out;
+    /* Анимация исчезновения длится 0.4с и начинается НЕМЕДЛЕННО */
+    transition: all 0.4s ease-out;
 }
 
+/* Показываем перевод только в финальной фазе */
 .card.phase-translation #translationContainer {
     max-height: 10em;
     opacity: 1;
