@@ -170,12 +170,15 @@ body {
     margin-right: 8px;
 }
 
+/* --- ИЗМЕНЕНИЕ: Фиксируем высоту контейнера и центрируем карточку --- */
 .main-content {
     padding: 40px;
-    min-height: 450px;
+    min-height: 500px;
+    /* Увеличиваем высоту для стабильности */
     background: white;
     display: flex;
-    align-items: stretch;
+    align-items: center;
+    /* Вертикальное центрирование */
     justify-content: center;
 }
 
@@ -358,7 +361,6 @@ body {
     animation: slideInFromBottom 0.6s ease-out;
 }
 
-/* --- ИЗМЕНЕНИЕ: Настройка анимации --- */
 .pronunciation,
 #morphemeTranslations,
 #sentenceContainer {
@@ -378,7 +380,6 @@ body {
     opacity: 0;
 }
 
-/* Новая хореография для перевода: появляется с задержкой */
 #translationContainer {
     overflow: hidden;
     transition: max-height 0.4s ease-in 0.6s, opacity 0.4s ease-in 0.6s;
@@ -422,20 +423,14 @@ body {
     opacity: 1;
 }
 
-/* --- ИЗМЕНЕНИЕ: Убираем старый сдвиг и добавляем новую логику анимации --- */
-/* Старый сдвиг .word-container УДАЛЕН */
-
-/* Прячем морфемы, когда показываем финальный перевод */
 .card.phase-translation #morphemeTranslations {
     max-height: 0;
     opacity: 0;
     padding: 0;
     margin: 0;
-    /* Анимация исчезновения длится 0.4с и начинается НЕМЕДЛЕННО */
     transition: all 0.4s ease-out;
 }
 
-/* Показываем перевод только в финальной фазе */
 .card.phase-translation #translationContainer {
     max-height: 10em;
     opacity: 1;
