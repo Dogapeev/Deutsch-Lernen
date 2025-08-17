@@ -319,8 +319,8 @@ body {
 /* --- ИЗМЕНЕНИЕ 2: Индикатор теперь привязан к .main-content и всегда наверху --- */
 .level-indicator {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 50px;
+    right: 50px;
     padding: 4px 8px;
     border-radius: 3px;
     font-size: 0.75rem;
