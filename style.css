@@ -188,8 +188,7 @@ body {
 .card {
     background: white;
     border-radius: 4px;
-    /* ИЗМЕНЕНИЕ: Уменьшаем нижний отступ для более плотной компоновки */
-    padding: 50px 40px 30px;
+    padding: 50px 40px;
     text-align: center;
     margin-bottom: 0;
     position: relative;
@@ -361,9 +360,8 @@ body {
 
 .pronunciation,
 #morphemeTranslations,
-#sentenceContainer,
-#translationContainer {
-    /* Добавляем перевод в общий список */
+#sentenceContainer {
+    /* ИЗМЕНЕНИЕ: Увеличиваем длительность общей анимации с 1.5s до 2.0s */
     transition: all 2.0s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
@@ -373,14 +371,18 @@ body {
     opacity: 1;
 }
 
+#translationContainer,
 #morphemeTranslations,
-#sentenceContainer,
-#translationContainer {
+#sentenceContainer {
     max-height: 0;
     opacity: 0;
 }
 
-/* ПРАВИЛО УДАЛЕНО: .swappable-area больше не используется */
+#translationContainer {
+    overflow: hidden;
+    /* ИЗМЕНЕНИЕ: Увеличиваем длительность (0.5s) и задержку (0.7s) */
+    transition: max-height 0.5s ease-in 0.7s, opacity 0.5s ease-in 0.7s;
+}
 
 #morphemeTranslations {
     display: flex;
@@ -388,9 +390,6 @@ body {
     flex-wrap: wrap;
     gap: 1.5em;
     padding: 15px 0;
-    min-height: 60px;
-    /* Фиксируем минимальную высоту, чтобы избежать прыжков */
-    align-items: center;
 }
 
 .translation-container {
@@ -405,6 +404,7 @@ body {
     color: #666;
     font-weight: 400;
     padding: 25px 0;
+    animation: slideInFromBottom 0.6s ease-out;
 }
 
 .card.phase-morphemes .pronunciation {
@@ -422,12 +422,19 @@ body {
     opacity: 1;
 }
 
+.card.phase-translation #morphemeTranslations {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    /* ИЗМЕНЕНИЕ: Увеличиваем длительность исчезновения до 0.5s */
+    transition: all 0.5s ease-out;
+}
+
 .card.phase-translation #translationContainer {
     max-height: 10em;
     opacity: 1;
 }
-
-/* ПРАВИЛО УДАЛЕНО: Старая логика анимации больше не нужна */
 
 .sentence {
     font-size: 1.4rem;
