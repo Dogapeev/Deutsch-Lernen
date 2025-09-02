@@ -170,15 +170,16 @@ body {
     margin-right: 8px;
 }
 
+/* --- ИЗМЕНЕНИЕ 1: Делаем .main-content стабильным якорем для индикатора --- */
 .main-content {
     padding: 40px;
-    /* --- ИЗМЕНЕНИЕ 2: Убираем фиксированную высоту, чтобы избежать наложений --- */
-    min-height: 450px;
-    /* Задаем минимальную высоту, чтобы верстка не прыгала */
+    height: 500px;
     background: white;
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
+    position: relative;
+    /* Теперь это наш якорь! */
 }
 
 #studyArea {
@@ -190,10 +191,10 @@ body {
 .card {
     background: white;
     border-radius: 4px;
-    padding: 50px 40px;
+    padding: 70px 40px 20px;
     text-align: center;
     margin-bottom: 0;
-    position: relative;
+    /* position: relative; -- Убрано */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -214,7 +215,7 @@ body {
 .word {
     font-size: 2.8rem;
     font-weight: 300;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     transition: color 0.5s ease;
     color: #333;
     display: flex;
@@ -239,10 +240,8 @@ body {
     transition: gap 3.5s ease-in-out;
 }
 
-/* --- ИЗМЕНЕНИЕ 1: Уменьшаем финальное расстояние между морфемами --- */
 .word.show-morphemes .main-word {
-    gap: 0.25em;
-    /* Было 0.5em */
+    gap: 0.15em;
 }
 
 .word .morpheme {
@@ -317,10 +316,11 @@ body {
     font-style: italic;
 }
 
+/* --- ИЗМЕНЕНИЕ 2: Индикатор теперь привязан к .main-content и всегда наверху --- */
 .level-indicator {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 50px;
+    right: 50px;
     padding: 4px 8px;
     border-radius: 3px;
     font-size: 0.75rem;
@@ -328,13 +328,15 @@ body {
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    z-index: 10;
+    /* Гарантирует, что индикатор поверх всего */
 }
 
 .level-indicator.a1,
 .level-indicator.a2,
 .level-indicator.b1,
 .level-indicator.b2 {
-    background: #666;
+    background: #aaa;
 }
 
 .word-crossfade {
@@ -363,10 +365,9 @@ body {
 }
 
 .pronunciation,
-#translationContainer,
 #morphemeTranslations,
 #sentenceContainer {
-    transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 2.0s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
 
@@ -380,6 +381,11 @@ body {
 #sentenceContainer {
     max-height: 0;
     opacity: 0;
+}
+
+#translationContainer {
+    overflow: hidden;
+    transition: max-height 0.5s ease-in 0.7s, opacity 0.5s ease-in 0.7s;
 }
 
 #morphemeTranslations {
@@ -398,10 +404,10 @@ body {
 }
 
 .translation {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     color: #666;
     font-weight: 400;
-    padding: 25px 0;
+    padding: 10px 0;
     animation: slideInFromBottom 0.6s ease-out;
 }
 
@@ -420,22 +426,26 @@ body {
     opacity: 1;
 }
 
+.card.phase-translation #morphemeTranslations {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    transition: all 0.5s ease-out;
+}
+
 .card.phase-translation #translationContainer {
     max-height: 10em;
     opacity: 1;
 }
 
-.card.phase-translation .word-container {
-    transform: translateY(70px);
-}
-
 .sentence {
     font-size: 1.4rem;
     color: #4a90e2;
-    margin: 20px 0 12px 0;
+    margin: 40px 0 12px 0;
     font-weight: 400;
     font-style: italic;
-    padding: 15px;
+    padding: 25px;
     border-left: 3px solid #4a90e2;
     background: rgba(74, 144, 226, 0.05);
     width: 100%;
@@ -445,7 +455,7 @@ body {
 .sentence-translation {
     font-size: 1.1rem;
     color: #888;
-    margin-top: 8px;
+    margin-top: 0px;
     font-style: normal;
 }
 

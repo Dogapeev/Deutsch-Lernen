@@ -1,6 +1,6 @@
 # Файл: server.py
-# ВЕРСИЯ 2.5.0 (ID-based TTS requests) - ПОЛНАЯ ВЕРСИЯ
-# Добавлен новый эндпоинт /synthesize_by_id для надежной работы.
+# ВЕРСИЯ 2.5.1 (Pagination fix) - ПОЛНАЯ ВЕРСИЯ
+# Исправлена загрузка списка файлов из Google Drive для поддержки более 1000 записей.
 
 import os
 import json
@@ -39,7 +39,6 @@ class Config:
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*')
     FOLDER_ID = os.getenv('GOOGLE_DRIVE_FOLDER_ID')
     CREDENTIALS_FILE = 'credentials.json'
-    # --- ИЗМЕНЕНИЕ: Используем права только на чтение, это безопаснее ---
     SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
     LOCAL_CACHE_DIR = "/tmp/audio_cache"
     SUPPORTED_LANGUAGES = {'de', 'ru', 'en', 'fr', 'es'}
@@ -106,7 +105,7 @@ class SmartTTSRateLimiter:
             with self._lock: now = datetime.now(); self.minute_requests.append(now); self.hour_requests.append(now)
         except Exception: pass
 
-# --- Google Drive Cache (Без изменений) ---
+# --- Google Drive Cache (ИСПРАВЛЕННАЯ ВЕРСИЯ С ПАГИНАЦИЕЙ) ---
 class GoogleDriveCache:
     def __init__(self):
         self.gdrive_enabled = False; self.service = None; self.folder_id = None; self.file_cache = {}; self._init_lock = threading.Lock(); self._initialized = False
@@ -124,13 +123,32 @@ class GoogleDriveCache:
                 else: logger.warning("⚠️ Google Drive not configured. Local-only mode.")
             except Exception as e: logger.error(f"❌ Google Drive initialization error: {e}"); logger.info("🔄 Switching to local-only mode")
             finally: self._initialized = True
+            
     def _populate_cache(self):
         try:
-            logger.info("📥 Loading file list from Google Drive...")
-            response = self.service.files().list(q=f"'{self.folder_id}' in parents and trashed=false", fields="files(id, name)", pageSize=1000).execute()
-            for file in response.get('files', []): self.file_cache[file.get('name')] = file.get('id')
+            logger.info("📥 Loading file list from Google Drive (all pages)...")
+            page_token = None
+            while True:
+                # <--- ИЗМЕНЕНИЕ 1: Добавляем 'nextPageToken' в fields для получения токена следующей страницы.
+                response = self.service.files().list(
+                    q=f"'{self.folder_id}' in parents and trashed=false",
+                    fields="nextPageToken, files(id, name)",
+                    pageSize=1000,
+                    pageToken=page_token
+                ).execute()
+
+                for file in response.get('files', []):
+                    self.file_cache[file.get('name')] = file.get('id')
+
+                # <--- ИЗМЕНЕНИЕ 2: Проверяем, есть ли следующая страница. Если нет - выходим из цикла.
+                page_token = response.get('nextPageToken', None)
+                if page_token is None:
+                    break 
+
             logger.info(f"✅ Found {len(self.file_cache)} files in Google Drive cache")
-        except Exception as e: logger.error(f"Error loading cache: {e}")
+        except Exception as e: 
+            logger.error(f"Error loading cache from Google Drive: {e}")
+            
     def ensure_initialized(self):
         if not self._initialized: self._initialize()
     def check_exists(self, filename):
@@ -196,12 +214,11 @@ class TTSSystem:
             else: logger.error(f"❌ TTS error: {e}")
             return False
 
-# --- НОВОЕ: Кэш для словарей и функции поиска ---
+# --- Кэш для словарей и функции поиска (Без изменений) ---
 vocabulary_cache = {}
 vocab_cache_lock = threading.Lock()
 
 def find_word_in_vocab(vocab_name, word_id):
-    """Находит слово по ID в конкретном, уже кэшированном словаре."""
     with vocab_cache_lock:
         if vocab_name not in vocabulary_cache:
             filepath = os.path.join(Config.VOCABULARIES_DIR, f"{vocab_name}.json")
@@ -215,7 +232,7 @@ def find_word_in_vocab(vocab_name, word_id):
                     vocabulary_cache[vocab_name] = {word['id']: word for word in data.get('words', [])}
             except Exception as e:
                 logger.error(f"Failed to load vocabulary {vocab_name}: {e}")
-                vocabulary_cache[vocab_name] = {} # Помечаем, чтобы не пытаться снова
+                vocabulary_cache[vocab_name] = {}
         return vocabulary_cache[vocab_name].get(word_id)
 
 
@@ -231,7 +248,7 @@ def handle_404(e): return jsonify({"error": "Not found"}), 404
 @app.errorhandler(413)
 def handle_413(e): return jsonify({"error": "Request too large"}), 413
 @app.route('/')
-def index(): return jsonify({"service": "TTS & Vocabulary Server", "version": "2.5.0-final"})
+def index(): return jsonify({"service": "TTS & Vocabulary Server", "version": "2.5.1-final"})
 @app.route('/api/vocabularies/list')
 @limiter.exempt
 def list_vocabularies():
@@ -255,6 +272,7 @@ def get_vocabulary(vocab_name):
     if not os.path.exists(os.path.join(vocab_dir, filename)): return jsonify({"error": "Vocabulary not found"}), 404
     return send_from_directory(vocab_dir, filename)
 @app.route('/audio/<filename>')
+@limiter.exempt
 def serve_audio(filename):
     try:
         if not filename.endswith('.mp3'): return jsonify({"error": "Invalid file format"}), 400
@@ -270,7 +288,7 @@ def serve_audio(filename):
         return jsonify({"error": "File not found"}), 404
     except Exception as e: tts_system.metrics.record_error(); logger.error(f"Error serving {filename}: {e}"); return jsonify({"error": "Server error"}), 500
 
-# --- НОВЫЙ ЭНДПОИНТ для работы по ID ---
+# --- Эндпоинт для работы по ID (Без изменений) ---
 @app.route('/synthesize_by_id', methods=['GET'])
 @limiter.exempt
 def synthesize_by_id():
@@ -305,7 +323,7 @@ def synthesize_by_id():
     else:
         return jsonify({"error": "TTS generation failed or file not in cache"}), 503
 
-# --- Старый эндпоинт /synthesize (остается на месте) ---
+# --- Старый эндпоинт /synthesize (Без изменений) ---
 @app.route('/synthesize', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def synthesize_text():
@@ -333,14 +351,14 @@ def health_check():
     try:
         components = {"system_initialized": tts_system._initialized, "local_cache_writable": os.access(tts_system.local_cache_dir, os.W_OK), "gdrive_connected": tts_system.gdrive_cache.gdrive_enabled, "vocabularies_dir_exists": os.path.isdir(Config.VOCABULARIES_DIR)}
         is_healthy = components["system_initialized"] and components["local_cache_writable"] and components["vocabularies_dir_exists"]
-        return jsonify({"status": "healthy" if is_healthy else "degraded", "version": "2.5.0-final", "components": components}), 200 if is_healthy else 503
+        return jsonify({"status": "healthy" if is_healthy else "degraded", "version": "2.5.1-final", "components": components}), 200 if is_healthy else 503
     except Exception as e: return jsonify({"status": "unhealthy", "error": str(e)}), 500
 @app.route('/metrics')
 def get_metrics():
     try:
         stats = tts_system.metrics.get_stats(); can_request, reason = tts_system.tts_limiter.can_make_request()
         stats["tts_rate_limit_status"] = {"can_generate": can_request, "reason": reason}
-        stats["platform"] = "cloud" if Config.IS_RENDER else "local"; stats["version"] = "2.5.0-final"
+        stats["platform"] = "cloud" if Config.IS_RENDER else "local"; stats["version"] = "2.5.1-final"
         return jsonify(stats)
     except Exception as e: return jsonify({"error": f"Failed to get metrics: {e}"}), 500
 @app.route('/admin/stats')
@@ -365,6 +383,6 @@ signal.signal(signal.SIGTERM, lambda s, f: sys.exit(0))
 if __name__ == '__main__':
     validate_environment()
     port = int(os.getenv('PORT', 5000))
-    logger.info(f"🚀 Starting TTS & Vocabulary Server v2.5.0 on port {port}")
+    logger.info(f"🚀 Starting TTS & Vocabulary Server v2.5.1 on port {port}")
     if not Config.IS_RENDER:
         app.run(host='0.0.0.0', port=port, debug=Config.DEBUG)
