@@ -560,7 +560,8 @@ body {
 }
 
 .option-btn,
-.repeat-selector {
+.repeat-selector,
+.sequence-selector {
     padding: 6px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -572,22 +573,38 @@ body {
     font-size: 0.85rem;
     min-width: 60px;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.sequence-selector .icon {
+    width: 16px;
+    height: 16px;
 }
 
 .option-btn:hover,
-.repeat-selector:hover {
+.repeat-selector:hover,
+.sequence-selector:hover {
     border-color: #999;
 }
 
 .option-btn.active,
-.repeat-selector.active {
+.repeat-selector.active,
+.sequence-selector.active {
     background: #333;
     color: white;
     border-color: #333;
 }
 
+.sequence-selector.active .icon {
+    fill: white;
+}
+
 .option-btn:disabled,
-.repeat-selector:disabled {
+.repeat-selector:disabled,
+.sequence-selector:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     background: #f5f5f5;
@@ -740,8 +757,8 @@ body {
     }
 
     .level-indicator {
-        top: 28px;
-        right: 28px;
+        top: 33px;
+        right: 33px;
     }
 
     .player-controls-mobile {

@@ -10,9 +10,9 @@ const DELAYS = {
     INITIAL_WORD: 500,
     BETWEEN_REPEATS: 1500,
     BEFORE_MORPHEMES: 1500,
-    BEFORE_SENTENCE: 2000,
-    BEFORE_TRANSLATION: 2000,
-    BEFORE_NEXT_WORD: 2000,
+    BEFORE_SENTENCE: 4000,
+    BEFORE_TRANSLATION: 3000,
+    BEFORE_NEXT_WORD: 3000,
     CARD_FADE_OUT: 750,
     CARD_FADE_IN: 300
 };
@@ -39,7 +39,8 @@ class VocabularyApp {
             soundEnabled: true,
             translationSoundEnabled: true,
             sentenceSoundEnabled: true,
-            repeatMode: '2',
+            sequenceMode: 'sequential',
+            repeatMode: 2,
             currentVocabulary: 'vocabulary',
             availableVocabularies: [],
             selectedLevels: ['A1', 'A2', 'B1', 'B2'],
@@ -288,7 +289,7 @@ class VocabularyApp {
         this.addToHistory(word);
     }
     async _playGermanPhase(word, checkAborted) {
-        const repeats = this.state.repeatMode === 'random' ? 1 : parseInt(this.state.repeatMode, 10);
+        const repeats = this.state.repeatMode;
         for (let i = 0; i < repeats; i++) {
             await delay(i === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
             checkAborted();
@@ -505,7 +506,17 @@ class VocabularyApp {
         this.state.soundEnabled = safeJsonParse('soundEnabled', true);
         this.state.translationSoundEnabled = safeJsonParse('translationSoundEnabled', true);
         this.state.sentenceSoundEnabled = safeJsonParse('sentenceSoundEnabled', true);
-        this.state.repeatMode = safeJsonParse('repeatMode', '2');
+
+        // Миграция старого repeatMode в новую структуру
+        const oldRepeatMode = safeJsonParse('repeatMode', 2);
+        if (oldRepeatMode === 'random') {
+            this.state.sequenceMode = 'random';
+            this.state.repeatMode = 2;
+        } else {
+            this.state.sequenceMode = safeJsonParse('sequenceMode', 'sequential');
+            this.state.repeatMode = typeof oldRepeatMode === 'string' ? parseInt(oldRepeatMode, 10) : oldRepeatMode;
+        }
+
         this.state.selectedLevels = safeJsonParse('selectedLevels', ['A1', 'A2', 'B1', 'B2']);
         this.state.selectedTheme = localStorage.getItem('selectedTheme') || 'all';
         this.state.showArticles = safeJsonParse('showArticles', true);
@@ -521,6 +532,7 @@ class VocabularyApp {
         localStorage.setItem('soundEnabled', JSON.stringify(this.state.soundEnabled));
         localStorage.setItem('translationSoundEnabled', JSON.stringify(this.state.translationSoundEnabled));
         localStorage.setItem('sentenceSoundEnabled', JSON.stringify(this.state.sentenceSoundEnabled));
+        localStorage.setItem('sequenceMode', JSON.stringify(this.state.sequenceMode));
         localStorage.setItem('repeatMode', JSON.stringify(this.state.repeatMode));
         localStorage.setItem('selectedLevels', JSON.stringify(this.state.selectedLevels));
         localStorage.setItem('selectedTheme', this.state.selectedTheme);
@@ -685,7 +697,7 @@ class VocabularyApp {
         const hasNextInHistory = this.currentHistoryIndex < this.wordHistory.length - 1;
         const activeWords = this.getActiveWords();
         const currentIndexInActive = activeWords.findIndex(w => w.id === this.state.currentWord?.id);
-        const canGenerateNext = activeWords.length > 0 && (this.state.repeatMode === 'random' || currentIndexInActive < activeWords.length - 1 || currentIndexInActive === -1);
+        const canGenerateNext = activeWords.length > 0 && (this.state.sequenceMode === 'random' || currentIndexInActive < activeWords.length - 1 || currentIndexInActive === -1);
         document.querySelectorAll('[id^=nextButton]').forEach(btn => btn.disabled = !this.allWords.length || (!hasNextInHistory && !canGenerateNext));
     }
     updateLevelButtons() {
@@ -700,8 +712,13 @@ class VocabularyApp {
         document.querySelectorAll('.block-btn[data-theme]').forEach(b => b.classList.toggle('active', b.dataset.theme === this.state.selectedTheme));
     }
     updateRepeatControlsState() {
-        document.querySelectorAll('[data-mode]').forEach(button => {
-            button.classList.toggle('active', button.dataset.mode === this.state.repeatMode);
+        // Обновляем кнопки повторений
+        document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(button => {
+            button.classList.toggle('active', parseInt(button.dataset.mode) === this.state.repeatMode);
+        });
+        // Обновляем кнопки порядка
+        document.querySelectorAll('.sequence-selector, .sequence-selector-mobile').forEach(button => {
+            button.classList.toggle('active', button.dataset.mode === this.state.sequenceMode);
         });
     }
     bindEvents() {
@@ -719,7 +736,8 @@ class VocabularyApp {
         document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(b => b.addEventListener('click', () => this.toggleSetting('showMorphemeTranslations')));
         document.querySelectorAll('[id^=toggleSentences]').forEach(b => b.addEventListener('click', () => this.toggleSetting('showSentences')));
         document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => this.toggleLevel(e.target.dataset.level)));
-        document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', e => this.setRepeatMode(e.target.dataset.mode)));
+        document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(btn => btn.addEventListener('click', e => this.setRepeatMode(parseInt(e.currentTarget.dataset.mode))));
+        document.querySelectorAll('.sequence-selector, .sequence-selector-mobile').forEach(btn => btn.addEventListener('click', e => this.setSequenceMode(e.currentTarget.dataset.mode)));
         document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.loadAndSwitchVocabulary(e.target.value)));
     }
     toggleSettingsPanel(show) {
@@ -739,6 +757,7 @@ class VocabularyApp {
         this.handleFilterChange();
     }
     setRepeatMode(mode) { this.setState({ repeatMode: mode }); }
+    setSequenceMode(mode) { this.setState({ sequenceMode: mode }); }
     getActiveWords() {
         const { selectedLevels, selectedTheme } = this.state;
         if (!this.allWords || this.allWords.length === 0) return [];
@@ -747,7 +766,7 @@ class VocabularyApp {
     getNextWord() {
         const activeWords = this.getActiveWords();
         if (activeWords.length === 0) return null;
-        if (this.state.repeatMode === 'random') {
+        if (this.state.sequenceMode === 'random') {
             return activeWords[Math.floor(Math.random() * activeWords.length)];
         }
         const currentId = this.state.currentWord?.id;
