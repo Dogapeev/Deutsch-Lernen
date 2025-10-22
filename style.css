@@ -739,6 +739,11 @@ body {
         display: inline;
     }
 
+    .level-indicator {
+        top: 33px;
+        right: 33px;
+    }
+
     .player-controls-mobile {
         display: flex;
         position: fixed;
