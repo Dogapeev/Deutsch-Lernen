@@ -10,8 +10,8 @@ const DELAYS = {
     INITIAL_WORD: 500,
     BETWEEN_REPEATS: 1500,
     BEFORE_MORPHEMES: 1500,
-    BEFORE_SENTENCE: 2000,
-    BEFORE_TRANSLATION: 2000,
+    BEFORE_SENTENCE: 4000,
+    BEFORE_TRANSLATION: 3000,
     BEFORE_NEXT_WORD: 3000,
     CARD_FADE_OUT: 750,
     CARD_FADE_IN: 300
@@ -76,6 +76,26 @@ class VocabularyApp {
         setTimeout(() => {
             document.querySelector('.header-mobile')?.classList.add('collapsed');
         }, 3000);
+
+        // Скрытие адресной строки в мобильных браузерах
+        if (window.innerWidth <= 768) {
+            // Скролл вниз для скрытия адресной строки при загрузке
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+            }, 100);
+
+            // Возврат к началу при скролле вверх
+            let lastScrollTop = 0;
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                // Если скроллим вверх и находимся близко к началу
+                if (scrollTop < lastScrollTop && scrollTop < 50) {
+                    window.scrollTo(0, 0);
+                }
+                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            }, false);
+        }
+
         await this.loadAndSwitchVocabulary(this.state.currentVocabulary, true);
     }
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
