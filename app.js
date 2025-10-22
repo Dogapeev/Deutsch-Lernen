@@ -76,26 +76,6 @@ class VocabularyApp {
         setTimeout(() => {
             document.querySelector('.header-mobile')?.classList.add('collapsed');
         }, 3000);
-
-        // Скрытие адресной строки в мобильных браузерах
-        if (window.innerWidth <= 768) {
-            // Скролл вниз для скрытия адресной строки при загрузке
-            setTimeout(() => {
-                window.scrollTo(0, 1);
-            }, 100);
-
-            // Возврат к началу при скролле вверх
-            let lastScrollTop = 0;
-            window.addEventListener('scroll', () => {
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                // Если скроллим вверх и находимся близко к началу
-                if (scrollTop < lastScrollTop && scrollTop < 50) {
-                    window.scrollTo(0, 0);
-                }
-                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-            }, false);
-        }
-
         await this.loadAndSwitchVocabulary(this.state.currentVocabulary, true);
     }
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
