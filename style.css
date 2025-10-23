@@ -1,3 +1,5 @@
+/* --- НАЧАЛО ФАЙЛА STYLE.CSS --- */
+
 /* --- BASE STYLES --- */
 * {
     margin: 0;
@@ -29,7 +31,6 @@ body {
     padding: 20px 30px;
     text-align: center;
     position: relative;
-    /* Добавлено для позиционирования auth-container */
 }
 
 .header h1 {
@@ -44,7 +45,6 @@ body {
     font-size: 1rem;
     font-weight: 400;
     margin-top: 10px;
-    /* Добавлен отступ */
 }
 
 .stats {
@@ -204,19 +204,797 @@ body {
     flex-grow: 1;
 }
 
-/* ... (все ваши старые стили для карточек, слов и т.д. остаются здесь без изменений) ... */
-
-/* --- Стили для кнопок, плеера и т.д. --- */
-.player-controls-desktop,
-.player-options,
-.control-group,
-.player-btn,
-.play-pause,
-.option-btn,
-.vocabulary-manager {
-    /* ... (все эти стили остаются как были) ... */
+.card.is-clickable {
+    cursor: pointer;
 }
 
+.word-container {
+    position: relative;
+    transition: transform 1.5s ease-in-out;
+}
+
+.word {
+    font-size: 2.8rem;
+    font-weight: 300;
+    margin-bottom: 10px;
+    transition: color 0.5s ease;
+    color: #333;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.3em;
+}
+
+.word .article {
+    font-size: 0.5em;
+    opacity: 0.6;
+    font-weight: 400;
+    transition: opacity 0.3s ease;
+}
+
+.word .main-word {
+    font-weight: 300;
+    display: grid;
+    grid-auto-flow: column;
+    align-items: center;
+    gap: 0em;
+    transition: gap 3.5s ease-in-out;
+}
+
+.word.show-morphemes .main-word {
+    gap: 0.15em;
+}
+
+.word .morpheme {
+    transition: none;
+}
+
+.word .morpheme-separator {
+    opacity: 0;
+    transform: scaleX(0);
+    transition: all 3.5s ease-in-out;
+    color: #999;
+    font-weight: 400;
+}
+
+.word.show-morphemes .morpheme-separator {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+.morpheme-separator-mobile {
+    display: none;
+}
+
+.morpheme-separator-desktop {
+    display: inline;
+}
+
+.word.hide-articles .article {
+    opacity: 0;
+}
+
+.word .article.der {
+    color: #0066cc;
+}
+
+.word .article.die {
+    color: #cc0066;
+}
+
+.word .article.das {
+    color: #666;
+}
+
+.word.der .main-word {
+    color: #0066cc;
+}
+
+.word.die .main-word {
+    color: #cc0066;
+}
+
+.word.das .main-word {
+    color: #333;
+}
+
+.morpheme-translation-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+}
+
+.morpheme-translation-item .morpheme-part {
+    font-weight: 500;
+    font-size: 1rem;
+    color: #555;
+}
+
+.morpheme-translation-item .translation-part {
+    font-size: 0.85rem;
+    color: #888;
+    font-style: italic;
+}
+
+.level-indicator {
+    position: absolute;
+    top: 50px;
+    right: 50px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 10;
+}
+
+.level-indicator.a1,
+.level-indicator.a2,
+.level-indicator.b1,
+.level-indicator.b2 {
+    background: #aaa;
+}
+
+.word-crossfade {
+    transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out;
+}
+
+.word-fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-appear {
+    animation: slideInFromBottom 0.6s ease-out;
+}
+
+.pronunciation,
+#morphemeTranslations,
+#sentenceContainer {
+    transition: all 2.0s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.pronunciation {
+    max-height: 5em;
+    opacity: 1;
+}
+
+#translationContainer,
+#morphemeTranslations,
+#sentenceContainer {
+    max-height: 0;
+    opacity: 0;
+}
+
+#translationContainer {
+    overflow: hidden;
+    transition: max-height 0.5s ease-in 0.7s, opacity 0.5s ease-in 0.7s;
+}
+
+#morphemeTranslations {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.5em;
+    padding: 15px 0;
+}
+
+.translation-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.translation {
+    font-size: 1.4rem;
+    color: #666;
+    font-weight: 400;
+    padding: 10px 0;
+    animation: slideInFromBottom 0.6s ease-out;
+}
+
+.card.phase-morphemes .pronunciation {
+    max-height: 0;
+    opacity: 0;
+}
+
+.card.phase-morphemes #morphemeTranslations {
+    max-height: 10em;
+    opacity: 1;
+}
+
+.card.phase-sentence #sentenceContainer {
+    max-height: 20em;
+    opacity: 1;
+}
+
+.card.phase-translation #morphemeTranslations {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    transition: all 0.5s ease-out;
+}
+
+.card.phase-translation #translationContainer {
+    max-height: 10em;
+    opacity: 1;
+}
+
+.sentence {
+    font-size: 1.4rem;
+    color: #4a90e2;
+    margin: 40px 0 12px 0;
+    font-weight: 400;
+    font-style: italic;
+    padding: 25px;
+    border-left: 3px solid #4a90e2;
+    background: rgba(74, 144, 226, 0.05);
+    width: 100%;
+    text-align: center;
+}
+
+.sentence-translation {
+    font-size: 1.1rem;
+    color: #888;
+    margin-top: 0px;
+    font-style: normal;
+}
+
+.player-controls-desktop {
+    background: white;
+    padding: 25px;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+}
+
+.player-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.player-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.player-btn svg {
+    transition: transform 0.2s ease;
+}
+
+.player-btn:hover {
+    border-color: #999;
+    background: #f8f8f8;
+}
+
+.player-btn:active svg {
+    transform: scale(0.9);
+}
+
+.player-btn:disabled {
+    border-color: #ddd;
+    background: #f5f5f5;
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.play-pause {
+    width: 60px;
+    height: 60px;
+    border-width: 3px;
+}
+
+.play-pause.playing {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.sound-btn,
+.translation-sound-btn,
+.sentence-sound-btn {
+    width: 44px;
+    height: 44px;
+    border-width: 1px;
+}
+
+.sound-btn.active,
+.translation-sound-btn.active,
+.sentence-sound-btn.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.player-options {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.option-btn,
+.repeat-selector,
+.sequence-selector {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #666;
+    font-size: 0.85rem;
+    min-width: 60px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.sequence-selector .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.option-btn:hover,
+.repeat-selector:hover,
+.sequence-selector:hover {
+    border-color: #999;
+}
+
+.option-btn.active,
+.repeat-selector.active,
+.sequence-selector.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.sequence-selector.active .icon {
+    fill: white;
+}
+
+.option-btn:disabled,
+.repeat-selector:disabled,
+.sequence-selector:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+.vocabulary-manager {
+    background: white;
+    padding: 25px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.vocabulary-selector-container {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.vocab-selector,
+.vocab-selector-mobile {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #333;
+    cursor: pointer;
+    min-width: 250px;
+}
+
+.icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    stroke-width: 0;
+    stroke: currentColor;
+    fill: currentColor;
+}
+
+.no-words {
+    text-align: center;
+    color: #888;
+    width: 100%;
+}
+
+/* --- MOBILE-SPECIFIC STYLES --- */
+.header-mobile,
+.player-controls-mobile,
+#settingsButton,
+.settings-overlay,
+.settings-panel {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 0 0 120px;
+    }
+
+    .container {
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .main-content {
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    .card {
+        padding: 80px 20px 20px 20px;
+        border: none;
+        margin-bottom: 0;
+    }
+
+    .word {
+        font-size: 3rem;
+    }
+
+    .translation {
+        font-size: 1.5rem;
+    }
+
+    .header,
+    .stats,
+    .player-controls-desktop,
+    .vocabulary-manager {
+        display: none;
+    }
+
+    .block-label {
+        display: none;
+    }
+
+    .header-mobile {
+        display: block;
+        padding: 20px;
+        text-align: center;
+        border-bottom: 1px solid #e9ecef;
+        overflow: hidden;
+        max-height: 100px;
+        transition: max-height 0.6s ease-out, padding 0.6s ease-out, border-color 0.6s;
+        background: white;
+    }
+
+    .header-mobile.collapsed {
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-color: transparent;
+    }
+
+    .level-selector,
+    .block-selector {
+        display: block;
+        padding: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .level-buttons,
+    .block-buttons {
+        justify-content: center;
+        gap: 4px 10px;
+    }
+
+    .level-btn,
+    .block-btn {
+        border: none;
+        background: none;
+        padding: 6px 8px;
+        font-size: 0.9rem;
+        font-weight: 400;
+        color: #6c757d;
+    }
+
+    .level-btn:disabled {
+        color: #ced4da;
+    }
+
+    .level-btn.active,
+    .block-btn.active {
+        color: #212529;
+        font-weight: 600;
+        background: none;
+    }
+
+    .morpheme-separator-desktop {
+        display: none;
+    }
+
+    .morpheme-separator-mobile {
+        display: inline;
+    }
+
+    .level-indicator {
+        top: 33px;
+        right: 33px;
+    }
+
+    .player-controls-mobile {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid #e9ecef;
+        padding: 15px;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        gap: 20px;
+    }
+
+    #settingsButton {
+        display: flex;
+        position: absolute;
+        right: 15px;
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        width: 52px;
+        height: 52px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .player-controls-mobile .player-btn {
+        width: 52px;
+        height: 52px;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+
+    .player-controls-mobile .player-btn:disabled {
+        border-color: #dee2e6;
+        background: white;
+        color: #ced4da;
+    }
+
+    .player-controls-mobile .play-pause {
+        width: 64px;
+        height: 64px;
+        border: 2px solid #adb5bd;
+        color: #6c757d;
+    }
+
+    .player-controls-mobile .player-btn .icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .player-controls-mobile .play-pause .icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    #settingsButton .icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    .player-controls-mobile .play-pause.playing {
+        background: #343a40;
+        border-color: #343a40;
+        color: white;
+    }
+
+    .settings-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1001;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0s 0.3s;
+    }
+
+    .settings-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease;
+    }
+
+    .settings-panel {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        padding: 20px;
+        z-index: 1002;
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        max-height: 80vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    .settings-panel.visible {
+        transform: translateY(0);
+    }
+
+    .settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .settings-header h2 {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    .close-btn {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+        background: none;
+        border: none;
+    }
+
+    .settings-section {
+        margin-bottom: 25px;
+    }
+
+    .settings-section h3 {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #adb5bd;
+        margin-bottom: 15px;
+        font-weight: 500;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 8px;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .settings-panel .control-group {
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .settings-panel .control-label {
+        font-weight: 400;
+        color: #333;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .settings-panel .option-btn {
+        border-radius: 20px;
+        background: #f8f9fa;
+        border-color: #dee2e6;
+        min-width: 0;
+        padding: 8px 12px;
+    }
+
+    .settings-panel .option-btn.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .settings-panel .player-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .settings-panel .player-buttons .option-btn {
+        flex: 0 1 auto;
+        min-width: 44px;
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+
+    .vocab-selector-mobile {
+        max-width: 60%;
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .word {
+        font-size: 2.5rem;
+    }
+
+    .block-buttons {
+        gap: 6px;
+    }
+
+    .block-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+
+    .settings-panel .player-buttons .option-btn {
+        min-width: 40px;
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+
+    .vocab-selector-mobile {
+        max-width: 100%;
+        width: 100%;
+    }
+}
 
 /* ============================================ */
 /* === НОВЫЕ СТИЛИ ДЛЯ АВТОРИЗАЦИИ И МОДАЛЬНОГО ОКНА === */
@@ -362,14 +1140,6 @@ body {
 .modal-header h3 {
     font-size: 1.1rem;
     font-weight: 500;
-}
-
-.close-btn {
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #888;
-    background: none;
-    border: none;
 }
 
 .modal-content {
@@ -559,8 +1329,6 @@ body {
 
 /* --- Адаптация для мобильных --- */
 @media (max-width: 768px) {
-    /* ... (все ваши старые мобильные стили остаются здесь) ... */
-
     .auth-container {
         display: none;
         /* Скрываем десктопную кнопку на мобильных */
@@ -571,3 +1339,5 @@ body {
         max-width: none;
     }
 }
+
+/* --- КОНЕЦ ФАЙЛА STYLE.CSS --- */
