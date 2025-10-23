@@ -3,7 +3,7 @@
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 const firebaseConfig = {
-    apiKey: "ВАШ_API_KEY", // Безопаснее хранить в переменных окружения, но для старта так нормально
+    apiKey: "AIzaSyBWkVK2-gnHLDk2XBxenqsSm4Dp8Ey9kcY",
     authDomain: "deutsch-lernen-aiweb.firebaseapp.com",
     projectId: "deutsch-lernen-aiweb",
     storageBucket: "deutsch-lernen-aiweb.firebasestorage.app",
