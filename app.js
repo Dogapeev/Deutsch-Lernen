@@ -893,17 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ Приложение инициализировано. Версия:', APP_VERSION);
     } catch (error) {
         console.error('❌ Критическая ошибка:', error);
-        // --- ВРЕМЕННЫЕ ИЗМЕНЕНИЯ ДЛЯ ДИАГНОСТИКИ ---
-        document.body.innerHTML = `
-                <div style="font-family: monospace; padding: 20px;">
-                    <h1>Произошла критическая ошибка</h1>
-                    <h2>Тип ошибки:</h2>
-                    <pre>${error.name}</pre>
-                    <h2>Сообщение:</h2>
-                    <pre>${error.message}</pre>
-                    <h2>Стек вызовов (где именно сломалось):</h2>
-                    <pre>${error.stack}</pre>
-                </div>`;
-        // --- КОНЕЦ ВРЕМЕННЫХ ИЗМЕНЕНИЙ ---
+        // Просто показываем простое сообщение, не ломая всю страницу
+        document.body.innerHTML = `<div style="text-align:center;padding:50px;"><h1>Произошла ошибка</h1><p>Попробуйте очистить кэш браузера.</p></div>`;
     }
 });
