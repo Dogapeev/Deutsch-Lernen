@@ -203,14 +203,6 @@ class VocabularyApp {
         this.updateUI();
     }
 
-    // --- Все остальные методы вашего класса без изменений ---
-    // (Я их скрыл для краткости, но они должны быть здесь)
-    // ...
-    // ... здесь идет весь ваш старый код ...
-    // ... loadAndSwitchVocabulary, fetchVocabularyData, и т.д. ...
-    // ...
-    // --- Давайте я их вставлю, чтобы файл был 100% полным ---
-
     setState(newState) {
         this.state = { ...this.state, ...newState };
         this.updateUI();
