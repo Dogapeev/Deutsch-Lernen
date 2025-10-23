@@ -14,6 +14,38 @@
         <div class="header">
             <h1>🇩🇪 Deutsch Lernen</h1>
             <p>Словарь с морфемами и предложениями</p>
+
+            <!-- Контейнер авторизации -->
+            <div class="auth-container">
+                <!-- Кнопка "Войти" (когда не авторизован) -->
+                <button id="openAuthBtn" class="auth-trigger-btn" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path
+                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                            fill="currentColor" />
+                    </svg>
+                    <span>Войти</span>
+                </button>
+
+                <!-- Профиль пользователя (когда авторизован) -->
+                <div id="userProfile" class="user-profile" style="display: none;">
+                    <div class="user-avatar">
+                        <img id="userAvatar" src="" alt="" style="display: none;">
+                        <span id="userInitials"></span>
+                    </div>
+                    <div class="user-info">
+                        <div id="userDisplayName" class="user-name"></div>
+                        <div id="userEmail" class="user-email"></div>
+                    </div>
+                    <button id="signOutBtn" class="btn-icon" title="Выйти">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path
+                                d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+                                fill="currentColor" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Mobile Header -->
@@ -231,7 +263,7 @@
             </symbol>
             <symbol id="icon-chat-off" viewBox="0 0 24 24">
                 <path
-                    d="m2.27 1.73 1.28-1.28L22 18.95l-1.27 1.28L18.95 20H4l-4 4V4c0-.28.06-.55.15-.8L2.27 1.73zM20 2H4.05L22 20.03V4c0-1.1-.9-2-2-2z" />
+                    d="m2.27 1.73 1.28-1.28L22 18.95l-1.27 1.28L18.95 20H4l-4 4V4c0-.28.06-.55.015-.8L2.27 1.73zM20 2H4.05L22 20.03V4c0-1.1-.9-2-2-2z" />
             </symbol>
             <symbol id="icon-sentence-on" viewBox="0 0 24 24">
                 <path
@@ -243,7 +275,7 @@
             </symbol>
             <symbol id="icon-settings" viewBox="0 0 24 24">
                 <path
-                    d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+                    d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12-.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
             </symbol>
             <symbol id="icon-levels" viewBox="0 0 24 24">
                 <path d="M3 13h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V7H3v2z" />
@@ -266,7 +298,148 @@
         </defs>
     </svg>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <audio id="audioPlayer" style="display:none;"></audio>
+
+    <!-- ============================================ -->
+    <!-- МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ -->
+    <!-- ============================================ -->
+    <div class="modal-overlay" id="authOverlay"></div>
+    <div class="modal auth-modal" id="authModal">
+        <div class="modal-header">
+            <h3>Вход в аккаунт</h3>
+            <button class="close-btn" id="closeAuthBtn">&times;</button>
+        </div>
+        <div class="modal-content">
+            <!-- Табы: Вход / Регистрация -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="signin">Вход</button>
+                <button class="auth-tab" data-tab="signup">Регистрация</button>
+            </div>
+            <!-- ========================================== -->
+            <!-- ВХОД -->
+            <!-- ========================================== -->
+            <div id="signinTab" class="auth-tab-content active">
+                <!-- Google Sign-In -->
+                <div class="social-auth">
+                    <button class="social-btn google-btn" id="googleSignInBtn">
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path fill="#4285F4"
+                                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
+                            <path fill="#34A853"
+                                d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" />
+                            <path fill="#FBBC05"
+                                d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+                            <path fill="#EA4335"
+                                d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" />
+                        </svg>
+                        <span>Продолжить с Google</span>
+                    </button>
+                </div>
+                <div class="divider">
+                    <span>или</span>
+                </div>
+                <!-- Email форма входа -->
+                <form id="signinForm">
+                    <div class="form-group">
+                        <label for="signinEmail">Email</label>
+                        <input type="email" id="signinEmail" placeholder="example@mail.com" required
+                            autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signinPassword">Пароль</label>
+                        <input type="password" id="signinPassword" placeholder="Введите пароль" required
+                            autocomplete="current-password">
+                    </div>
+                    <button type="button" class="btn-link" id="forgotPasswordBtn">
+                        Забыли пароль?
+                    </button>
+                    <button type="submit" class="btn-primary btn-block">
+                        Войти
+                    </button>
+                </form>
+            </div>
+            <!-- ========================================== -->
+            <!-- РЕГИСТРАЦИЯ -->
+            <!-- ========================================== -->
+            <div id="signupTab" class="auth-tab-content">
+                <!-- Google Sign-In -->
+                <div class="social-auth">
+                    <button class="social-btn google-btn" id="googleSignUpBtn">
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path fill="#4285F4"
+                                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
+                            <path fill="#34A853"
+                                d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" />
+                            <path fill="#FBBC05"
+                                d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+                            <path fill="#EA4335"
+                                d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" />
+                        </svg>
+                        <span>Зарегистрироваться через Google</span>
+                    </button>
+                </div>
+                <div class="divider">
+                    <span>или</span>
+                </div>
+                <!-- Email форма регистрации -->
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label for="signupName">Имя</label>
+                        <input type="text" id="signupName" placeholder="Ваше имя" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" placeholder="example@mail.com" required
+                            autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Пароль</label>
+                        <input type="password" id="signupPassword" placeholder="Минимум 6 символов" required
+                            minlength="6" autocomplete="new-password">
+                        <small class="hint">Минимум 6 символов</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPasswordConfirm">Повторите пароль</label>
+                        <input type="password" id="signupPasswordConfirm" placeholder="Повторите пароль" required
+                            minlength="6" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        Создать аккаунт
+                    </button>
+                </form>
+            </div>
+            <!-- ========================================== -->
+            <!-- СБРОС ПАРОЛЯ -->
+            <!-- ========================================== -->
+            <div id="resetPasswordTab" class="auth-tab-content">
+                <button class="back-btn" id="backToSigninBtn">
+                    ← Назад
+                </button>
+                <h4>Восстановление пароля</h4>
+                <p>Мы отправим вам письмо со ссылкой для сброса пароля</p>
+                <form id="resetPasswordForm">
+                    <div class="form-group">
+                        <label for="resetEmail">Email</label>
+                        <input type="email" id="resetEmail" placeholder="example@mail.com" required>
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        Отправить письмо
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notification" class="notification"></div>
+    <!-- ============================================ -->
+    <!-- КОНЕЦ МОДАЛЬНОГО ОКНА -->
+    <!-- ============================================ -->
 
     <script src="app.js"></script>
 </body>
