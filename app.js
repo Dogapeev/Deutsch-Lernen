@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.2 (Mobile Auth & Header UX)
+// app.js - Версия 5.0.3 (Fix Email/Password Auth & Add Notifications)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -8,7 +8,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyBWkVK2-gnHLDk2XBxenqsSm4Dp8Ey9kcY",
     authDomain: "deutsch-lernen-aiweb.firebaseapp.com",
     projectId: "deutsch-lernen-aiweb",
-    storageBucket: "deutsch-lernen-aiweb.appspot.com", // Исправлено
+    storageBucket: "deutsch-lernen-aiweb.appspot.com",
     messagingSenderId: "495823275301",
     appId: "1:495823275301:web:f724cdedce75a1538946cc",
     measurementId: "G-DV24PZW6R3"
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.2';
+const APP_VERSION = '5.0.3';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -91,6 +91,7 @@ class VocabularyApp {
             vocabularyManager: document.querySelector('.vocabulary-manager'),
             mobileVocabularySection: document.querySelector('.settings-section[data-section="vocabulary"]'),
             headerMobile: document.querySelector('.header-mobile'),
+            notification: document.getElementById('notification'),
             auth: {
                 container: document.querySelector('.auth-container'),
                 openAuthBtn: document.getElementById('openAuthBtn'),
@@ -104,7 +105,14 @@ class VocabularyApp {
                 overlay: document.getElementById('authOverlay'),
                 closeModalBtn: document.getElementById('closeAuthBtn'),
                 googleSignInBtn: document.getElementById('googleSignInBtn'),
-                googleSignUpBtn: document.getElementById('googleSignUpBtn')
+                googleSignUpBtn: document.getElementById('googleSignUpBtn'),
+                tabs: document.querySelectorAll('.auth-tab'),
+                tabContents: document.querySelectorAll('.auth-tab-content'),
+                signinForm: document.getElementById('signinForm'),
+                signupForm: document.getElementById('signupForm'),
+                resetPasswordForm: document.getElementById('resetPasswordForm'),
+                forgotPasswordBtn: document.getElementById('forgotPasswordBtn'),
+                backToSigninBtn: document.getElementById('backToSigninBtn'),
             }
         };
 
@@ -158,6 +166,7 @@ class VocabularyApp {
         if (show) {
             this.elements.auth.modal.classList.add('visible');
             this.elements.auth.overlay.classList.add('visible');
+            this.switchAuthTab('signin'); // Сбрасываем на вкладку входа при открытии
         } else {
             this.elements.auth.modal.classList.remove('visible');
             this.elements.auth.overlay.classList.remove('visible');
@@ -171,6 +180,7 @@ class VocabularyApp {
             this.toggleAuthModal(false);
         } catch (error) {
             console.error("Ошибка входа через Google:", error);
+            this.showNotification(`Ошибка: ${error.message}`, 'error');
         }
     }
 
@@ -192,16 +202,119 @@ class VocabularyApp {
         document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(btn => btn.addEventListener('click', e => this.setRepeatMode(parseInt(e.currentTarget.dataset.mode))));
         document.querySelectorAll('.sequence-selector, .sequence-selector-mobile').forEach(btn => btn.addEventListener('click', e => this.setSequenceMode(e.currentTarget.dataset.mode)));
         document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.loadAndSwitchVocabulary(e.target.value)));
+
+        // --- AUTH EVENTS ---
         this.elements.auth.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
         this.elements.auth.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.overlay.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.signOutBtn.addEventListener('click', () => auth.signOut());
         this.elements.auth.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
         this.elements.auth.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
+
+        this.elements.auth.tabs.forEach(tab => {
+            tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab));
+        });
+        this.elements.auth.forgotPasswordBtn.addEventListener('click', () => this.switchAuthTab('resetPassword'));
+        this.elements.auth.backToSigninBtn.addEventListener('click', () => this.switchAuthTab('signin'));
+
+        this.elements.auth.signupForm.addEventListener('submit', e => this.handleSignUpWithEmail(e));
+        this.elements.auth.signinForm.addEventListener('submit', e => this.handleSignInWithEmail(e));
+        this.elements.auth.resetPasswordForm.addEventListener('submit', e => this.handlePasswordReset(e));
+
+        // --- WINDOW EVENTS ---
         window.addEventListener('resize', () => this.repositionAuthContainer());
         window.addEventListener('scroll', () => this.handleScroll());
     }
 
+    // --- AUTH HANDLERS ---
+    async handleSignUpWithEmail(e) {
+        e.preventDefault();
+        const name = e.target.signupName.value;
+        const email = e.target.signupEmail.value;
+        const password = e.target.signupPassword.value;
+        const passwordConfirm = e.target.signupPasswordConfirm.value;
+
+        if (password !== passwordConfirm) {
+            this.showNotification('Пароли не совпадают!', 'error');
+            return;
+        }
+
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            await userCredential.user.updateProfile({ displayName: name });
+            this.toggleAuthModal(false);
+            this.showNotification(`Добро пожаловать, ${name}!`, 'success');
+        } catch (error) {
+            console.error("Ошибка регистрации:", error);
+            this.showNotification(this.getFirebaseAuthErrorMessage(error), 'error');
+        }
+    }
+
+    async handleSignInWithEmail(e) {
+        e.preventDefault();
+        const email = e.target.signinEmail.value;
+        const password = e.target.signinPassword.value;
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+            this.toggleAuthModal(false);
+        } catch (error) {
+            console.error("Ошибка входа:", error);
+            this.showNotification(this.getFirebaseAuthErrorMessage(error), 'error');
+        }
+    }
+
+    async handlePasswordReset(e) {
+        e.preventDefault();
+        const email = e.target.resetEmail.value;
+
+        try {
+            await auth.sendPasswordResetEmail(email);
+            this.showNotification('Письмо для сброса пароля отправлено на ваш email.', 'success');
+            this.switchAuthTab('signin');
+        } catch (error) {
+            console.error("Ошибка сброса пароля:", error);
+            this.showNotification(this.getFirebaseAuthErrorMessage(error), 'error');
+        }
+    }
+
+    switchAuthTab(tabId) {
+        this.elements.auth.tabContents.forEach(content => {
+            content.classList.toggle('active', content.id === `${tabId}Tab`);
+        });
+        this.elements.auth.tabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabId);
+        });
+    }
+
+    getFirebaseAuthErrorMessage(error) {
+        switch (error.code) {
+            case 'auth/email-already-in-use':
+                return 'Этот email уже зарегистрирован.';
+            case 'auth/invalid-email':
+                return 'Неверный формат email.';
+            case 'auth/weak-password':
+                return 'Пароль слишком слабый (минимум 6 символов).';
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+                return 'Неверный email или пароль.';
+            default:
+                return 'Произошла ошибка. Попробуйте снова.';
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        const notification = this.elements.notification;
+        if (!notification) return;
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        notification.classList.add('visible');
+        setTimeout(() => {
+            notification.classList.remove('visible');
+        }, 4000);
+    }
+
+    // --- UI/UX HANDLERS ---
     repositionAuthContainer() {
         const isMobile = window.innerWidth <= 768;
         const authContainer = this.elements.auth.container;
