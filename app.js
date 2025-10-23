@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.1 (Bugfix & Firebase Auth Integration)
+// app.js - Версия 5.0.2 (Mobile Auth & Header UX)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.1';
+const APP_VERSION = '5.0.2';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -47,6 +47,8 @@ class VocabularyApp {
         this.audioPlayer = null;
         this.themeMap = {};
         this.elements = {};
+        this.lastScrollY = 0;
+        this.headerCollapseTimeout = null;
 
         this.state = {
             currentUser: null,
@@ -88,7 +90,9 @@ class VocabularyApp {
             themeButtonsContainer: document.getElementById('themeButtonsContainer'),
             vocabularyManager: document.querySelector('.vocabulary-manager'),
             mobileVocabularySection: document.querySelector('.settings-section[data-section="vocabulary"]'),
+            headerMobile: document.querySelector('.header-mobile'),
             auth: {
+                container: document.querySelector('.auth-container'),
                 openAuthBtn: document.getElementById('openAuthBtn'),
                 userProfile: document.getElementById('userProfile'),
                 signOutBtn: document.getElementById('signOutBtn'),
@@ -105,24 +109,25 @@ class VocabularyApp {
         };
 
         this.bindEvents();
+        this.repositionAuthContainer();
         auth.onAuthStateChanged(user => this.handleAuthStateChanged(user));
-        setTimeout(() => {
-            document.querySelector('.header-mobile')?.classList.add('collapsed');
-        }, 3000);
     }
 
     handleAuthStateChanged(user) {
+        clearTimeout(this.headerCollapseTimeout);
         if (user) {
             this.setState({ currentUser: user });
             this.updateAuthUI(user);
             console.log("✅ Пользователь вошел:", user.displayName);
             this.loadAndSwitchVocabulary(this.state.currentVocabulary, true);
+            this.headerCollapseTimeout = setTimeout(() => this.collapseMobileHeader(), 3000);
         } else {
             this.setState({ currentUser: null });
             this.updateAuthUI(null);
             this.allWords = [];
             this.showLoginMessage();
             console.log("🔴 Пользователь вышел.");
+            this.expandMobileHeader();
         }
     }
 
@@ -193,6 +198,44 @@ class VocabularyApp {
         this.elements.auth.signOutBtn.addEventListener('click', () => auth.signOut());
         this.elements.auth.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
         this.elements.auth.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
+        window.addEventListener('resize', () => this.repositionAuthContainer());
+        window.addEventListener('scroll', () => this.handleScroll());
+    }
+
+    repositionAuthContainer() {
+        const isMobile = window.innerWidth <= 768;
+        const authContainer = this.elements.auth.container;
+        if (!authContainer) return;
+        const mobileHeader = this.elements.headerMobile;
+        const desktopHeader = document.querySelector('.header');
+        if (isMobile) {
+            if (authContainer.parentElement !== mobileHeader) {
+                mobileHeader.appendChild(authContainer);
+            }
+        } else {
+            if (authContainer.parentElement !== desktopHeader) {
+                desktopHeader.appendChild(authContainer);
+            }
+        }
+    }
+
+    handleScroll() {
+        if (window.innerWidth > 768) return;
+        const currentScrollY = window.scrollY;
+        if (currentScrollY === 0) {
+            this.expandMobileHeader();
+        } else if (currentScrollY > this.lastScrollY && currentScrollY > 50) {
+            this.collapseMobileHeader();
+        }
+        this.lastScrollY = currentScrollY;
+    }
+
+    collapseMobileHeader() {
+        this.elements.headerMobile?.classList.add('collapsed');
+    }
+
+    expandMobileHeader() {
+        this.elements.headerMobile?.classList.remove('collapsed');
     }
 
     showLoginMessage() {

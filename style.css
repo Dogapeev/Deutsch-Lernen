@@ -707,9 +707,13 @@ body {
         text-align: center;
         border-bottom: 1px solid #e9ecef;
         overflow: hidden;
-        max-height: 100px;
+        max-height: 150px;
+        /* Увеличено для блока авторизации */
         transition: max-height 0.6s ease-out, padding 0.6s ease-out, border-color 0.6s;
         background: white;
+        position: sticky;
+        top: 0;
+        z-index: 999;
     }
 
     .header-mobile.collapsed {
@@ -1329,10 +1333,43 @@ body {
 
 /* --- Адаптация для мобильных --- */
 @media (max-width: 768px) {
-    .auth-container {
-        display: none;
-        /* Скрываем десктопную кнопку на мобильных */
+
+    /* Стили для блока авторизации внутри мобильного хедера */
+    .header-mobile .auth-container {
+        position: static;
+        transform: none;
+        justify-content: center;
+        margin-top: 15px;
+        padding-bottom: 5px;
     }
+
+    .header-mobile .auth-trigger-btn {
+        padding: 6px 14px;
+        font-size: 0.9rem;
+    }
+
+    .header-mobile .user-profile {
+        gap: 8px;
+    }
+
+    .header-mobile .user-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .header-mobile .user-name {
+        font-size: 0.95rem;
+    }
+
+    .header-mobile .user-email {
+        display: none;
+        /* Экономим место */
+    }
+
+    .header-mobile .btn-icon {
+        padding: 4px;
+    }
+
 
     .auth-modal {
         width: 90%;
