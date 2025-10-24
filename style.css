@@ -1,3 +1,5 @@
+/* --- НАЧАЛО ФАЙЛА STYLE.CSS --- */
+
 /* --- BASE STYLES --- */
 * {
     margin: 0;
@@ -26,14 +28,15 @@ body {
 .header {
     background: #fff;
     border-bottom: 1px solid #e5e5e5;
-    padding: 40px 30px;
-    text-align: center;
+    padding: 20px 30px;
+    text-align: left;
+    position: relative;
 }
 
 .header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 8px;
-    font-weight: 300;
+    font-size: 2.2rem;
+    margin-bottom: 0px;
+    font-weight: 200;
     color: #333;
 }
 
@@ -41,6 +44,7 @@ body {
     color: #666;
     font-size: 1rem;
     font-weight: 400;
+    margin-top: -8px;
 }
 
 .stats {
@@ -170,7 +174,6 @@ body {
     margin-right: 8px;
 }
 
-/* --- ИЗМЕНЕНИЕ 1: Делаем .main-content стабильным якорем для индикатора --- */
 .main-content {
     padding: 40px;
     height: 500px;
@@ -179,7 +182,6 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
-    /* Теперь это наш якорь! */
 }
 
 #studyArea {
@@ -194,7 +196,6 @@ body {
     padding: 70px 40px 20px;
     text-align: center;
     margin-bottom: 0;
-    /* position: relative; -- Убрано */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -316,7 +317,6 @@ body {
     font-style: italic;
 }
 
-/* --- ИЗМЕНЕНИЕ 2: Индикатор теперь привязан к .main-content и всегда наверху --- */
 .level-indicator {
     position: absolute;
     top: 50px;
@@ -329,7 +329,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     z-index: 10;
-    /* Гарантирует, что индикатор поверх всего */
 }
 
 .level-indicator.a1,
@@ -560,7 +559,8 @@ body {
 }
 
 .option-btn,
-.repeat-selector {
+.repeat-selector,
+.sequence-selector {
     padding: 6px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -572,22 +572,38 @@ body {
     font-size: 0.85rem;
     min-width: 60px;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.sequence-selector .icon {
+    width: 16px;
+    height: 16px;
 }
 
 .option-btn:hover,
-.repeat-selector:hover {
+.repeat-selector:hover,
+.sequence-selector:hover {
     border-color: #999;
 }
 
 .option-btn.active,
-.repeat-selector.active {
+.repeat-selector.active,
+.sequence-selector.active {
     background: #333;
     color: white;
     border-color: #333;
 }
 
+.sequence-selector.active .icon {
+    fill: white;
+}
+
 .option-btn:disabled,
-.repeat-selector:disabled {
+.repeat-selector:disabled,
+.sequence-selector:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     background: #f5f5f5;
@@ -627,6 +643,12 @@ body {
     stroke-width: 0;
     stroke: currentColor;
     fill: currentColor;
+}
+
+.no-words {
+    text-align: center;
+    color: #888;
+    width: 100%;
 }
 
 /* --- MOBILE-SPECIFIC STYLES --- */
@@ -685,9 +707,13 @@ body {
         text-align: center;
         border-bottom: 1px solid #e9ecef;
         overflow: hidden;
-        max-height: 100px;
+        max-height: 150px;
+        /* Увеличено для блока авторизации */
         transition: max-height 0.6s ease-out, padding 0.6s ease-out, border-color 0.6s;
         background: white;
+        position: sticky;
+        top: 0;
+        z-index: 999;
     }
 
     .header-mobile.collapsed {
@@ -740,8 +766,8 @@ body {
     }
 
     .level-indicator {
-        top: 28px;
-        right: 28px;
+        top: 33px;
+        right: 33px;
     }
 
     .player-controls-mobile {
@@ -973,3 +999,382 @@ body {
         width: 100%;
     }
 }
+
+/* ============================================ */
+/* === НОВЫЕ СТИЛИ ДЛЯ АВТОРИЗАЦИИ И МОДАЛЬНОГО ОКНА === */
+/* ============================================ */
+
+/* --- Контейнер в шапке --- */
+.auth-container {
+    position: absolute;
+    top: 50%;
+    right: 30px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+}
+
+.auth-trigger-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.auth-trigger-btn:hover {
+    background-color: #f7f7f7;
+    border-color: #ccc;
+}
+
+/* --- Профиль пользователя --- */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-weight: 500;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-info {
+    text-align: left;
+}
+
+.user-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
+.user-email {
+    font-size: 0.8rem;
+    color: #777;
+    line-height: 1.2;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+}
+
+.btn-icon:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* --- Модальное окно --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+.modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.auth-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1002;
+    width: 100%;
+    max-width: 400px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.auth-modal.visible {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.modal-content {
+    padding: 20px;
+}
+
+/* --- Табы --- */
+.auth-tabs {
+    display: flex;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 20px;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #888;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.auth-tab.active {
+    color: #333;
+    border-bottom-color: #333;
+}
+
+.auth-tab-content {
+    display: none;
+}
+
+.auth-tab-content.active {
+    display: block;
+}
+
+/* --- Социальные кнопки и разделитель --- */
+.social-auth {
+    margin-bottom: 20px;
+}
+
+.social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    gap: 10px;
+}
+
+.social-btn:hover {
+    background: #f7f7f7;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #aaa;
+    margin: 20px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.divider:not(:empty)::before {
+    margin-right: .5em;
+}
+
+.divider:not(:empty)::after {
+    margin-left: .5em;
+}
+
+/* --- Формы --- */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.form-group .hint {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 5px;
+}
+
+/* --- Общие кнопки --- */
+.btn-primary {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #555;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #4a90e2;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    margin-bottom: 15px;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+/* --- Уведомления --- */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.notification.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.notification.success {
+    background-color: #28a745;
+}
+
+.notification.error {
+    background-color: #dc3545;
+}
+
+
+/* --- Адаптация для мобильных --- */
+@media (max-width: 768px) {
+
+    /* Стили для блока авторизации внутри мобильного хедера */
+    .header-mobile .auth-container {
+        position: static;
+        transform: none;
+        justify-content: center;
+        margin-top: 15px;
+        padding-bottom: 5px;
+    }
+
+    .header-mobile .auth-trigger-btn {
+        padding: 6px 14px;
+        font-size: 0.9rem;
+    }
+
+    .header-mobile .user-profile {
+        gap: 8px;
+    }
+
+    .header-mobile .user-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .header-mobile .user-name {
+        font-size: 0.95rem;
+    }
+
+    .header-mobile .user-email {
+        display: none;
+        /* Экономим место */
+    }
+
+    .header-mobile .btn-icon {
+        padding: 4px;
+    }
+
+
+    .auth-modal {
+        width: 90%;
+        max-width: none;
+    }
+}
+
+/* --- КОНЕЦ ФАЙЛА STYLE.CSS --- */
