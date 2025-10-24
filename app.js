@@ -1,19 +1,18 @@
-// app.js - Версия 2.9.9 (Polished Animations & Timings)
+// app.js - Версия 4.0.0 (Stable Frame & Final UI)
 "use strict";
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '2.9.9'; // Обновляем версию
+const APP_VERSION = '4.0.0'; // Обновляем версию
 const TTS_API_BASE_URL = 'https://deutsch-lernen-blnp.onrender.com';
 // ... (остальные константы) ...
 
-// --- ИЗМЕНЕНИЕ 2: Увеличиваем длительность пауз для комфортного просмотра ---
 const DELAYS = {
     INITIAL_WORD: 500,
     BETWEEN_REPEATS: 1500,
     BEFORE_MORPHEMES: 1500,
-    BEFORE_SENTENCE: 4000,      // Было 2500. Больше времени на просмотр морфем.
-    BEFORE_TRANSLATION: 3000,   // Было 1500. Больше времени на чтение примера.
-    BEFORE_NEXT_WORD: 3000,     // Было 2000. Больше времени на финальный просмотр.
+    BEFORE_SENTENCE: 2000,
+    BEFORE_TRANSLATION: 2000,
+    BEFORE_NEXT_WORD: 2000,
     CARD_FADE_OUT: 750,
     CARD_FADE_IN: 300
 };
@@ -52,7 +51,9 @@ class VocabularyApp {
             showMorphemeTranslations: true,
             showSentences: true,
         };
+        // --- ИЗМЕНЕНИЕ 1: Добавляем 'mainContent' в список элементов для доступа к стабильному фрейму ---
         this.elements = {
+            mainContent: document.getElementById('mainContent'),
             studyArea: document.getElementById('studyArea'),
             totalWords: document.getElementById('totalWords'),
             studiedToday: document.getElementById('studiedToday'),
@@ -591,14 +592,46 @@ class VocabularyApp {
         this.runDisplaySequence(nextWord);
         if (wasAutoPlaying) this.startAutoPlay();
     }
+
+    // --- ИЗМЕНЕНИЕ 2: Полностью переработанный метод для раздельной отрисовки индикатора и карточки ---
     renderInitialCard(word) {
-        if (!word) { this.showNoWordsMessage(); return; }
-        const levelHtml = word.level ? `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>` : '';
-        // --- ИЗМЕНЕНИЕ 1: Изменяем порядок элементов в HTML для правильной анимации ---
-        this.elements.studyArea.innerHTML = `<div class="card card-appear" id="wordCard">${levelHtml}<div class="word-container">${this.formatGermanWord(word)}<div class="pronunciation">${word.pronunciation || ''}</div><div id="translationContainer" class="translation-container"></div><div id="morphemeTranslations" class="morpheme-translations"></div><div id="sentenceContainer" class="sentence-container"></div></div></div>`;
+        if (!word) {
+            this.showNoWordsMessage();
+            return;
+        }
+
+        // 1. Управляем индикатором отдельно, ВНЕ studyArea
+        // Сначала удаляем старый индикатор, если он есть, из стабильного фрейма
+        this.elements.mainContent.querySelector('.level-indicator')?.remove();
+
+        // Затем создаем и вставляем новый индикатор прямо в mainContent (наш стабильный фрейм)
+        if (word.level) {
+            const levelHtml = `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>`;
+            this.elements.mainContent.insertAdjacentHTML('afterbegin', levelHtml);
+        }
+
+        // 2. Генерируем HTML для карточки УЖЕ БЕЗ ИНДИКАТОРА
+        const cardHtml = `
+            <div class="card card-appear" id="wordCard">
+                <div class="word-container">
+                    ${this.formatGermanWord(word)}
+                    <div class="pronunciation">${word.pronunciation || ''}</div>
+                    <div class="swappable-area">
+                        <div id="morphemeTranslations" class="morpheme-translations"></div>
+                        <div id="translationContainer" class="translation-container"></div>
+                    </div>
+                    <div id="sentenceContainer" class="sentence-container"></div>
+                </div>
+            </div>`;
+
+        // 3. Обновляем ТОЛЬКО studyArea, не затрагивая индикатор
+        this.elements.studyArea.innerHTML = cardHtml;
+
+        // 4. Вешаем обработчик как и раньше
         document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateUI();
     }
+
     displayMorphemesAndTranslations(word) {
         const { showMorphemes, showMorphemeTranslations } = this.state;
         const mainWordElement = document.querySelector('.word .main-word');
