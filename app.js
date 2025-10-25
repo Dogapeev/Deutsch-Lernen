@@ -224,6 +224,8 @@ class VocabularyApp {
         // --- WINDOW EVENTS ---
         window.addEventListener('resize', () => this.repositionAuthContainer());
         window.addEventListener('scroll', () => this.handleScroll());
+
+        this.elements.mainContent.addEventListener('click', () => this.toggleAutoPlay());
     }
 
     // --- AUTH HANDLERS ---
@@ -774,7 +776,7 @@ class VocabularyApp {
         document.querySelectorAll('[id^=toggleButton]').forEach(btn => {
             btn.classList.toggle('playing', this.state.isAutoPlaying);
         });
-        document.getElementById('wordCard')?.classList.toggle('is-clickable', !this.state.isAutoPlaying);
+        this.elements.mainContent.classList.toggle('is-clickable', !this.state.isAutoPlaying);
     }
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
@@ -903,7 +905,6 @@ class VocabularyApp {
                 </div>
             </div>`;
         this.elements.studyArea.innerHTML = cardHtml;
-        document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateUI();
     }
     displayMorphemesAndTranslations(word) {
