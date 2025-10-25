@@ -729,7 +729,7 @@ class VocabularyApp {
     }
     setupIcons() {
         const iconMap = {
-            prevButton: '#icon-prev', nextButton: '#icon-next', settingsButton: '#icon-settings',
+            prevButton: '#icon-prev', nextButton: '#icon-next',
             soundToggle: this.state.soundEnabled ? '#icon-sound-on' : '#icon-sound-off',
             translationSoundToggle: this.state.translationSoundEnabled ? '#icon-chat-on' : '#icon-chat-off',
             sentenceSoundToggle: this.state.sentenceSoundEnabled ? '#icon-sentence-on' : '#icon-sentence-off',
