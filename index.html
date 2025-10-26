@@ -13,7 +13,39 @@
         <!-- Desktop Header -->
         <div class="header">
             <h1>🇩🇪 Deutsch Lernen</h1>
-            <p>Словарь с морфемами и предложениями</p>
+            <p>Учим слова с морфемами и примерами</p>
+
+            <!-- Контейнер авторизации -->
+            <div class="auth-container">
+                <!-- Кнопка "Войти" (когда не авторизован) -->
+                <button id="openAuthBtn" class="auth-trigger-btn" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path
+                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                            fill="currentColor" />
+                    </svg>
+                    <span>Войти</span>
+                </button>
+
+                <!-- Профиль пользователя (когда авторизован) -->
+                <div id="userProfile" class="user-profile" style="display: none;">
+                    <div class="user-avatar">
+                        <img id="userAvatar" src="" alt="" style="display: none;">
+                        <span id="userInitials"></span>
+                    </div>
+                    <div class="user-info">
+                        <div id="userDisplayName" class="user-name"></div>
+                        <div id="userEmail" class="user-email"></div>
+                    </div>
+                    <button id="signOutBtn" class="btn-icon" title="Выйти">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path
+                                d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+                                fill="currentColor" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Mobile Header -->
@@ -80,10 +112,25 @@
                         title="Звук примера"></button>
                 </div>
                 <div class="control-group">
+                    <span class="control-label">Порядок:</span>
+                    <button class="sequence-selector" data-mode="sequential">
+                        <svg class="icon">
+                            <use xlink:href="#icon-sequential"></use>
+                        </svg>
+                        <span>По порядку</span>
+                    </button>
+                    <button class="sequence-selector" data-mode="random">
+                        <svg class="icon">
+                            <use xlink:href="#icon-random"></use>
+                        </svg>
+                        <span>Случайно</span>
+                    </button>
+                </div>
+                <div class="control-group">
                     <span class="control-label">Повторений:</span>
-                    <button class="repeat-selector" data-mode="1">1</button><button class="repeat-selector"
-                        data-mode="2">2</button><button class="repeat-selector" data-mode="3">3</button><button
-                        class="repeat-selector" data-mode="random">∞</button>
+                    <button class="repeat-selector" data-mode="1">1</button>
+                    <button class="repeat-selector" data-mode="2">2</button>
+                    <button class="repeat-selector" data-mode="3">3</button>
                 </div>
                 <div class="control-group"><span class="control-label">Артикли:</span><button class="repeat-selector"
                         id="toggleArticles_desktop" title="Показать/Скрыть артикли"></button></div>
@@ -112,7 +159,11 @@
         <button class="player-btn" id="prevButton_mobile" title="Предыдущее слово"></button>
         <button class="player-btn play-pause" id="toggleButton_mobile" title="Остановить/Запустить"></button>
         <button class="player-btn" id="nextButton_mobile" title="Следующее слово"></button>
-        <button id="settingsButton" title="Настройки"></button>
+        <button id="settingsButton" title="Настройки">
+            <svg class="icon">
+                <use xlink:href="#icon-settings"></use>
+            </svg>
+        </button>
     </div>
 
     <!-- Mobile Settings Panel -->
@@ -134,10 +185,30 @@
             <div class="settings-section">
                 <h3>Процесс</h3>
                 <div class="options-grid">
-                    <div class="control-group"><span class="control-label">Повторений:</span>
-                        <div class="player-buttons"><button class="option-btn" data-mode="1">1</button><button
-                                class="option-btn" data-mode="2">2</button><button class="option-btn"
-                                data-mode="3">3</button><button class="option-btn" data-mode="random">∞</button></div>
+                    <div class="control-group">
+                        <span class="control-label">Порядок слов:</span>
+                        <div class="player-buttons">
+                            <button class="option-btn sequence-selector-mobile" data-mode="sequential">
+                                <svg class="icon">
+                                    <use xlink:href="#icon-sequential"></use>
+                                </svg>
+                                <span>По порядку</span>
+                            </button>
+                            <button class="option-btn sequence-selector-mobile" data-mode="random">
+                                <svg class="icon">
+                                    <use xlink:href="#icon-random"></use>
+                                </svg>
+                                <span>Случайно</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <span class="control-label">Повторений:</span>
+                        <div class="player-buttons">
+                            <button class="option-btn repeat-selector-mobile" data-mode="1">1</button>
+                            <button class="option-btn repeat-selector-mobile" data-mode="2">2</button>
+                            <button class="option-btn repeat-selector-mobile" data-mode="3">3</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -196,7 +267,7 @@
             </symbol>
             <symbol id="icon-chat-off" viewBox="0 0 24 24">
                 <path
-                    d="m2.27 1.73 1.28-1.28L22 18.95l-1.27 1.28L18.95 20H4l-4 4V4c0-.28.06-.55.15-.8L2.27 1.73zM20 2H4.05L22 20.03V4c0-1.1-.9-2-2-2z" />
+                    d="m2.27 1.73 1.28-1.28L22 18.95l-1.27 1.28L18.95 20H4l-4 4V4c0-.28.06-.55.015-.8L2.27 1.73zM20 2H4.05L22 20.03V4c0-1.1-.9-2-2-2z" />
             </symbol>
             <symbol id="icon-sentence-on" viewBox="0 0 24 24">
                 <path
@@ -221,10 +292,158 @@
                 <path
                     d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-0.75L9 9V4zm6 12H9v-2h6v2zm3-4H9v-2h9v2zm0-4H9V8h9v2z" />
             </symbol>
+            <symbol id="icon-sequential" viewBox="0 0 24 24">
+                <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+            </symbol>
+            <symbol id="icon-random" viewBox="0 0 24 24">
+                <path
+                    d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
+            </symbol>
         </defs>
     </svg>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <audio id="audioPlayer" style="display:none;"></audio>
+
+    <!-- ============================================ -->
+    <!-- МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ -->
+    <!-- ============================================ -->
+    <div class="modal-overlay" id="authOverlay"></div>
+    <div class="modal auth-modal" id="authModal">
+        <div class="modal-header">
+            <h3>Вход в аккаунт</h3>
+            <button class="close-btn" id="closeAuthBtn">&times;</button>
+        </div>
+        <div class="modal-content">
+            <!-- Табы: Вход / Регистрация -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="signin">Вход</button>
+                <button class="auth-tab" data-tab="signup">Регистрация</button>
+            </div>
+            <!-- ========================================== -->
+            <!-- ВХОД -->
+            <!-- ========================================== -->
+            <div id="signinTab" class="auth-tab-content active">
+                <!-- Google Sign-In -->
+                <div class="social-auth">
+                    <button class="social-btn google-btn" id="googleSignInBtn">
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path fill="#4285F4"
+                                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
+                            <path fill="#34A853"
+                                d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" />
+                            <path fill="#FBBC05"
+                                d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+                            <path fill="#EA4335"
+                                d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" />
+                        </svg>
+                        <span>Продолжить с Google</span>
+                    </button>
+                </div>
+                <div class="divider">
+                    <span>или</span>
+                </div>
+                <!-- Email форма входа -->
+                <form id="signinForm">
+                    <div class="form-group">
+                        <label for="signinEmail">Email</label>
+                        <input type="email" id="signinEmail" placeholder="example@mail.com" required
+                            autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signinPassword">Пароль</label>
+                        <input type="password" id="signinPassword" placeholder="Введите пароль" required
+                            autocomplete="current-password">
+                    </div>
+                    <button type="button" class="btn-link" id="forgotPasswordBtn">
+                        Забыли пароль?
+                    </button>
+                    <button type="submit" class="btn-primary btn-block">
+                        Войти
+                    </button>
+                </form>
+            </div>
+            <!-- ========================================== -->
+            <!-- РЕГИСТРАЦИЯ -->
+            <!-- ========================================== -->
+            <div id="signupTab" class="auth-tab-content">
+                <!-- Google Sign-In -->
+                <div class="social-auth">
+                    <button class="social-btn google-btn" id="googleSignUpBtn">
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path fill="#4285F4"
+                                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
+                            <path fill="#34A853"
+                                d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" />
+                            <path fill="#FBBC05"
+                                d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+                            <path fill="#EA4335"
+                                d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" />
+                        </svg>
+                        <span>Зарегистрироваться через Google</span>
+                    </button>
+                </div>
+                <div class="divider">
+                    <span>или</span>
+                </div>
+                <!-- Email форма регистрации -->
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label for="signupName">Имя</label>
+                        <input type="text" id="signupName" placeholder="Ваше имя" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" placeholder="example@mail.com" required
+                            autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Пароль</label>
+                        <input type="password" id="signupPassword" placeholder="Минимум 6 символов" required
+                            minlength="6" autocomplete="new-password">
+                        <small class="hint">Минимум 6 символов</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPasswordConfirm">Повторите пароль</label>
+                        <input type="password" id="signupPasswordConfirm" placeholder="Повторите пароль" required
+                            minlength="6" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        Создать аккаунт
+                    </button>
+                </form>
+            </div>
+            <!-- ========================================== -->
+            <!-- СБРОС ПАРОЛЯ -->
+            <!-- ========================================== -->
+            <div id="resetPasswordTab" class="auth-tab-content">
+                <button class="back-btn" id="backToSigninBtn">
+                    ← Назад
+                </button>
+                <h4>Восстановление пароля</h4>
+                <p>Мы отправим вам письмо со ссылкой для сброса пароля</p>
+                <form id="resetPasswordForm">
+                    <div class="form-group">
+                        <label for="resetEmail">Email</label>
+                        <input type="email" id="resetEmail" placeholder="example@mail.com" required>
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        Отправить письмо
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notification" class="notification"></div>
+    <!-- ============================================ -->
+    <!-- КОНЕЦ МОДАЛЬНОГО ОКНА -->
+    <!-- ============================================ -->
 
     <script src="app.js"></script>
 </body>
