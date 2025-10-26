@@ -184,6 +184,10 @@ body {
     position: relative;
 }
 
+.main-content.is-clickable {
+    cursor: pointer;
+}
+
 #studyArea {
     display: flex;
     flex-grow: 1;
@@ -202,10 +206,6 @@ body {
     transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     width: 100%;
     flex-grow: 1;
-}
-
-.card.is-clickable {
-    cursor: pointer;
 }
 
 .word-container {
@@ -803,7 +803,7 @@ body {
     .player-controls-mobile .player-btn {
         width: 52px;
         height: 52px;
-        border-color: #dee2e6;
+        border-color: #adb5bd;
         color: #6c757d;
     }
 

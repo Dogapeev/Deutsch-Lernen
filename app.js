@@ -188,19 +188,58 @@ class VocabularyApp {
         document.getElementById('settingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(true));
         document.getElementById('closeSettingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(false));
         this.elements.settingsOverlay.addEventListener('click', () => this.toggleSettingsPanel(false));
-        document.querySelectorAll('[id^=toggleButton]').forEach(b => b.addEventListener('click', () => this.toggleAutoPlay()));
-        document.querySelectorAll('[id^=prevButton]').forEach(b => b.addEventListener('click', () => this.showPreviousWord()));
-        document.querySelectorAll('[id^=nextButton]').forEach(b => b.addEventListener('click', () => this.showNextWordManually()));
-        document.querySelectorAll('[id^=soundToggle]').forEach(b => b.addEventListener('click', () => this.toggleSetting('soundEnabled')));
-        document.querySelectorAll('[id^=translationSoundToggle]').forEach(b => b.addEventListener('click', () => this.toggleSetting('translationSoundEnabled')));
-        document.querySelectorAll('[id^=sentenceSoundToggle]').forEach(b => b.addEventListener('click', () => this.toggleSetting('sentenceSoundEnabled')));
-        document.querySelectorAll('[id^=toggleArticles]').forEach(b => b.addEventListener('click', () => this.toggleSetting('showArticles')));
-        document.querySelectorAll('[id^=toggleMorphemes]').forEach(b => b.addEventListener('click', () => this.toggleSetting('showMorphemes')));
-        document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(b => b.addEventListener('click', () => this.toggleSetting('showMorphemeTranslations')));
-        document.querySelectorAll('[id^=toggleSentences]').forEach(b => b.addEventListener('click', () => this.toggleSetting('showSentences')));
-        document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => this.toggleLevel(e.target.dataset.level)));
-        document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(btn => btn.addEventListener('click', e => this.setRepeatMode(parseInt(e.currentTarget.dataset.mode))));
-        document.querySelectorAll('.sequence-selector, .sequence-selector-mobile').forEach(btn => btn.addEventListener('click', e => this.setSequenceMode(e.currentTarget.dataset.mode)));
+        document.querySelectorAll('[id^=toggleButton]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleAutoPlay();
+        }));
+        document.querySelectorAll('[id^=prevButton]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.showPreviousWord();
+        }));
+        document.querySelectorAll('[id^=nextButton]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.showNextWordManually();
+        }));
+        document.querySelectorAll('[id^=soundToggle]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleSetting('soundEnabled');
+        }));
+        document.querySelectorAll('[id^=translationSoundToggle]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleSetting('translationSoundEnabled');
+        }));
+        document.querySelectorAll('[id^=sentenceSoundToggle]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleSetting('sentenceSoundEnabled');
+        }));
+        document.querySelectorAll('[id^=toggleArticles]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleSetting('showArticles');
+        }));
+        document.querySelectorAll('[id^=toggleMorphemes]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleSetting('showMorphemes');
+        }));
+        document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleSetting('showMorphemeTranslations');
+        }));
+        document.querySelectorAll('[id^=toggleSentences]').forEach(b => b.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.toggleSetting('showSentences');
+        }));
+        document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => {
+            e.stopPropagation();
+            this.toggleLevel(e.target.dataset.level);
+        }));
+        document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(btn => btn.addEventListener('click', e => {
+            e.stopPropagation();
+            this.setRepeatMode(parseInt(e.currentTarget.dataset.mode));
+        }));
+        document.querySelectorAll('.sequence-selector, .sequence-selector-mobile').forEach(btn => btn.addEventListener('click', e => {
+            e.stopPropagation();
+            this.setSequenceMode(e.currentTarget.dataset.mode);
+        }));
         document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.loadAndSwitchVocabulary(e.target.value)));
 
         // --- AUTH EVENTS ---
@@ -224,6 +263,8 @@ class VocabularyApp {
         // --- WINDOW EVENTS ---
         window.addEventListener('resize', () => this.repositionAuthContainer());
         window.addEventListener('scroll', () => this.handleScroll());
+
+        this.elements.mainContent.addEventListener('click', () => this.toggleAutoPlay());
     }
 
     // --- AUTH HANDLERS ---
@@ -729,7 +770,7 @@ class VocabularyApp {
     }
     setupIcons() {
         const iconMap = {
-            prevButton: '#icon-prev', nextButton: '#icon-next', settingsButton: '#icon-settings',
+            prevButton: '#icon-prev', nextButton: '#icon-next',
             soundToggle: this.state.soundEnabled ? '#icon-sound-on' : '#icon-sound-off',
             translationSoundToggle: this.state.translationSoundEnabled ? '#icon-chat-on' : '#icon-chat-off',
             sentenceSoundToggle: this.state.sentenceSoundEnabled ? '#icon-sentence-on' : '#icon-sentence-off',
@@ -774,7 +815,7 @@ class VocabularyApp {
         document.querySelectorAll('[id^=toggleButton]').forEach(btn => {
             btn.classList.toggle('playing', this.state.isAutoPlaying);
         });
-        document.getElementById('wordCard')?.classList.toggle('is-clickable', !this.state.isAutoPlaying);
+        this.elements.mainContent.classList.toggle('is-clickable', !this.state.isAutoPlaying);
     }
     loadStateFromLocalStorage() {
         const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
@@ -903,7 +944,6 @@ class VocabularyApp {
                 </div>
             </div>`;
         this.elements.studyArea.innerHTML = cardHtml;
-        document.getElementById('wordCard')?.addEventListener('click', () => this.toggleAutoPlay());
         this.updateUI();
     }
     displayMorphemesAndTranslations(word) {
