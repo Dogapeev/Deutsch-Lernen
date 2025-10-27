@@ -1216,15 +1216,6 @@ class VocabularyApp {
             console.log('⏮️ Previous Track с Apple Watch');
             this.showPreviousWord();
         });
-
-        // Явно отключаем кнопки перемотки, чтобы они не появлялись в интерфейсе
-        try {
-            navigator.mediaSession.setActionHandler('seekforward', null);
-            navigator.mediaSession.setActionHandler('seekbackward', null);
-            navigator.mediaSession.setActionHandler('seekto', null);
-        } catch (e) {
-            // Игнорируем ошибки если браузер не поддерживает эти действия
-        }
     }
 
     updateMediaSessionMetadata(word) {
@@ -1233,17 +1224,11 @@ class VocabularyApp {
         const germanWord = word.german || '';
         const translation = word.russian || '';
 
+        // Без artwork - будет только темный системный плеер с кнопками |▶ и ◀|
         navigator.mediaSession.metadata = new MediaMetadata({
             title: germanWord,
             artist: translation,
-            album: `${word.level || ''} - Deutsch Lernen`,
-            artwork: [
-                {
-                    src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzQyODVGNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjIwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkRFPC90ZXh0Pjwvc3ZnPg==',
-                    sizes: '512x512',
-                    type: 'image/svg+xml'
-                }
-            ]
+            album: `${word.level || ''} - Deutsch Lernen`
         });
 
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
