@@ -1329,22 +1329,33 @@ class VocabularyApp {
     startMediaSessionTimer(totalDurationInSeconds) {
         this.stopMediaSessionTimer();
         let position = 0;
-        const updateInterval = 500;
+        const updateInterval = 500; // Обновление каждые 0.5 секунды
 
         this.mediaSessionTimer = setInterval(() => {
             position += updateInterval / 1000;
-            if (position > totalDurationInSeconds) {
-                this.stopMediaSessionTimer();
-                return;
-            }
+
+            // Вычисляем текущую позицию, но не позволяем ей превышать общую длительность
+            const currentPosition = Math.min(position, totalDurationInSeconds);
+
             if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
                 try {
                     navigator.mediaSession.setPositionState({
                         duration: totalDurationInSeconds,
                         playbackRate: 1,
-                        position: position
+                        position: currentPosition
                     });
-                } catch (e) { this.stopMediaSessionTimer(); }
+                } catch (e) {
+                    // Если отправка состояния не удалась, останавливаем таймер
+                    this.stopMediaSessionTimer();
+                    return;
+                }
+            }
+
+            // Если вычисленная позиция достигла или превысила общую длительность,
+            // это значит, что мы только что установили прогресс на 100% (благодаря Math.min).
+            // Теперь можно безопасно остановить таймер.
+            if (position >= totalDurationInSeconds) {
+                this.stopMediaSessionTimer();
             }
         }, updateInterval);
     }
