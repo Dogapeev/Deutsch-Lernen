@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.7 (Fix Media Session with Interval Lock)
+// app.js - Версия 5.0.4 (Fix Media Session Sync)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.7';
+const APP_VERSION = '5.0.4';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -50,10 +50,6 @@ class VocabularyApp {
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
 
-        // --- УПРАВЛЕНИЕ БЛОКИРОВКОЙ МЕДИА-СЕССИИ ---
-        this.mediaLockInterval = null;
-        // ---
-
         this.state = {
             currentUser: null,
             isAutoPlaying: false,
@@ -82,32 +78,29 @@ class VocabularyApp {
         this.runMigrations();
     }
 
-    // --- МЕТОДЫ УПРАВЛЕНИЯ МЕДИА-СЕССИЕЙ ---
-
-    // Захватываем управление медиа-сессией с помощью интервала
-    acquireMediaLock() {
-        if (this.mediaLockInterval) return;
-        this.mediaLockInterval = setInterval(() => {
-            if (this.state.isAutoPlaying && 'mediaSession' in navigator && navigator.mediaSession.playbackState !== 'playing') {
-                navigator.mediaSession.playbackState = 'playing';
-            }
-        }, 200); // Проверяем 5 раз в секунду - надежно и не затратно
-    }
-
-    // Освобождаем управление медиа-сессией
-    releaseMediaLock() {
-        if (this.mediaLockInterval) {
-            clearInterval(this.mediaLockInterval);
-            this.mediaLockInterval = null;
-        }
-    }
-
-
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
 
-        // Устанавливаем обработчики Media Session один раз.
-        // Это ЕДИНСТВЕННЫЙ источник команд от ОС (часы, наушники).
+        // Добавляем обработчики для корректной синхронизации с MediaSession
+        if (this.audioPlayer) {
+            this.audioPlayer.addEventListener('play', () => {
+                // Когда аудио реально начинает играть, сообщаем системе.
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
+            });
+
+            this.audioPlayer.addEventListener('pause', () => {
+                // Сообщаем системе о паузе, ТОЛЬКО если автопроигрывание было остановлено пользователем.
+                // Это предотвратит смену состояния на 'paused' между фразами.
+                if (!this.state.isAutoPlaying && 'mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
+            });
+        }
+
+
+        // Устанавливаем обработчики Media Session один раз
         if ('mediaSession' in navigator) {
             navigator.mediaSession.setActionHandler('play', () => {
                 if (!this.state.isAutoPlaying) {
@@ -129,11 +122,14 @@ class VocabularyApp {
                 this.showNextWordManually();
             });
 
+            // Отключаем перемотку
             try {
                 navigator.mediaSession.setActionHandler('seekbackward', null);
                 navigator.mediaSession.setActionHandler('seekforward', null);
                 navigator.mediaSession.setActionHandler('seekto', null);
-            } catch (e) { }
+            } catch (e) {
+                // Игнорируем ошибки
+            }
         }
 
         this.elements = {
@@ -222,7 +218,7 @@ class VocabularyApp {
         if (show) {
             this.elements.auth.modal.classList.add('visible');
             this.elements.auth.overlay.classList.add('visible');
-            this.switchAuthTab('signin');
+            this.switchAuthTab('signin'); // Сбрасываем на вкладку входа при открытии
         } else {
             this.elements.auth.modal.classList.remove('visible');
             this.elements.auth.overlay.classList.remove('visible');
@@ -298,36 +294,44 @@ class VocabularyApp {
         }));
         document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.loadAndSwitchVocabulary(e.target.value)));
 
+        // --- AUTH EVENTS ---
         this.elements.auth.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
         this.elements.auth.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.overlay.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.signOutBtn.addEventListener('click', () => auth.signOut());
         this.elements.auth.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
         this.elements.auth.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
+
         this.elements.auth.tabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab));
         });
         this.elements.auth.forgotPasswordBtn.addEventListener('click', () => this.switchAuthTab('resetPassword'));
         this.elements.auth.backToSigninBtn.addEventListener('click', () => this.switchAuthTab('signin'));
+
         this.elements.auth.signupForm.addEventListener('submit', e => this.handleSignUpWithEmail(e));
         this.elements.auth.signinForm.addEventListener('submit', e => this.handleSignInWithEmail(e));
         this.elements.auth.resetPasswordForm.addEventListener('submit', e => this.handlePasswordReset(e));
 
+        // --- WINDOW EVENTS ---
         window.addEventListener('resize', () => this.repositionAuthContainer());
         window.addEventListener('scroll', () => this.handleScroll());
+
         this.elements.mainContent.addEventListener('click', () => this.toggleAutoPlay());
     }
 
+    // --- AUTH HANDLERS ---
     async handleSignUpWithEmail(e) {
         e.preventDefault();
         const name = e.target.signupName.value;
         const email = e.target.signupEmail.value;
         const password = e.target.signupPassword.value;
         const passwordConfirm = e.target.signupPasswordConfirm.value;
+
         if (password !== passwordConfirm) {
             this.showNotification('Пароли не совпадают!', 'error');
             return;
         }
+
         try {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             await userCredential.user.updateProfile({ displayName: name });
@@ -343,6 +347,7 @@ class VocabularyApp {
         e.preventDefault();
         const email = e.target.signinEmail.value;
         const password = e.target.signinPassword.value;
+
         try {
             await auth.signInWithEmailAndPassword(email, password);
             this.toggleAuthModal(false);
@@ -355,6 +360,7 @@ class VocabularyApp {
     async handlePasswordReset(e) {
         e.preventDefault();
         const email = e.target.resetEmail.value;
+
         try {
             await auth.sendPasswordResetEmail(email);
             this.showNotification('Письмо для сброса пароля отправлено на ваш email.', 'success');
@@ -376,12 +382,17 @@ class VocabularyApp {
 
     getFirebaseAuthErrorMessage(error) {
         switch (error.code) {
-            case 'auth/email-already-in-use': return 'Этот email уже зарегистрирован.';
-            case 'auth/invalid-email': return 'Неверный формат email.';
-            case 'auth/weak-password': return 'Пароль слишком слабый (минимум 6 символов).';
+            case 'auth/email-already-in-use':
+                return 'Этот email уже зарегистрирован.';
+            case 'auth/invalid-email':
+                return 'Неверный формат email.';
+            case 'auth/weak-password':
+                return 'Пароль слишком слабый (минимум 6 символов).';
             case 'auth/user-not-found':
-            case 'auth/wrong-password': return 'Неверный email или пароль.';
-            default: return 'Произошла ошибка. Попробуйте снова.';
+            case 'auth/wrong-password':
+                return 'Неверный email или пароль.';
+            default:
+                return 'Произошла ошибка. Попробуйте снова.';
         }
     }
 
@@ -396,6 +407,7 @@ class VocabularyApp {
         }, 4000);
     }
 
+    // --- UI/UX HANDLERS ---
     repositionAuthContainer() {
         const isMobile = window.innerWidth <= 768;
         const authContainer = this.elements.auth.container;
@@ -424,8 +436,13 @@ class VocabularyApp {
         this.lastScrollY = currentScrollY;
     }
 
-    collapseMobileHeader() { this.elements.headerMobile?.classList.add('collapsed'); }
-    expandMobileHeader() { this.elements.headerMobile?.classList.remove('collapsed'); }
+    collapseMobileHeader() {
+        this.elements.headerMobile?.classList.add('collapsed');
+    }
+
+    expandMobileHeader() {
+        this.elements.headerMobile?.classList.remove('collapsed');
+    }
 
     showLoginMessage() {
         this.stopAutoPlay();
@@ -439,6 +456,7 @@ class VocabularyApp {
         this.state = { ...this.state, ...newState };
         this.updateUI();
         this.saveStateToLocalStorage();
+        // Обновляем Media Session если изменилось текущее слово
         if (newState.hasOwnProperty('currentWord')) {
             this.updateMediaSession(newState.currentWord);
         }
@@ -446,25 +464,27 @@ class VocabularyApp {
     updateMediaSession(word) {
         if ('mediaSession' in navigator) {
             if (word && word.german && word.russian) {
+                // Обновляем только метаданные при смене слова
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: word.german,
                     artist: word.russian,
                     album: word.level || 'A1',
                 });
             } else {
+                // Очищаем Media Session если нет слова
                 navigator.mediaSession.metadata = null;
             }
         }
     }
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
         this.stopAutoPlay();
-        this.elements.studyArea.innerHTML = `<div class.no-words"><p>Загрузка...</p></div>`;
+        this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загрузка...</p></div>`;
         if (this.state.availableVocabularies.length === 0) {
             try {
                 const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
                 if (!response.ok) throw new Error('Сервер не отвечает.');
                 const vocabs = await response.json();
-                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей.');
+                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей. Убедитесь, что файлы .json лежат в папке /vocabularies/');
                 this.state.availableVocabularies = vocabs;
             } catch (error) {
                 console.error(error);
@@ -484,7 +504,7 @@ class VocabularyApp {
         try {
             await this.fetchVocabularyData(finalVocabName);
             const vocabularyData = this.vocabulariesCache[finalVocabName];
-            if (!vocabularyData) throw new Error("Кэшированные данные не найдены.");
+            if (!vocabularyData) throw new Error("Кэшированные данные не найдены после загрузки.");
             this.allWords = vocabularyData.words;
             this.themeMap = vocabularyData.meta.themes || {};
         } catch (error) {
@@ -507,14 +527,14 @@ class VocabularyApp {
         const data = await response.json();
         if (!data.words || !data.meta || !data.meta.themes) {
             if (Array.isArray(data)) {
-                console.warn(`Словарь "${vocabName}" имеет устаревший формат.`);
+                console.warn(`Словарь "${vocabName}" имеет устаревший формат (простой массив). Рекомендуется обновить его до структуры {meta, words}.`);
                 this.vocabulariesCache[vocabName] = {
                     words: data.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
                     meta: { themes: {} }
                 };
                 return;
             }
-            throw new Error(`Неверный формат словаря "${vocabName}".`);
+            throw new Error(`Неверный формат словаря "${vocabName}": отсутствует 'words' или 'meta.themes'`);
         }
         this.vocabulariesCache[vocabName] = {
             words: data.words.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
@@ -580,10 +600,10 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
+            // Обновляем Media Session playback state
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
             }
-            this.acquireMediaLock(); // Захватываем управление
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -593,9 +613,13 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        this.audioPlayer?.pause();
+        // Останавливаем текущее аудио
+        if (this.audioPlayer) {
+            this.audioPlayer.pause();
+        }
+
         this.setState({ isAutoPlaying: false });
-        this.releaseMediaLock(); // Освобождаем управление
+        // Обновляем Media Session playback state
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
@@ -657,9 +681,9 @@ class VocabularyApp {
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('▶️ Последовательность прервана.');
+                console.log('▶️ Последовательность корректно прервана. Текущая фаза:', this.state.currentPhase);
             } else {
-                console.error('Ошибка в последовательности:', error);
+                console.error('Ошибка в последовательности воспроизведения:', error);
                 this.stopAutoPlay();
             }
         }
@@ -735,8 +759,11 @@ class VocabularyApp {
 
             const onFinish = (error = null) => {
                 cleanup();
-                if (error) reject(error);
-                else resolve();
+                if (error && error.name !== 'AbortError') {
+                    reject(error);
+                } else {
+                    resolve();
+                }
             };
 
             const cleanup = () => {
@@ -746,6 +773,11 @@ class VocabularyApp {
             };
 
             try {
+                // Устанавливаем состояние 'playing' прямо перед запросом и воспроизведением.
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
+
                 const apiUrl = `${TTS_API_BASE_URL}/synthesize_by_id?id=${wordId}&part=${part}&vocab=${this.state.currentVocabulary}`;
                 const response = await fetch(apiUrl, { signal: this.sequenceController?.signal });
                 if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
@@ -755,15 +787,25 @@ class VocabularyApp {
 
                 this.audioPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
                 this.audioPlayer.addEventListener('ended', onFinish, { once: true });
-                this.audioPlayer.addEventListener('error', () => onFinish(new Error("Audio playback error")), { once: true });
+                this.audioPlayer.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
 
                 await this.audioPlayer.play();
+
             } catch (error) {
                 if (error.name !== 'AbortError') {
-                    console.error('Ошибка в speakById:', error);
+                    console.error('Ошибка в методе speakById:', error);
                 }
-                onFinish(error.name === 'AbortError' ? null : error);
+                onFinish(error);
+            } finally {
+                // === КЛЮЧЕВОЙ ФРАГМЕНТ ===
+                // После того, как аудио закончилось (или было прервано),
+                // мы немедленно проверяем, продолжается ли автопроигрывание.
+                // Если да, мы принудительно возвращаем состояние 'playing',
+                // чтобы перекрыть автоматическое 'paused' от браузера на время беззвучной паузы.
+                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
             }
         });
     }
@@ -805,7 +847,7 @@ class VocabularyApp {
         }
     }
     updateUI() {
-        if (!this.elements.mainContent) return;
+        if (!this.elements.mainContent) return; // Защита от ошибок, если элементы еще не найдены
         this.setupIcons();
         this.updateStats();
         this.updateControlButtons();
@@ -1148,6 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ Приложение инициализировано. Версия:', APP_VERSION);
     } catch (error) {
         console.error('❌ Критическая ошибка:', error);
+        // Просто показываем простое сообщение, не ломая всю страницу
         document.body.innerHTML = `<div style="text-align:center;padding:50px;"><h1>Произошла ошибка</h1><p>Попробуйте очистить кэш браузера.</p></div>`;
     }
 });
