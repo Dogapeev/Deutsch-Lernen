@@ -81,24 +81,36 @@ class VocabularyApp {
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
 
-        // Добавляем слушатели для синхронизации Media Session с реальным состоянием аудио
-        if (this.audioPlayer && 'mediaSession' in navigator) {
-            this.audioPlayer.addEventListener('play', () => {
-                // Обновляем только если автоплей активен
-                if (this.state.isAutoPlaying) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
-            });
-            this.audioPlayer.addEventListener('pause', () => {
-                // Всегда показываем паузу когда аудио на паузе
-                navigator.mediaSession.playbackState = 'paused';
-            });
-            this.audioPlayer.addEventListener('ended', () => {
-                // Если автоплей НЕ активен, показываем паузу
+        // Устанавливаем обработчики Media Session один раз
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.setActionHandler('play', () => {
                 if (!this.state.isAutoPlaying) {
-                    navigator.mediaSession.playbackState = 'paused';
+                    this.startAutoPlay();
                 }
             });
+
+            navigator.mediaSession.setActionHandler('pause', () => {
+                if (this.state.isAutoPlaying) {
+                    this.stopAutoPlay();
+                }
+            });
+
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                this.showPreviousWord();
+            });
+
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                this.showNextWordManually();
+            });
+
+            // Отключаем перемотку
+            try {
+                navigator.mediaSession.setActionHandler('seekbackward', null);
+                navigator.mediaSession.setActionHandler('seekforward', null);
+                navigator.mediaSession.setActionHandler('seekto', null);
+            } catch (e) {
+                // Игнорируем ошибки
+            }
         }
 
         this.elements = {
@@ -433,43 +445,12 @@ class VocabularyApp {
     updateMediaSession(word) {
         if ('mediaSession' in navigator) {
             if (word && word.german && word.russian) {
+                // Обновляем только метаданные при смене слова
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: word.german,
                     artist: word.russian,
                     album: word.level || 'A1',
                 });
-
-                // Устанавливаем обработчики действий - работают как кнопки в мобильном приложении
-                navigator.mediaSession.setActionHandler('play', () => {
-                    if (!this.state.isAutoPlaying) {
-                        this.startAutoPlay();
-                    }
-                });
-
-                navigator.mediaSession.setActionHandler('pause', () => {
-                    if (this.state.isAutoPlaying) {
-                        this.stopAutoPlay();
-                    }
-                });
-
-                navigator.mediaSession.setActionHandler('previoustrack', () => {
-                    this.showPreviousWord();
-                });
-
-                navigator.mediaSession.setActionHandler('nexttrack', () => {
-                    this.showNextWordManually();
-                });
-
-                // Отключаем перемотку вперёд/назад (показываем только prev/next)
-                try {
-                    navigator.mediaSession.setActionHandler('seekbackward', null);
-                    navigator.mediaSession.setActionHandler('seekforward', null);
-                    navigator.mediaSession.setActionHandler('seekto', null);
-                } catch (e) {
-                    // Игнорируем ошибки если браузер не поддерживает эти действия
-                }
-
-                // Не устанавливаем playbackState здесь - он обновится автоматически через события audioPlayer
             } else {
                 // Очищаем Media Session если нет слова
                 navigator.mediaSession.metadata = null;
@@ -600,6 +581,10 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
+            // Обновляем Media Session playback state
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -614,6 +599,10 @@ class VocabularyApp {
             this.audioPlayer.pause();
         }
         this.setState({ isAutoPlaying: false });
+        // Обновляем Media Session playback state
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
     }
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
@@ -748,6 +737,10 @@ class VocabularyApp {
             };
             const onFinish = () => {
                 cleanup();
+                // Восстанавливаем playback state если блок все еще играет
+                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
                 resolve();
             };
             const cleanup = () => {
@@ -767,6 +760,10 @@ class VocabularyApp {
                 this.audioPlayer.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
                 await this.audioPlayer.play();
+                // Принудительно устанавливаем playback state в 'playing' чтобы предотвратить мигание на часах
+                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error('Ошибка в методе speakById:', error);
