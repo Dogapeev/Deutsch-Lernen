@@ -54,6 +54,7 @@ class VocabularyApp {
         this.silentAudioSrc = null; // URL для тихого фонового трека
         this.audioContext = null;
         this.mediaSessionTimer = null;
+        this.artworkUrl = null; // Кеш для artwork медиаплеера
 
         this.state = {
             currentUser: null,
@@ -1239,6 +1240,9 @@ class VocabularyApp {
     }
 
     generateGermanFlagArtwork() {
+        // Если artwork уже создан, возвращаем закешированный URL
+        if (this.artworkUrl) return this.artworkUrl;
+
         // Создаем SVG с флагом Германии и буквами "DE"
         const svg = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
@@ -1258,9 +1262,10 @@ class VocabularyApp {
             </svg>
         `;
 
-        // Конвертируем SVG в data URL
+        // Конвертируем SVG в data URL и кешируем
         const blob = new Blob([svg], { type: 'image/svg+xml' });
-        return URL.createObjectURL(blob);
+        this.artworkUrl = URL.createObjectURL(blob);
+        return this.artworkUrl;
     }
 
     updateMediaSessionMetadata(word, duration = 2) {
