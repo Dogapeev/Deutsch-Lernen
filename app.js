@@ -23,6 +23,9 @@ const db = firebase.firestore();
 const APP_VERSION = '5.0.3';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
+// Беззвучный audio (1 секунда тишины) для удержания Media Session активным
+const SILENT_AUDIO = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAA4T0JxArAAAAAAD/+xDEAAP8ABLgAAAAA/wAEuAAAAACU1FBVUxUVTNUSVBQVVRTVVBQT1JUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/+xDEPwP8AAwQAAAAA/wADBAAAADx9nVQigAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+
 const DELAYS = {
     INITIAL_WORD: 500,
     BETWEEN_REPEATS: 1000,
@@ -80,6 +83,12 @@ class VocabularyApp {
 
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
+        // Настраиваем audioPlayer как беззвучный placeholder для Media Session
+        if (this.audioPlayer) {
+            this.audioPlayer.loop = true;
+            this.audioPlayer.volume = 0;
+            this.audioPlayer.src = SILENT_AUDIO;
+        }
 
         // Устанавливаем обработчики Media Session один раз
         if ('mediaSession' in navigator) {
@@ -581,6 +590,10 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
+            // Запускаем беззвучный placeholder аудио для удержания Media Session
+            if (this.audioPlayer) {
+                this.audioPlayer.play().catch(e => console.log('Silent audio play error:', e));
+            }
             // Обновляем Media Session playback state
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
@@ -594,7 +607,10 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        // Аудио теперь останавливается через abort controller, не нужно отдельно pauseть
+        // Останавливаем placeholder аудио
+        if (this.audioPlayer) {
+            this.audioPlayer.pause();
+        }
         this.setState({ isAutoPlaying: false });
         // Обновляем Media Session playback state
         if ('mediaSession' in navigator) {
