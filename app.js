@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.3 (Fix Email/Password Auth & Add Notifications)
+// app.js - Версия 5.0.4 (Fix Media Session Sync)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.3';
+const APP_VERSION = '5.0.4';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -49,7 +49,6 @@ class VocabularyApp {
         this.elements = {};
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
-        this.playbackStateKeeper = null; // Интервал для удержания playbackState
 
         this.state = {
             currentUser: null,
@@ -82,29 +81,24 @@ class VocabularyApp {
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
 
-        // Добавляем обработчики для принудительного контроля playbackState
-        // Предотвращаем автоматическое изменение состояния браузером
+        // Добавляем обработчики для корректной синхронизации с MediaSession
         if (this.audioPlayer) {
             this.audioPlayer.addEventListener('play', () => {
-                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
+                // Когда аудио реально начинает играть, сообщаем системе.
+                if ('mediaSession' in navigator) {
                     navigator.mediaSession.playbackState = 'playing';
                 }
             });
 
             this.audioPlayer.addEventListener('pause', () => {
-                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    // Если блок играет, принудительно возвращаем playbackState в playing
-                    navigator.mediaSession.playbackState = 'playing';
-                }
-            });
-
-            this.audioPlayer.addEventListener('ended', () => {
-                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    // Если блок играет, принудительно возвращаем playbackState в playing
-                    navigator.mediaSession.playbackState = 'playing';
+                // Сообщаем системе о паузе, ТОЛЬКО если автопроигрывание было остановлено пользователем.
+                // Это предотвратит смену состояния на 'paused' между фразами.
+                if (!this.state.isAutoPlaying && 'mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
                 }
             });
         }
+
 
         // Устанавливаем обработчики Media Session один раз
         if ('mediaSession' in navigator) {
@@ -609,12 +603,6 @@ class VocabularyApp {
             // Обновляем Media Session playback state
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
-                // Запускаем агрессивный keeper - проверяем каждые 100ms
-                this.playbackStateKeeper = setInterval(() => {
-                    if (this.state.isAutoPlaying && navigator.mediaSession.playbackState !== 'playing') {
-                        navigator.mediaSession.playbackState = 'playing';
-                    }
-                }, 100);
             }
             this.runDisplaySequence(wordToShow);
         } else {
@@ -629,11 +617,7 @@ class VocabularyApp {
         if (this.audioPlayer) {
             this.audioPlayer.pause();
         }
-        // Останавливаем keeper интервал
-        if (this.playbackStateKeeper) {
-            clearInterval(this.playbackStateKeeper);
-            this.playbackStateKeeper = null;
-        }
+
         this.setState({ isAutoPlaying: false });
         // Обновляем Media Session playback state
         if ('mediaSession' in navigator) {
@@ -765,38 +749,63 @@ class VocabularyApp {
             if (!wordId || (this.sequenceController && this.sequenceController.signal.aborted)) {
                 return resolve();
             }
+
             const onAbort = () => {
                 this.audioPlayer.pause();
                 this.audioPlayer.src = '';
                 cleanup();
                 reject(new DOMException('Aborted', 'AbortError'));
             };
-            const onFinish = () => {
+
+            const onFinish = (error = null) => {
                 cleanup();
-                resolve();
+                if (error && error.name !== 'AbortError') {
+                    reject(error);
+                } else {
+                    resolve();
+                }
             };
+
             const cleanup = () => {
                 this.audioPlayer.removeEventListener('ended', onFinish);
                 this.audioPlayer.removeEventListener('error', onFinish);
                 this.sequenceController?.signal.removeEventListener('abort', onAbort);
             };
+
             try {
+                // Устанавливаем состояние 'playing' прямо перед запросом и воспроизведением.
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
+
                 const apiUrl = `${TTS_API_BASE_URL}/synthesize_by_id?id=${wordId}&part=${part}&vocab=${this.state.currentVocabulary}`;
                 const response = await fetch(apiUrl, { signal: this.sequenceController?.signal });
                 if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
                 const data = await response.json();
                 if (!data.url) throw new Error('Invalid response from TTS server');
-                if (this.sequenceController?.signal.aborted) return reject(new DOMException('Aborted', 'AbortError'));
+                if (this.sequenceController?.signal.aborted) return onAbort();
+
                 this.audioPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
                 this.audioPlayer.addEventListener('ended', onFinish, { once: true });
                 this.audioPlayer.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
+
                 await this.audioPlayer.play();
+
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error('Ошибка в методе speakById:', error);
                 }
-                onFinish();
+                onFinish(error);
+            } finally {
+                // === КЛЮЧЕВОЙ ФРАГМЕНТ ===
+                // После того, как аудио закончилось (или было прервано),
+                // мы немедленно проверяем, продолжается ли автопроигрывание.
+                // Если да, мы принудительно возвращаем состояние 'playing',
+                // чтобы перекрыть автоматическое 'paused' от браузера на время беззвучной паузы.
+                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
             }
         });
     }
