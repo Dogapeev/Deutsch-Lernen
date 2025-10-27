@@ -1118,8 +1118,8 @@ class VocabularyApp {
         if (!this.audioContext) return null;
 
         try {
-            // Создаем буфер на 30 секунд
-            const duration = 30;
+            // Создаем ОЧЕНЬ КОРОТКИЙ буфер (2 секунды) чтобы часы показывали кнопки Next/Previous
+            const duration = 2;
             const sampleRate = this.audioContext.sampleRate;
             const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
             const data = buffer.getChannelData(0);
@@ -1235,6 +1235,17 @@ class VocabularyApp {
             artist: translation,
             album: `${word.level || ''} - Deutsch Lernen`
         });
+
+        // Устанавливаем очень короткую позицию, чтобы часы не показывали кнопки перемотки
+        try {
+            navigator.mediaSession.setPositionState({
+                duration: 2,
+                playbackRate: 1,
+                position: 0
+            });
+        } catch (e) {
+            // Игнорируем ошибки если не поддерживается
+        }
 
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
     }
