@@ -415,7 +415,7 @@ class VocabularyApp {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: word.german,
                     artist: word.russian,
-                    album: `Deutsch Lernen - ${word.level || 'A1'}`,
+                    album: word.level || 'A1',
                 });
 
                 // Устанавливаем обработчики действий
