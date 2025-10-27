@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.1.0 (Apple Watch Control Support)
+// app.js - Версия 5.2.0 (Dynamic MediaSession Progress)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.1.0';
+const APP_VERSION = '5.2.0';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -50,9 +50,10 @@ class VocabularyApp {
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
 
-        // Новое: для управления с Apple Watch
+        // Для управления с Apple Watch
         this.blockAudioPlayer = null;
         this.audioContext = null;
+        this.mediaSessionTimer = null; // Таймер для обновления прогресс-бара
 
         this.state = {
             currentUser: null,
@@ -85,14 +86,12 @@ class VocabularyApp {
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
 
-        // Создаем блоковый аудио-плеер для управления с Apple Watch
         this.blockAudioPlayer = document.createElement('audio');
         this.blockAudioPlayer.id = 'blockAudioPlayer';
         this.blockAudioPlayer.loop = true;
-        this.blockAudioPlayer.volume = 0.05; // Очень тихо
+        this.blockAudioPlayer.volume = 0.05;
         document.body.appendChild(this.blockAudioPlayer);
 
-        // Инициализируем Web Audio API и MediaSession
         this.initAudioContext();
         this.initMediaSession();
 
@@ -182,7 +181,7 @@ class VocabularyApp {
         if (show) {
             this.elements.auth.modal.classList.add('visible');
             this.elements.auth.overlay.classList.add('visible');
-            this.switchAuthTab('signin'); // Сбрасываем на вкладку входа при открытии
+            this.switchAuthTab('signin');
         } else {
             this.elements.auth.modal.classList.remove('visible');
             this.elements.auth.overlay.classList.remove('visible');
@@ -546,10 +545,7 @@ class VocabularyApp {
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
 
-            // Запускаем блоковый трек для управления с Apple Watch
             this.startBlockAudio();
-            // Обновляем метаданные на часах
-            this.updateMediaSessionMetadata(wordToShow);
 
             this.runDisplaySequence(wordToShow);
         } else {
@@ -562,10 +558,9 @@ class VocabularyApp {
         }
         this.setState({ isAutoPlaying: false });
 
-        // Останавливаем блоковый трек
         this.stopBlockAudio();
+        this.stopMediaSessionTimer(); // Останавливаем таймер прогресса
 
-        // Обновляем статус в MediaSession
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
@@ -590,11 +585,19 @@ class VocabularyApp {
         const { signal } = this.sequenceController;
         try {
             const checkAborted = () => { if (signal.aborted) throw new DOMException('Aborted', 'AbortError'); };
+
+            // Рассчитываем длительность и запускаем таймер прогресса для часов
+            const sequenceDuration = this.calculateCurrentWordDuration(word);
+
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
-                // Обновляем метаданные на Apple Watch при смене слова
-                this.updateMediaSessionMetadata(word);
+                // Обновляем метаданные СРАЗУ с правильной длительностью
+                this.updateMediaSessionMetadata(word, sequenceDuration);
             }
+
+            // Запускаем наш таймер
+            this.startMediaSessionTimer(sequenceDuration);
+
             let phase = this.state.currentPhase;
             if (phase === 'initial') {
                 await this._fadeInNewCard(word, checkAborted);
@@ -770,7 +773,7 @@ class VocabularyApp {
         }
     }
     updateUI() {
-        if (!this.elements.mainContent) return; // Защита от ошибок, если элементы еще не найдены
+        if (!this.elements.mainContent) return;
         this.setupIcons();
         this.updateStats();
         this.updateControlButtons();
@@ -929,6 +932,7 @@ class VocabularyApp {
         if (this.currentHistoryIndex <= 0) return;
         const wasAutoPlaying = this.state.isAutoPlaying;
         this.stopAutoPlay();
+        this.stopMediaSessionTimer();
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
         this.setState({ currentWord: word, currentPhase: 'initial' });
@@ -938,6 +942,7 @@ class VocabularyApp {
     showNextWordManually() {
         const wasAutoPlaying = this.state.isAutoPlaying;
         this.stopAutoPlay();
+        this.stopMediaSessionTimer();
         let nextWord;
         if (this.currentHistoryIndex < this.wordHistory.length - 1) {
             this.currentHistoryIndex++;
@@ -1118,13 +1123,10 @@ class VocabularyApp {
         if (!this.audioContext) return null;
 
         try {
-            // Создаем ОЧЕНЬ КОРОТКИЙ буфер (2 секунды) чтобы часы показывали кнопки Next/Previous
             const duration = 2;
             const sampleRate = this.audioContext.sampleRate;
             const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
             const data = buffer.getChannelData(0);
-
-            // Генерируем тихий низкочастотный тон (80 Hz, амплитуда 0.03)
             const frequency = 80;
             const amplitude = 0.03;
 
@@ -1132,11 +1134,8 @@ class VocabularyApp {
                 data[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * amplitude;
             }
 
-            // Конвертируем буфер в WAV blob
             const audioBlob = await this.bufferToWave(buffer, buffer.length);
-            const audioUrl = URL.createObjectURL(audioBlob);
-
-            return audioUrl;
+            return URL.createObjectURL(audioBlob);
         } catch (e) {
             console.error('❌ Ошибка генерации блокового аудио:', e);
             return null;
@@ -1152,7 +1151,6 @@ class VocabularyApp {
         let offset = 0;
         let pos = 0;
 
-        // WAV header
         const setUint16 = (data) => { view.setUint16(pos, data, true); pos += 2; };
         const setUint32 = (data) => { view.setUint32(pos, data, true); pos += 4; };
 
@@ -1170,7 +1168,6 @@ class VocabularyApp {
         setUint32(0x61746164); // "data"
         setUint32(length - pos - 4);
 
-        // Write audio data
         for (let i = 0; i < abuffer.numberOfChannels; i++) {
             channels.push(abuffer.getChannelData(i));
         }
@@ -1196,7 +1193,6 @@ class VocabularyApp {
 
         console.log('✅ Инициализация MediaSession для управления с Apple Watch');
 
-        // Обработчики для кнопок на часах
         navigator.mediaSession.setActionHandler('play', () => {
             console.log('▶️ Play с Apple Watch');
             this.startAutoPlay();
@@ -1207,20 +1203,17 @@ class VocabularyApp {
             this.stopAutoPlay();
         });
 
-        // Кнопка "следующий трек" будет переключать слово
         navigator.mediaSession.setActionHandler('nexttrack', () => {
             console.log('⏭️ Next Track с Apple Watch');
             this.showNextWordManually();
         });
 
-        // Кнопка "предыдущий трек" будет переключать слово
         navigator.mediaSession.setActionHandler('previoustrack', () => {
             console.log('⏮️ Previous Track с Apple Watch');
             this.showPreviousWord();
         });
 
-        // --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
-        // Теперь кнопки перемотки (+10с / -10с) тоже будут переключать слова.
+        // Кнопки перемотки теперь тоже переключают слова
         navigator.mediaSession.setActionHandler('seekforward', () => {
             console.log('⏩ Seek Forward (+10s) с Apple Watch -> Переключаем на следующее слово');
             this.showNextWordManually();
@@ -1230,49 +1223,41 @@ class VocabularyApp {
             this.showPreviousWord();
         });
 
-        // seekto можно оставить отключенным
         navigator.mediaSession.setActionHandler('seekto', null);
     }
 
-    updateMediaSessionMetadata(word) {
+    updateMediaSessionMetadata(word, duration = 2) {
         if (!('mediaSession' in navigator) || !word) return;
 
         const germanWord = word.german || '';
         const translation = word.russian || '';
 
-        // Без artwork - будет только темный системный плеер с кнопками |▶ и ◀|
         navigator.mediaSession.metadata = new MediaMetadata({
             title: germanWord,
             artist: translation,
             album: `${word.level || ''} - Deutsch Lernen`
         });
 
-        // Устанавливаем очень короткую позицию, чтобы часы не показывали кнопки перемотки
         try {
             navigator.mediaSession.setPositionState({
-                duration: 2,
+                duration: duration,
                 playbackRate: 1,
                 position: 0
             });
-        } catch (e) {
-            // Игнорируем ошибки если не поддерживается
-        }
+        } catch (e) { /* Игнорируем ошибки */ }
 
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
     }
 
     async startBlockAudio() {
         if (!this.blockAudioPlayer) return;
-
         try {
-            // Генерируем аудио при первом запуске
             if (!this.blockAudioPlayer.src) {
                 const audioUrl = await this.generateBlockAudio();
                 if (audioUrl) {
                     this.blockAudioPlayer.src = audioUrl;
                 }
             }
-
             await this.blockAudioPlayer.play();
             console.log('✅ Блоковый трек запущен (управление с Apple Watch активно)');
         } catch (e) {
@@ -1282,10 +1267,86 @@ class VocabularyApp {
 
     stopBlockAudio() {
         if (!this.blockAudioPlayer) return;
-
         this.blockAudioPlayer.pause();
         this.blockAudioPlayer.currentTime = 0;
         console.log('⏹️ Блоковый трек остановлен');
+    }
+
+    calculateCurrentWordDuration(word) {
+        if (!word) return 2;
+
+        let totalDurationMs = 0;
+        const estimatedAudioDurationMs = 1800;
+        const estimatedSentenceDurationMs = 3500;
+
+        totalDurationMs += DELAYS.INITIAL_WORD;
+        for (let i = 0; i < this.state.repeatMode; i++) {
+            totalDurationMs += estimatedAudioDurationMs;
+            if (i < this.state.repeatMode - 1) {
+                totalDurationMs += DELAYS.BETWEEN_REPEATS;
+            }
+        }
+
+        if (this.state.showMorphemes) {
+            totalDurationMs += DELAYS.BEFORE_MORPHEMES;
+        }
+
+        if (this.state.showSentences && word.sentence) {
+            totalDurationMs += DELAYS.BEFORE_SENTENCE;
+            if (this.state.sentenceSoundEnabled) {
+                totalDurationMs += estimatedSentenceDurationMs;
+            }
+        }
+
+        totalDurationMs += DELAYS.BEFORE_TRANSLATION;
+        if (this.state.translationSoundEnabled) {
+            totalDurationMs += estimatedAudioDurationMs;
+        }
+
+        totalDurationMs += DELAYS.BEFORE_NEXT_WORD;
+        return Math.round(totalDurationMs / 1000);
+    }
+
+    startMediaSessionTimer(totalDurationInSeconds) {
+        this.stopMediaSessionTimer();
+
+        let position = 0;
+        const updateInterval = 500;
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.setPositionState({
+                duration: totalDurationInSeconds,
+                playbackRate: 1,
+                position: 0
+            });
+        }
+
+        this.mediaSessionTimer = setInterval(() => {
+            position += updateInterval / 1000;
+            if (position > totalDurationInSeconds) {
+                this.stopMediaSessionTimer();
+                return;
+            }
+
+            if ('mediaSession' in navigator) {
+                try {
+                    navigator.mediaSession.setPositionState({
+                        duration: totalDurationInSeconds,
+                        playbackRate: 1,
+                        position: position
+                    });
+                } catch (e) {
+                    this.stopMediaSessionTimer();
+                }
+            }
+        }, updateInterval);
+    }
+
+    stopMediaSessionTimer() {
+        if (this.mediaSessionTimer) {
+            clearInterval(this.mediaSessionTimer);
+            this.mediaSessionTimer = null;
+        }
     }
 
     // --- КОНЕЦ МЕТОДОВ ДЛЯ APPLE WATCH ---
@@ -1300,7 +1361,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ Приложение инициализировано. Версия:', APP_VERSION);
     } catch (error) {
         console.error('❌ Критическая ошибка:', error);
-        // Просто показываем простое сообщение, не ломая всю страницу
         document.body.innerHTML = `<div style="text-align:center;padding:50px;"><h1>Произошла ошибка</h1><p>Попробуйте очистить кэш браузера.</p></div>`;
     }
 });
