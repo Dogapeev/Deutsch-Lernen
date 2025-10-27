@@ -154,7 +154,6 @@ class VocabularyApp {
             }
         });
 
-        // Обработчики для кнопок Next/Previous (переключение треков)
         navigator.mediaSession.setActionHandler('nexttrack', () => {
             console.log('⏭️ Команда NEXTTRACK от часов/наушников');
             this.showNextWordManually();
@@ -165,27 +164,22 @@ class VocabularyApp {
             this.showPreviousWord();
         });
 
-        // ВАЖНО: Переопределяем seekforward/seekbackward чтобы они переключали слова
-        // вместо перемотки (т.к. у нас нет временной шкалы)
+        // Переопределяем seekforward/seekbackward
         navigator.mediaSession.setActionHandler('seekforward', () => {
-            console.log('⏭️ Команда SEEKFORWARD (переназначена на NEXT) от часов/наушников');
+            console.log('⏭️ Команда SEEKFORWARD от часов/наушников');
             this.showNextWordManually();
         });
 
         navigator.mediaSession.setActionHandler('seekbackward', () => {
-            console.log('⏮️ Команда SEEKBACKWARD (переназначена на PREVIOUS) от часов/наушников');
+            console.log('⏮️ Команда SEEKBACKWARD от часов/наушников');
             this.showPreviousWord();
         });
 
-        // Отключаем обработчик seekto чтобы не было перемотки
-        try {
-            navigator.mediaSession.setActionHandler('seekto', null);
-        } catch (e) {
-            // Некоторые браузеры не поддерживают установку null
-        }
-
         // Изначально устанавливаем состояние "нет воспроизведения"
         navigator.mediaSession.playbackState = 'none';
+
+        // Устанавливаем позицию чтобы убрать seek bar
+        this.updateMediaSessionPosition();
     }
 
     /**
@@ -247,11 +241,31 @@ class VocabularyApp {
             ]
         });
 
-        // 🔥 ВАЖНО: Не устанавливаем позицию воспроизведения, чтобы браузер
-        // не думал что это медиа-файл с временной шкалой
-        // (это предотвращает показ перемотки на 10 секунд)
+        // Обновляем позицию после установки метаданных
+        this.updateMediaSessionPosition();
 
         console.log('📱 Метаданные обновлены для часов:', { title, artist, album });
+    }
+
+    /**
+     * Обновляет позицию воспроизведения для Media Session
+     * Устанавливаем фиксированную длительность чтобы убрать seek bar
+     */
+    updateMediaSessionPosition() {
+        if (!('mediaSession' in navigator)) return;
+
+        try {
+            // Устанавливаем позицию - делаем вид что это трек длительностью 1 секунда
+            // и мы всегда на позиции 0, это убирает возможность seek
+            navigator.mediaSession.setPositionState({
+                duration: 1,
+                playbackRate: 1,
+                position: 0
+            });
+        } catch (error) {
+            // Игнорируем ошибки для браузеров которые не поддерживают setPositionState
+            console.log('⚠️ setPositionState не поддерживается');
+        }
     }
 
     // ============================================================
@@ -547,9 +561,16 @@ class VocabularyApp {
                 this.updateMediaSessionMetadata(newState.currentWord);
             }
 
-            // Обновляем состояние воспроизведения
+            // Обновляем состояние воспроизведения только если оно действительно изменилось
             if ('isAutoPlaying' in newState && newState.isAutoPlaying !== oldState.isAutoPlaying) {
-                navigator.mediaSession.playbackState = newState.isAutoPlaying ? 'playing' : 'paused';
+                const newPlaybackState = newState.isAutoPlaying ? 'playing' : 'paused';
+                navigator.mediaSession.playbackState = newPlaybackState;
+                console.log('🎵 Media Session playbackState:', newPlaybackState);
+
+                // Обновляем позицию при смене состояния
+                if (newState.isAutoPlaying) {
+                    this.updateMediaSessionPosition();
+                }
             }
         }
 
@@ -683,6 +704,8 @@ class VocabularyApp {
             // 🎵 Обновляем Media Session при старте воспроизведения
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
+                this.updateMediaSessionPosition();
+                this.updateMediaSessionMetadata(wordToShow);
             }
             this.runDisplaySequence(wordToShow);
         } else {
@@ -697,6 +720,7 @@ class VocabularyApp {
         // 🎵 Обновляем Media Session при остановке воспроизведения
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
+            console.log('🎵 Media Session playbackState: paused');
         }
     }
     toggleAutoPlay() {
@@ -1059,6 +1083,13 @@ class VocabularyApp {
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
         this.setState({ currentWord: word, currentPhase: 'initial' });
+
+        // 🎵 Обновляем Media Session при переключении слова
+        if ('mediaSession' in navigator) {
+            this.updateMediaSessionMetadata(word);
+            this.updateMediaSessionPosition();
+        }
+
         this.runDisplaySequence(word);
         if (wasAutoPlaying) this.startAutoPlay();
     }
@@ -1077,6 +1108,13 @@ class VocabularyApp {
             return;
         }
         this.setState({ currentWord: nextWord, currentPhase: 'initial' });
+
+        // 🎵 Обновляем Media Session при переключении слова
+        if ('mediaSession' in navigator) {
+            this.updateMediaSessionMetadata(nextWord);
+            this.updateMediaSessionPosition();
+        }
+
         this.runDisplaySequence(nextWord);
         if (wasAutoPlaying) this.startAutoPlay();
     }
