@@ -439,6 +439,15 @@ class VocabularyApp {
                     this.showNextWordManually();
                 });
 
+                // Отключаем перемотку вперёд/назад (показываем только prev/next)
+                try {
+                    navigator.mediaSession.setActionHandler('seekbackward', null);
+                    navigator.mediaSession.setActionHandler('seekforward', null);
+                    navigator.mediaSession.setActionHandler('seekto', null);
+                } catch (e) {
+                    // Игнорируем ошибки если браузер не поддерживает эти действия
+                }
+
                 // Устанавливаем состояние воспроизведения
                 navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
             } else {
@@ -741,6 +750,12 @@ class VocabularyApp {
                 this.audioPlayer.addEventListener('ended', onFinish, { once: true });
                 this.audioPlayer.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
+
+                // Обновляем Media Session перед воспроизведением
+                if (this.state.currentWord) {
+                    this.updateMediaSession(this.state.currentWord);
+                }
+
                 await this.audioPlayer.play();
             } catch (error) {
                 if (error.name !== 'AbortError') {
