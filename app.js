@@ -1208,12 +1208,23 @@ class VocabularyApp {
         });
 
         navigator.mediaSession.setActionHandler('nexttrack', () => {
-            console.log('⏭️ Next с Apple Watch');
+            console.log('⏭️ Next Track с Apple Watch');
             this.showNextWordManually();
         });
 
         navigator.mediaSession.setActionHandler('previoustrack', () => {
-            console.log('⏮️ Previous с Apple Watch');
+            console.log('⏮️ Previous Track с Apple Watch');
+            this.showPreviousWord();
+        });
+
+        // Кнопки перемотки (обычно ±10-15 сек) также переключают слова
+        navigator.mediaSession.setActionHandler('seekforward', () => {
+            console.log('⏩ Seek Forward с Apple Watch → следующее слово');
+            this.showNextWordManually();
+        });
+
+        navigator.mediaSession.setActionHandler('seekbackward', () => {
+            console.log('⏪ Seek Backward с Apple Watch → предыдущее слово');
             this.showPreviousWord();
         });
     }
