@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.4 (Fix Media Session Sync)
+// app.js - Версия 5.0.5 (Fix Media Session with Silent Audio)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.4';
+const APP_VERSION = '5.0.5';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -49,6 +49,13 @@ class VocabularyApp {
         this.elements = {};
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
+
+        // --- ВОСПРОИЗВЕДЕНИЕ ТИШИНЫ ДЛЯ УДЕРЖАНИЯ СЕССИИ ---
+        // Создаем плеер с коротким, бесшумным аудиофайлом в формате base64, который будет играть на цикле
+        const silentAudioData = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+        this.silentAudio = new Audio(silentAudioData);
+        this.silentAudio.loop = true;
+        // ---
 
         this.state = {
             currentUser: null,
@@ -81,25 +88,6 @@ class VocabularyApp {
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
 
-        // Добавляем обработчики для корректной синхронизации с MediaSession
-        if (this.audioPlayer) {
-            this.audioPlayer.addEventListener('play', () => {
-                // Когда аудио реально начинает играть, сообщаем системе.
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
-            });
-
-            this.audioPlayer.addEventListener('pause', () => {
-                // Сообщаем системе о паузе, ТОЛЬКО если автопроигрывание было остановлено пользователем.
-                // Это предотвратит смену состояния на 'paused' между фразами.
-                if (!this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'paused';
-                }
-            });
-        }
-
-
         // Устанавливаем обработчики Media Session один раз
         if ('mediaSession' in navigator) {
             navigator.mediaSession.setActionHandler('play', () => {
@@ -122,13 +110,13 @@ class VocabularyApp {
                 this.showNextWordManually();
             });
 
-            // Отключаем перемотку
+            // Отключаем неиспользуемые элементы управления
             try {
                 navigator.mediaSession.setActionHandler('seekbackward', null);
                 navigator.mediaSession.setActionHandler('seekforward', null);
                 navigator.mediaSession.setActionHandler('seekto', null);
             } catch (e) {
-                // Игнорируем ошибки
+                // Игнорируем ошибки, если какой-то из хендлеров не поддерживается
             }
         }
 
@@ -218,7 +206,7 @@ class VocabularyApp {
         if (show) {
             this.elements.auth.modal.classList.add('visible');
             this.elements.auth.overlay.classList.add('visible');
-            this.switchAuthTab('signin'); // Сбрасываем на вкладку входа при открытии
+            this.switchAuthTab('signin');
         } else {
             this.elements.auth.modal.classList.remove('visible');
             this.elements.auth.overlay.classList.remove('visible');
@@ -456,7 +444,6 @@ class VocabularyApp {
         this.state = { ...this.state, ...newState };
         this.updateUI();
         this.saveStateToLocalStorage();
-        // Обновляем Media Session если изменилось текущее слово
         if (newState.hasOwnProperty('currentWord')) {
             this.updateMediaSession(newState.currentWord);
         }
@@ -464,14 +451,12 @@ class VocabularyApp {
     updateMediaSession(word) {
         if ('mediaSession' in navigator) {
             if (word && word.german && word.russian) {
-                // Обновляем только метаданные при смене слова
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: word.german,
                     artist: word.russian,
                     album: word.level || 'A1',
                 });
             } else {
-                // Очищаем Media Session если нет слова
                 navigator.mediaSession.metadata = null;
             }
         }
@@ -484,7 +469,7 @@ class VocabularyApp {
                 const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
                 if (!response.ok) throw new Error('Сервер не отвечает.');
                 const vocabs = await response.json();
-                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей. Убедитесь, что файлы .json лежат в папке /vocabularies/');
+                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей.');
                 this.state.availableVocabularies = vocabs;
             } catch (error) {
                 console.error(error);
@@ -527,14 +512,14 @@ class VocabularyApp {
         const data = await response.json();
         if (!data.words || !data.meta || !data.meta.themes) {
             if (Array.isArray(data)) {
-                console.warn(`Словарь "${vocabName}" имеет устаревший формат (простой массив). Рекомендуется обновить его до структуры {meta, words}.`);
+                console.warn(`Словарь "${vocabName}" имеет устаревший формат (простой массив).`);
                 this.vocabulariesCache[vocabName] = {
                     words: data.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
                     meta: { themes: {} }
                 };
                 return;
             }
-            throw new Error(`Неверный формат словаря "${vocabName}": отсутствует 'words' или 'meta.themes'`);
+            throw new Error(`Неверный формат словаря "${vocabName}".`);
         }
         this.vocabulariesCache[vocabName] = {
             words: data.words.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
@@ -599,8 +584,8 @@ class VocabularyApp {
             }
         }
         if (wordToShow) {
+            this.silentAudio.play().catch(e => console.error("Ошибка воспроизведения тишины:", e));
             this.setState({ isAutoPlaying: true });
-            // Обновляем Media Session playback state
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
             }
@@ -613,13 +598,9 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        // Останавливаем текущее аудио
-        if (this.audioPlayer) {
-            this.audioPlayer.pause();
-        }
-
+        this.audioPlayer?.pause();
+        this.silentAudio.pause();
         this.setState({ isAutoPlaying: false });
-        // Обновляем Media Session playback state
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
@@ -681,9 +662,9 @@ class VocabularyApp {
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('▶️ Последовательность корректно прервана. Текущая фаза:', this.state.currentPhase);
+                console.log('▶️ Последовательность прервана.');
             } else {
-                console.error('Ошибка в последовательности воспроизведения:', error);
+                console.error('Ошибка в последовательности:', error);
                 this.stopAutoPlay();
             }
         }
@@ -759,11 +740,8 @@ class VocabularyApp {
 
             const onFinish = (error = null) => {
                 cleanup();
-                if (error && error.name !== 'AbortError') {
-                    reject(error);
-                } else {
-                    resolve();
-                }
+                if (error) reject(error);
+                else resolve();
             };
 
             const cleanup = () => {
@@ -773,11 +751,6 @@ class VocabularyApp {
             };
 
             try {
-                // Устанавливаем состояние 'playing' прямо перед запросом и воспроизведением.
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
-
                 const apiUrl = `${TTS_API_BASE_URL}/synthesize_by_id?id=${wordId}&part=${part}&vocab=${this.state.currentVocabulary}`;
                 const response = await fetch(apiUrl, { signal: this.sequenceController?.signal });
                 if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
@@ -787,25 +760,15 @@ class VocabularyApp {
 
                 this.audioPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
                 this.audioPlayer.addEventListener('ended', onFinish, { once: true });
-                this.audioPlayer.addEventListener('error', onFinish, { once: true });
+                this.audioPlayer.addEventListener('error', () => onFinish(new Error("Audio playback error")), { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
 
                 await this.audioPlayer.play();
-
             } catch (error) {
                 if (error.name !== 'AbortError') {
-                    console.error('Ошибка в методе speakById:', error);
+                    console.error('Ошибка в speakById:', error);
                 }
-                onFinish(error);
-            } finally {
-                // === КЛЮЧЕВОЙ ФРАГМЕНТ ===
-                // После того, как аудио закончилось (или было прервано),
-                // мы немедленно проверяем, продолжается ли автопроигрывание.
-                // Если да, мы принудительно возвращаем состояние 'playing',
-                // чтобы перекрыть автоматическое 'paused' от браузера на время беззвучной паузы.
-                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
+                onFinish(error.name === 'AbortError' ? null : error);
             }
         });
     }
@@ -847,7 +810,7 @@ class VocabularyApp {
         }
     }
     updateUI() {
-        if (!this.elements.mainContent) return; // Защита от ошибок, если элементы еще не найдены
+        if (!this.elements.mainContent) return;
         this.setupIcons();
         this.updateStats();
         this.updateControlButtons();
@@ -1190,7 +1153,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ Приложение инициализировано. Версия:', APP_VERSION);
     } catch (error) {
         console.error('❌ Критическая ошибка:', error);
-        // Просто показываем простое сообщение, не ломая всю страницу
         document.body.innerHTML = `<div style="text-align:center;padding:50px;"><h1>Произошла ошибка</h1><p>Попробуйте очистить кэш браузера.</p></div>`;
     }
 });
