@@ -1241,23 +1241,70 @@ class VocabularyApp {
         navigator.mediaSession.setActionHandler('seekto', null);
     }
 
-    generateGermanFlagArtwork() {
-        // Если artwork уже создан, возвращаем закешированный URL
-        if (this.artworkUrl) return this.artworkUrl;
+    // --- НАЧАЛО НОВОГО БЛОКА, КОТОРЫЙ НУЖНО ВСТАВИТЬ ---
 
-        // Создаем SVG с флагом Германии и буквами "DE"
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="170.67" fill="#000000"/><rect y="170.67" width="512" height="170.67" fill="#DD0000"/><rect y="341.33" width="512" height="170.67" fill="#FFCE00"/><defs><filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.5"/></filter></defs><text x="256" y="310" font-family="Arial, sans-serif" font-size="200" font-weight="bold" fill="#FFFFFF" text-anchor="middle" filter="url(#shadow)">DE</text></svg>`;
+    generateGermanFlagArtwork(word) {
+        // Если слова нет (например, при инициализации), показываем пустую обложку
+        if (!word || !word.german) {
+            const emptySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="#212529"/></svg>`;
+            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(emptySvg)));
+        }
 
-        // Конвертируем SVG в data URL (base64) для совместимости с Apple Watch
-        this.artworkUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
-        return this.artworkUrl;
+        const germanWord = word.german;
+
+        // Динамически подбираем размер шрифта, чтобы даже длинные слова помещались
+        let fontSize = 180; // Размер для коротких слов
+        if (germanWord.length > 20) fontSize = 90;
+        else if (germanWord.length > 15) fontSize = 110;
+        else if (germanWord.length > 10) fontSize = 140;
+
+        // Создаем SVG с новым дизайном
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <!-- 1. Нейтральный тёмно-серый фон для максимального комфорта -->
+                <rect width="512" height="512" fill="#212529"/>
+                
+                <!-- Фильтр для лёгкой тени, чтобы текст был ещё более объёмным -->
+                <defs>
+                    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="2" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
+                    </filter>
+                </defs>
+                
+                <!-- 2. Немецкое слово: большое, белое, по центру -->
+                <text 
+                    x="256" 
+                    y="280" 
+                    font-family="Helvetica, Arial, sans-serif" 
+                    font-size="${fontSize}" 
+                    font-weight="bold" 
+                    fill="#FFFFFF" 
+                    text-anchor="middle" 
+                    filter="url(#shadow)"
+                    textLength="${germanWord.length > 8 ? 490 : ''}"
+                    lengthAdjust="spacingAndGlyphs"
+                >
+                    ${germanWord}
+                </text>
+
+                <!-- 3. Минималистичная полоска-флаг внизу -->
+                <rect y="482" width="512" height="10" fill="#000000"/>
+                <rect y="492" width="512" height="10" fill="#DD0000"/>
+                <rect y="502" width="512" height="10" fill="#FFCE00"/>
+            </svg>
+        `;
+
+        // Конвертируем готовый SVG в data URL, понятный для медиаплеера
+        return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
     }
+
+    // --- КОНЕЦ НОВОГО БЛОКА ---
 
     updateMediaSessionMetadata(word, duration = 2) {
         if (!('mediaSession' in navigator) || !word) return;
 
         // Генерируем artwork с флагом Германии
-        const artworkUrl = this.generateGermanFlagArtwork();
+        const artworkUrl = this.generateGermanFlagArtwork(word);
 
         navigator.mediaSession.metadata = new MediaMetadata({
             title: word.german || '',
