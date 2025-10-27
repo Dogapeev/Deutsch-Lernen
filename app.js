@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.3 (Fix Email/Password Auth & Add Notifications)
+// app.js - Версия 5.1.0 (Apple Watch Control Support)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.3';
+const APP_VERSION = '5.1.0';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -49,6 +49,10 @@ class VocabularyApp {
         this.elements = {};
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
+
+        // Новое: для управления с Apple Watch
+        this.blockAudioPlayer = null;
+        this.audioContext = null;
 
         this.state = {
             currentUser: null,
@@ -80,6 +84,18 @@ class VocabularyApp {
 
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
+
+        // Создаем блоковый аудио-плеер для управления с Apple Watch
+        this.blockAudioPlayer = document.createElement('audio');
+        this.blockAudioPlayer.id = 'blockAudioPlayer';
+        this.blockAudioPlayer.loop = true;
+        this.blockAudioPlayer.volume = 0.05; // Очень тихо
+        document.body.appendChild(this.blockAudioPlayer);
+
+        // Инициализируем Web Audio API и MediaSession
+        this.initAudioContext();
+        this.initMediaSession();
+
         this.elements = {
             mainContent: document.getElementById('mainContent'),
             studyArea: document.getElementById('studyArea'),
@@ -529,6 +545,12 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
+
+            // Запускаем блоковый трек для управления с Apple Watch
+            this.startBlockAudio();
+            // Обновляем метаданные на часах
+            this.updateMediaSessionMetadata(wordToShow);
+
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -539,6 +561,14 @@ class VocabularyApp {
             this.sequenceController.abort();
         }
         this.setState({ isAutoPlaying: false });
+
+        // Останавливаем блоковый трек
+        this.stopBlockAudio();
+
+        // Обновляем статус в MediaSession
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
     }
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
@@ -562,6 +592,8 @@ class VocabularyApp {
             const checkAborted = () => { if (signal.aborted) throw new DOMException('Aborted', 'AbortError'); };
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
+                // Обновляем метаданные на Apple Watch при смене слова
+                this.updateMediaSessionMetadata(word);
             }
             let phase = this.state.currentPhase;
             if (phase === 'initial') {
@@ -1070,6 +1102,172 @@ class VocabularyApp {
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
         this.setState({ currentWord: null });
     }
+
+    // --- МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ С APPLE WATCH ---
+
+    initAudioContext() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('✅ Audio Context инициализирован для Apple Watch');
+        } catch (e) {
+            console.warn('⚠️ Audio Context не поддерживается:', e);
+        }
+    }
+
+    async generateBlockAudio() {
+        if (!this.audioContext) return null;
+
+        try {
+            // Создаем буфер на 30 секунд
+            const duration = 30;
+            const sampleRate = this.audioContext.sampleRate;
+            const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            // Генерируем тихий низкочастотный тон (80 Hz, амплитуда 0.03)
+            const frequency = 80;
+            const amplitude = 0.03;
+
+            for (let i = 0; i < buffer.length; i++) {
+                data[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * amplitude;
+            }
+
+            // Конвертируем буфер в WAV blob
+            const audioBlob = await this.bufferToWave(buffer, buffer.length);
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            return audioUrl;
+        } catch (e) {
+            console.error('❌ Ошибка генерации блокового аудио:', e);
+            return null;
+        }
+    }
+
+    bufferToWave(abuffer, len) {
+        const numOfChan = abuffer.numberOfChannels;
+        const length = len * numOfChan * 2 + 44;
+        const buffer = new ArrayBuffer(length);
+        const view = new DataView(buffer);
+        const channels = [];
+        let offset = 0;
+        let pos = 0;
+
+        // WAV header
+        const setUint16 = (data) => { view.setUint16(pos, data, true); pos += 2; };
+        const setUint32 = (data) => { view.setUint32(pos, data, true); pos += 4; };
+
+        setUint32(0x46464952); // "RIFF"
+        setUint32(length - 8);
+        setUint32(0x45564157); // "WAVE"
+        setUint32(0x20746d66); // "fmt "
+        setUint32(16);
+        setUint16(1); // PCM
+        setUint16(numOfChan);
+        setUint32(abuffer.sampleRate);
+        setUint32(abuffer.sampleRate * 2 * numOfChan);
+        setUint16(numOfChan * 2);
+        setUint16(16);
+        setUint32(0x61746164); // "data"
+        setUint32(length - pos - 4);
+
+        // Write audio data
+        for (let i = 0; i < abuffer.numberOfChannels; i++) {
+            channels.push(abuffer.getChannelData(i));
+        }
+
+        while (pos < length) {
+            for (let i = 0; i < numOfChan; i++) {
+                const sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                const intSample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                view.setInt16(pos, intSample, true);
+                pos += 2;
+            }
+            offset++;
+        }
+
+        return new Blob([buffer], { type: "audio/wav" });
+    }
+
+    initMediaSession() {
+        if (!('mediaSession' in navigator)) {
+            console.log('⚠️ MediaSession API не поддерживается');
+            return;
+        }
+
+        console.log('✅ Инициализация MediaSession для управления с Apple Watch');
+
+        // Обработчики для кнопок на часах
+        navigator.mediaSession.setActionHandler('play', () => {
+            console.log('▶️ Play с Apple Watch');
+            this.startAutoPlay();
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+            console.log('⏸️ Pause с Apple Watch');
+            this.stopAutoPlay();
+        });
+
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+            console.log('⏭️ Next с Apple Watch');
+            this.showNextWordManually();
+        });
+
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            console.log('⏮️ Previous с Apple Watch');
+            this.showPreviousWord();
+        });
+    }
+
+    updateMediaSessionMetadata(word) {
+        if (!('mediaSession' in navigator) || !word) return;
+
+        const germanWord = word.german || '';
+        const translation = word.russian || '';
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: germanWord,
+            artist: translation,
+            album: `${word.level || ''} - Deutsch Lernen`,
+            artwork: [
+                {
+                    src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzQyODVGNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjIwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkRFPC90ZXh0Pjwvc3ZnPg==',
+                    sizes: '512x512',
+                    type: 'image/svg+xml'
+                }
+            ]
+        });
+
+        navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
+    }
+
+    async startBlockAudio() {
+        if (!this.blockAudioPlayer) return;
+
+        try {
+            // Генерируем аудио при первом запуске
+            if (!this.blockAudioPlayer.src) {
+                const audioUrl = await this.generateBlockAudio();
+                if (audioUrl) {
+                    this.blockAudioPlayer.src = audioUrl;
+                }
+            }
+
+            await this.blockAudioPlayer.play();
+            console.log('✅ Блоковый трек запущен (управление с Apple Watch активно)');
+        } catch (e) {
+            console.warn('⚠️ Ошибка запуска блокового трека:', e);
+        }
+    }
+
+    stopBlockAudio() {
+        if (!this.blockAudioPlayer) return;
+
+        this.blockAudioPlayer.pause();
+        this.blockAudioPlayer.currentTime = 0;
+        console.log('⏹️ Блоковый трек остановлен');
+    }
+
+    // --- КОНЕЦ МЕТОДОВ ДЛЯ APPLE WATCH ---
 
 } // Конец класса VocabularyApp
 
