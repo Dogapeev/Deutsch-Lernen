@@ -1,7 +1,7 @@
-// --- НАЧАЛО ФАЙЛА APP.JS ---
+--- НАЧАЛО ФАЙЛА APP.JS-- -
 
-// app.js - Версия 5.3.0 (Single Audio Player Architecture)
-"use strict";
+    // app.js - Версия 5.3.0 (Single Audio Player Architecture)
+    "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 const firebaseConfig = {
@@ -1240,12 +1240,32 @@ class VocabularyApp {
 
     updateMediaSessionMetadata(word, duration = 2) {
         if (!('mediaSession' in navigator) || !word) return;
+
+        // Создаем обложку с синим фоном и буквами DE
+        const svgArtwork = `
+            <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+                <rect width="512" height="512" fill="#4285F4"/>
+                <text x="256" y="280" font-family="Arial, sans-serif" font-size="180" font-weight="bold" 
+                      fill="white" text-anchor="middle" dominant-baseline="middle">DE</text>
+            </svg>
+        `.trim();
+        const artworkBase64 = btoa(unescape(encodeURIComponent(svgArtwork)));
+
         navigator.mediaSession.metadata = new MediaMetadata({
             title: word.german || '',
             artist: word.russian || '',
-            album: `${word.level || ''} - Deutsch Lernen`
+            album: `${word.level || ''} - Deutsch Lernen`,
+            artwork: [
+                {
+                    src: `data:image/svg+xml;base64,${artworkBase64}`,
+                    sizes: '512x512',
+                    type: 'image/svg+xml'
+                }
+            ]
         });
+
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
+
         try {
             navigator.mediaSession.setPositionState({
                 duration: duration,
