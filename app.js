@@ -1238,12 +1238,44 @@ class VocabularyApp {
         navigator.mediaSession.setActionHandler('seekto', null);
     }
 
+    generateGermanFlagArtwork() {
+        // Создаем SVG с флагом Германии и буквами "DE"
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <!-- Флаг Германии: черный, красный, золотой -->
+                <rect width="512" height="170.67" fill="#000000"/>
+                <rect y="170.67" width="512" height="170.67" fill="#DD0000"/>
+                <rect y="341.33" width="512" height="170.67" fill="#FFCE00"/>
+                
+                <!-- Буквы "DE" белым цветом с тенью -->
+                <defs>
+                    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.5"/>
+                    </filter>
+                </defs>
+                <text x="256" y="310" font-family="Arial, sans-serif" font-size="200" font-weight="bold" 
+                      fill="#FFFFFF" text-anchor="middle" filter="url(#shadow)">DE</text>
+            </svg>
+        `;
+
+        // Конвертируем SVG в data URL
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        return URL.createObjectURL(blob);
+    }
+
     updateMediaSessionMetadata(word, duration = 2) {
         if (!('mediaSession' in navigator) || !word) return;
+
+        // Генерируем artwork с флагом Германии
+        const artworkUrl = this.generateGermanFlagArtwork();
+
         navigator.mediaSession.metadata = new MediaMetadata({
             title: word.german || '',
             artist: word.russian || '',
-            album: `${word.level || ''} - Deutsch Lernen`
+            album: `${word.level || ''} - Deutsch Lernen`,
+            artwork: [
+                { src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }
+            ]
         });
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
         try {
