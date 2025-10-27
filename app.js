@@ -568,6 +568,8 @@ class VocabularyApp {
         }
     }
 
+    // --- ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ НА ЭТУ ---
+
     async runDisplaySequence(word) {
         if (!word) {
             this.showNoWordsMessage();
@@ -583,13 +585,24 @@ class VocabularyApp {
             const checkAborted = () => {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
+
+            // --- ИСПРАВЛЕННАЯ ЛОГИКА ---
+            // Шаг 1: Рассчитываем длительность.
             const sequenceDuration = this.calculateCurrentWordDuration(word);
 
+            // Шаг 2: Безусловно обновляем метаданные КАЖДЫЙ РАЗ при запуске.
+            // Это гарантирует, что часы всегда получат актуальную информацию.
+            this.updateMediaSessionMetadata(word, sequenceDuration);
+
+            // Шаг 3: Обновляем состояние приложения, если слово изменилось.
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
-                this.updateMediaSessionMetadata(word, sequenceDuration);
             }
+
+            // Шаг 4: Запускаем таймер прогресс-бара.
             this.startMediaSessionTimer(sequenceDuration);
+            // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
+
 
             let phase = this.state.currentPhase;
             if (phase === 'initial') {
