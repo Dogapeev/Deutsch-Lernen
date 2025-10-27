@@ -1242,8 +1242,29 @@ class VocabularyApp {
     }
 
     generateGermanFlagArtwork(word) {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><rect width="16" height="16" fill="transparent"/></svg>`;
-        return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+        // Минималистичный квадрат: черный фон + белые буквы "DE"
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <!-- Черный фон -->
+                <rect width="512" height="512" fill="#000000"/>
+                
+                <!-- Белые буквы DE по центру -->
+                <text 
+                    x="256" 
+                    y="310" 
+                    font-family="Helvetica, Arial, sans-serif" 
+                    font-size="280" 
+                    font-weight="bold" 
+                    fill="#FFFFFF" 
+                    text-anchor="middle"
+                >
+                    DE
+                </text>
+            </svg>
+        `;
+
+        // Современный способ: без base64, напрямую через encodeURIComponent
+        return 'data:image/svg+xml,' + encodeURIComponent(svg);
     }
 
     // --- КОНЕЦ НОВОГО БЛОКА ---
