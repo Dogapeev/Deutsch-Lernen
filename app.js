@@ -1,7 +1,7 @@
---- НАЧАЛО ФАЙЛА APP.JS-- -
+//--- НАЧАЛО ФАЙЛА APP.JS-- -
 
-    // app.js - Версия 5.3.0 (Single Audio Player Architecture)
-    "use strict";
+// app.js - Версия 5.3.0 (Single Audio Player Architecture)
+"use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 const firebaseConfig = {
