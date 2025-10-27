@@ -1243,7 +1243,7 @@ class VocabularyApp {
         navigator.mediaSession.metadata = new MediaMetadata({
             title: word.german || '',
             artist: word.russian || '',
-            album: `${word.level || ''} - Deutsch Lernen`
+            album: `Словарь: ${vocabName} (${word.level || '...'})`
         });
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
         try {
