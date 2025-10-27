@@ -1216,6 +1216,15 @@ class VocabularyApp {
             console.log('⏮️ Previous Track с Apple Watch');
             this.showPreviousWord();
         });
+
+        // Явно отключаем кнопки перемотки, чтобы они не появлялись в интерфейсе
+        try {
+            navigator.mediaSession.setActionHandler('seekforward', null);
+            navigator.mediaSession.setActionHandler('seekbackward', null);
+            navigator.mediaSession.setActionHandler('seekto', null);
+        } catch (e) {
+            // Игнорируем ошибки если браузер не поддерживает эти действия
+        }
     }
 
     updateMediaSessionMetadata(word) {
