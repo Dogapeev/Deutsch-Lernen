@@ -1272,11 +1272,7 @@ class VocabularyApp {
             album: `${word.level || ''} - Deutsch Lernen`,
             artwork: [
                 { src: artworkUrl, sizes: '96x96', type: 'image/svg+xml' },
-                { src: artworkUrl, sizes: '128x128', type: 'image/svg+xml' },
-                { src: artworkUrl, sizes: '192x192', type: 'image/svg+xml' },
-                { src: artworkUrl, sizes: '256x256', type: 'image/svg+xml' },
-                { src: artworkUrl, sizes: '384x384', type: 'image/svg+xml' },
-                { src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }
+                { src: artworkUrl, sizes: '128x128', type: 'image/svg+xml' }
             ]
         });
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
