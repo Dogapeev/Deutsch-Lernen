@@ -118,8 +118,111 @@ class VocabularyApp {
 
         this.bindEvents();
         this.repositionAuthContainer();
+        this.initMediaSession(); // 🎵 Инициализация управления с часов/наушников
         auth.onAuthStateChanged(user => this.handleAuthStateChanged(user));
     }
+
+    // ============================================================
+    // 🎵 MEDIA SESSION API - УПРАВЛЕНИЕ С ЧАСОВ/НАУШНИКОВ
+    // ============================================================
+
+    /**
+     * Инициализирует Media Session API для управления с внешних устройств
+     * (умные часы, наушники, уведомления браузера)
+     */
+    initMediaSession() {
+        // Проверяем поддержку Media Session API браузером
+        if (!('mediaSession' in navigator)) {
+            console.warn('⚠️ Media Session API не поддерживается этим браузером');
+            return;
+        }
+
+        console.log('✅ Media Session API инициализирован');
+
+        // Устанавливаем обработчики команд от внешних устройств
+        navigator.mediaSession.setActionHandler('play', () => {
+            console.log('▶️ Команда PLAY от часов/наушников');
+            if (!this.state.isAutoPlaying) {
+                this.startAutoPlay();
+            }
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+            console.log('⏸️ Команда PAUSE от часов/наушников');
+            if (this.state.isAutoPlaying) {
+                this.stopAutoPlay();
+            }
+        });
+
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+            console.log('⏭️ Команда NEXT от часов/наушников');
+            this.showNextWordManually();
+        });
+
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            console.log('⏮️ Команда PREVIOUS от часов/наушников');
+            this.showPreviousWord();
+        });
+
+        // Изначально устанавливаем состояние "нет воспроизведения"
+        navigator.mediaSession.playbackState = 'none';
+    }
+
+    /**
+     * Обновляет информацию о текущем слове на внешних устройствах
+     * (отображается на часах, в уведомлениях, на наушниках)
+     * @param {Object} word - объект слова с полями german, russian, level и т.д.
+     */
+    updateMediaSessionMetadata(word) {
+        if (!('mediaSession' in navigator)) return;
+
+        if (!word) {
+            // Если слова нет, очищаем метаданные
+            navigator.mediaSession.metadata = null;
+            return;
+        }
+
+        // Парсим немецкое слово (отделяем артикль)
+        const parsed = this.parseGermanWord(word);
+        const germanWordFull = parsed.article
+            ? `${parsed.article} ${parsed.mainWord}`
+            : parsed.mainWord;
+
+        // Формируем название и альбом для отображения
+        const title = germanWordFull; // Немецкое слово
+        const artist = word.russian || ''; // Русский перевод
+        const album = word.level ? `Уровень ${word.level}` : 'Deutsch Lernen';
+
+        // Устанавливаем метаданные для Media Session
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: title,        // Главная строка - немецкое слово
+            artist: artist,      // Подзаголовок - русский перевод
+            album: album,        // Дополнительная информация - уровень
+            // artwork можно добавить, если есть иконка приложения
+            artwork: [
+                {
+                    src: 'https://via.placeholder.com/96x96.png?text=DE',
+                    sizes: '96x96',
+                    type: 'image/png'
+                },
+                {
+                    src: 'https://via.placeholder.com/128x128.png?text=DE',
+                    sizes: '128x128',
+                    type: 'image/png'
+                },
+                {
+                    src: 'https://via.placeholder.com/256x256.png?text=DE',
+                    sizes: '256x256',
+                    type: 'image/png'
+                }
+            ]
+        });
+
+        console.log('📱 Метаданные обновлены для часов:', { title, artist, album });
+    }
+
+    // ============================================================
+
 
     handleAuthStateChanged(user) {
         clearTimeout(this.headerCollapseTimeout);
@@ -401,7 +504,22 @@ class VocabularyApp {
     }
 
     setState(newState) {
+        const oldState = { ...this.state };
         this.state = { ...this.state, ...newState };
+
+        // 🎵 Синхронизация с Media Session при изменении состояния
+        if ('mediaSession' in navigator) {
+            // Обновляем метаданные, если изменилось текущее слово
+            if (newState.currentWord && newState.currentWord !== oldState.currentWord) {
+                this.updateMediaSessionMetadata(newState.currentWord);
+            }
+
+            // Обновляем состояние воспроизведения
+            if ('isAutoPlaying' in newState && newState.isAutoPlaying !== oldState.isAutoPlaying) {
+                navigator.mediaSession.playbackState = newState.isAutoPlaying ? 'playing' : 'paused';
+            }
+        }
+
         this.updateUI();
         this.saveStateToLocalStorage();
     }
@@ -529,6 +647,10 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
+            // 🎵 Обновляем Media Session при старте воспроизведения
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -539,6 +661,10 @@ class VocabularyApp {
             this.sequenceController.abort();
         }
         this.setState({ isAutoPlaying: false });
+        // 🎵 Обновляем Media Session при остановке воспроизведения
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
     }
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
@@ -1069,6 +1195,11 @@ class VocabularyApp {
         const msg = customMessage || (this.allWords && this.allWords.length > 0 ? 'Нет слов для выбранных фильтров.<br>Попробуйте изменить уровень или тему.' : 'Загрузка словаря...');
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
         this.setState({ currentWord: null });
+        // 🎵 Очищаем метаданные Media Session когда нет слов
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = null;
+            navigator.mediaSession.playbackState = 'none';
+        }
     }
 
 } // Конец класса VocabularyApp
