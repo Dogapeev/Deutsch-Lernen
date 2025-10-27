@@ -594,10 +594,7 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        // Останавливаем текущее аудио
-        if (this.audioPlayer) {
-            this.audioPlayer.pause();
-        }
+        // Аудио теперь останавливается через abort controller, не нужно отдельно pauseть
         this.setState({ isAutoPlaying: false });
         // Обновляем Media Session playback state
         if ('mediaSession' in navigator) {
@@ -729,24 +726,26 @@ class VocabularyApp {
             if (!wordId || (this.sequenceController && this.sequenceController.signal.aborted)) {
                 return resolve();
             }
+
+            // Создаем новый Audio объект вместо использования HTML элемента
+            // Это предотвращает автоматическое управление Media Session браузером
+            let audio = new Audio();
+
             const onAbort = () => {
-                this.audioPlayer.pause();
-                this.audioPlayer.src = '';
+                audio.pause();
+                audio.src = '';
                 cleanup();
                 reject(new DOMException('Aborted', 'AbortError'));
             };
             const onFinish = () => {
                 cleanup();
-                // Восстанавливаем playback state если блок все еще играет
-                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
                 resolve();
             };
             const cleanup = () => {
-                this.audioPlayer.removeEventListener('ended', onFinish);
-                this.audioPlayer.removeEventListener('error', onFinish);
+                audio.removeEventListener('ended', onFinish);
+                audio.removeEventListener('error', onFinish);
                 this.sequenceController?.signal.removeEventListener('abort', onAbort);
+                audio = null;
             };
             try {
                 const apiUrl = `${TTS_API_BASE_URL}/synthesize_by_id?id=${wordId}&part=${part}&vocab=${this.state.currentVocabulary}`;
@@ -755,15 +754,11 @@ class VocabularyApp {
                 const data = await response.json();
                 if (!data.url) throw new Error('Invalid response from TTS server');
                 if (this.sequenceController?.signal.aborted) return reject(new DOMException('Aborted', 'AbortError'));
-                this.audioPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
-                this.audioPlayer.addEventListener('ended', onFinish, { once: true });
-                this.audioPlayer.addEventListener('error', onFinish, { once: true });
+                audio.src = `${TTS_API_BASE_URL}${data.url}`;
+                audio.addEventListener('ended', onFinish, { once: true });
+                audio.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
-                await this.audioPlayer.play();
-                // Принудительно устанавливаем playback state в 'playing' чтобы предотвратить мигание на часах
-                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
+                await audio.play();
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error('Ошибка в методе speakById:', error);
