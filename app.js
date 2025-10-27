@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.4 (Fix Media Session Sync)
+// app.js - Версия 5.0.3 (Fix Email/Password Auth & Add Notifications)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.4';
+const APP_VERSION = '5.0.3';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -80,58 +80,6 @@ class VocabularyApp {
 
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
-
-        // Добавляем обработчики для корректной синхронизации с MediaSession
-        if (this.audioPlayer) {
-            this.audioPlayer.addEventListener('play', () => {
-                // Когда аудио реально начинает играть, сообщаем системе.
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
-            });
-
-            this.audioPlayer.addEventListener('pause', () => {
-                // Сообщаем системе о паузе, ТОЛЬКО если автопроигрывание было остановлено пользователем.
-                // Это предотвратит смену состояния на 'paused' между фразами.
-                if (!this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'paused';
-                }
-            });
-        }
-
-
-        // Устанавливаем обработчики Media Session один раз
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.setActionHandler('play', () => {
-                if (!this.state.isAutoPlaying) {
-                    this.startAutoPlay();
-                }
-            });
-
-            navigator.mediaSession.setActionHandler('pause', () => {
-                if (this.state.isAutoPlaying) {
-                    this.stopAutoPlay();
-                }
-            });
-
-            navigator.mediaSession.setActionHandler('previoustrack', () => {
-                this.showPreviousWord();
-            });
-
-            navigator.mediaSession.setActionHandler('nexttrack', () => {
-                this.showNextWordManually();
-            });
-
-            // Отключаем перемотку
-            try {
-                navigator.mediaSession.setActionHandler('seekbackward', null);
-                navigator.mediaSession.setActionHandler('seekforward', null);
-                navigator.mediaSession.setActionHandler('seekto', null);
-            } catch (e) {
-                // Игнорируем ошибки
-            }
-        }
-
         this.elements = {
             mainContent: document.getElementById('mainContent'),
             studyArea: document.getElementById('studyArea'),
@@ -456,25 +404,6 @@ class VocabularyApp {
         this.state = { ...this.state, ...newState };
         this.updateUI();
         this.saveStateToLocalStorage();
-        // Обновляем Media Session если изменилось текущее слово
-        if (newState.hasOwnProperty('currentWord')) {
-            this.updateMediaSession(newState.currentWord);
-        }
-    }
-    updateMediaSession(word) {
-        if ('mediaSession' in navigator) {
-            if (word && word.german && word.russian) {
-                // Обновляем только метаданные при смене слова
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: word.german,
-                    artist: word.russian,
-                    album: word.level || 'A1',
-                });
-            } else {
-                // Очищаем Media Session если нет слова
-                navigator.mediaSession.metadata = null;
-            }
-        }
     }
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
         this.stopAutoPlay();
@@ -600,10 +529,6 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
-            // Обновляем Media Session playback state
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -613,16 +538,7 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        // Останавливаем текущее аудио
-        if (this.audioPlayer) {
-            this.audioPlayer.pause();
-        }
-
         this.setState({ isAutoPlaying: false });
-        // Обновляем Media Session playback state
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
-        }
     }
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
@@ -749,63 +665,38 @@ class VocabularyApp {
             if (!wordId || (this.sequenceController && this.sequenceController.signal.aborted)) {
                 return resolve();
             }
-
             const onAbort = () => {
                 this.audioPlayer.pause();
                 this.audioPlayer.src = '';
                 cleanup();
                 reject(new DOMException('Aborted', 'AbortError'));
             };
-
-            const onFinish = (error = null) => {
+            const onFinish = () => {
                 cleanup();
-                if (error && error.name !== 'AbortError') {
-                    reject(error);
-                } else {
-                    resolve();
-                }
+                resolve();
             };
-
             const cleanup = () => {
                 this.audioPlayer.removeEventListener('ended', onFinish);
                 this.audioPlayer.removeEventListener('error', onFinish);
                 this.sequenceController?.signal.removeEventListener('abort', onAbort);
             };
-
             try {
-                // Устанавливаем состояние 'playing' прямо перед запросом и воспроизведением.
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
-
                 const apiUrl = `${TTS_API_BASE_URL}/synthesize_by_id?id=${wordId}&part=${part}&vocab=${this.state.currentVocabulary}`;
                 const response = await fetch(apiUrl, { signal: this.sequenceController?.signal });
                 if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
                 const data = await response.json();
                 if (!data.url) throw new Error('Invalid response from TTS server');
-                if (this.sequenceController?.signal.aborted) return onAbort();
-
+                if (this.sequenceController?.signal.aborted) return reject(new DOMException('Aborted', 'AbortError'));
                 this.audioPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
                 this.audioPlayer.addEventListener('ended', onFinish, { once: true });
                 this.audioPlayer.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
-
                 await this.audioPlayer.play();
-
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error('Ошибка в методе speakById:', error);
                 }
-                onFinish(error);
-            } finally {
-                // === КЛЮЧЕВОЙ ФРАГМЕНТ ===
-                // После того, как аудио закончилось (или было прервано),
-                // мы немедленно проверяем, продолжается ли автопроигрывание.
-                // Если да, мы принудительно возвращаем состояние 'playing',
-                // чтобы перекрыть автоматическое 'paused' от браузера на время беззвучной паузы.
-                if (this.state.isAutoPlaying && 'mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'playing';
-                }
+                onFinish();
             }
         });
     }
