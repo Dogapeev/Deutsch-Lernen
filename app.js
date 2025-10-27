@@ -1242,69 +1242,17 @@ class VocabularyApp {
     }
 
     generateGermanFlagArtwork(word) {
-        // Если слова нет, показываем пустую обложку
-        if (!word || !word.german) {
-            const emptySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="#000000"/></svg>`;
-            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(emptySvg)));
-        }
+        // Простой флаг Германии без текста
+        // Title и Artist уже показываются крупно на часах отдельно!
 
-        const germanWord = word.german;
-        const russianWord = word.russian || '';
-
-        // Динамически подбираем размер шрифта для немецкого слова
-        let fontSize = 200; // Ещё крупнее для коротких слов
-        if (germanWord.length > 20) fontSize = 80;
-        else if (germanWord.length > 15) fontSize = 100;
-        else if (germanWord.length > 10) fontSize = 130;
-        else if (germanWord.length > 8) fontSize = 160;
-
-        // Размер для русского перевода (значительно меньше)
-        const russianFontSize = 40;
-
-        // Создаем минималистичный SVG
         const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-            <!-- Чёрный фон (экономия батареи на OLED) -->
-            <rect width="512" height="512" fill="#000000"/>
-            
-            <!-- Лёгкая тень для объёма -->
-            <defs>
-                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx="1" dy="1" stdDeviation="3" flood-color="#000" flood-opacity="0.6"/>
-                </filter>
-            </defs>
-            
-            <!-- НЕМЕЦКОЕ СЛОВО: огромное, жирное, белое, по центру -->
-            <text 
-                x="256" 
-                y="256" 
-                font-family="Helvetica, Arial, sans-serif" 
-                font-size="${fontSize}" 
-                font-weight="bold" 
-                fill="#FFFFFF" 
-                text-anchor="middle" 
-                dominant-baseline="middle"
-                filter="url(#shadow)"
-                ${germanWord.length > 8 ? 'textLength="480" lengthAdjust="spacingAndGlyphs"' : ''}
-            >
-                ${germanWord}
-            </text>
-
-            <!-- РУССКИЙ ПЕРЕВОД: маленький, серый, внизу -->
-            <text 
-                x="256" 
-                y="470" 
-                font-family="Helvetica, Arial, sans-serif" 
-                font-size="${russianFontSize}" 
-                font-weight="normal" 
-                fill="#808080" 
-                text-anchor="middle"
-                opacity="0.8"
-            >
-                ${russianWord}
-            </text>
-        </svg>
-    `;
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <!-- Флаг Германии: три горизонтальные полосы -->
+                <rect y="0" width="512" height="171" fill="#000000"/>
+                <rect y="171" width="512" height="170" fill="#DD0000"/>
+                <rect y="341" width="512" height="171" fill="#FFCE00"/>
+            </svg>
+        `;
 
         // Конвертируем SVG в data URL
         return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
