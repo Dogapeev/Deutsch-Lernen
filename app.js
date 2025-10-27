@@ -154,15 +154,35 @@ class VocabularyApp {
             }
         });
 
+        // Обработчики для кнопок Next/Previous (переключение треков)
         navigator.mediaSession.setActionHandler('nexttrack', () => {
-            console.log('⏭️ Команда NEXT от часов/наушников');
+            console.log('⏭️ Команда NEXTTRACK от часов/наушников');
             this.showNextWordManually();
         });
 
         navigator.mediaSession.setActionHandler('previoustrack', () => {
-            console.log('⏮️ Команда PREVIOUS от часов/наушников');
+            console.log('⏮️ Команда PREVIOUSTRACK от часов/наушников');
             this.showPreviousWord();
         });
+
+        // ВАЖНО: Переопределяем seekforward/seekbackward чтобы они переключали слова
+        // вместо перемотки (т.к. у нас нет временной шкалы)
+        navigator.mediaSession.setActionHandler('seekforward', () => {
+            console.log('⏭️ Команда SEEKFORWARD (переназначена на NEXT) от часов/наушников');
+            this.showNextWordManually();
+        });
+
+        navigator.mediaSession.setActionHandler('seekbackward', () => {
+            console.log('⏮️ Команда SEEKBACKWARD (переназначена на PREVIOUS) от часов/наушников');
+            this.showPreviousWord();
+        });
+
+        // Отключаем обработчик seekto чтобы не было перемотки
+        try {
+            navigator.mediaSession.setActionHandler('seekto', null);
+        } catch (e) {
+            // Некоторые браузеры не поддерживают установку null
+        }
 
         // Изначально устанавливаем состояние "нет воспроизведения"
         navigator.mediaSession.playbackState = 'none';
@@ -177,8 +197,9 @@ class VocabularyApp {
         if (!('mediaSession' in navigator)) return;
 
         if (!word) {
-            // Если слова нет, очищаем метаданные
+            // Если слова нет, очищаем метаданные и возвращаем исходный title
             navigator.mediaSession.metadata = null;
+            document.title = 'Изучение немецких слов - Новый движок';
             return;
         }
 
@@ -193,6 +214,9 @@ class VocabularyApp {
         const artist = word.russian || ''; // Русский перевод
         const album = word.level ? `Уровень ${word.level}` : 'Deutsch Lernen';
 
+        // 🔥 ВАЖНО: Обновляем title страницы - это показывается на многих устройствах!
+        document.title = `${title} — ${artist}`;
+
         // Устанавливаем метаданные для Media Session
         navigator.mediaSession.metadata = new MediaMetadata({
             title: title,        // Главная строка - немецкое слово
@@ -201,22 +225,31 @@ class VocabularyApp {
             // artwork можно добавить, если есть иконка приложения
             artwork: [
                 {
-                    src: 'https://via.placeholder.com/96x96.png?text=DE',
+                    src: 'https://via.placeholder.com/96x96.png?text=🇩🇪',
                     sizes: '96x96',
                     type: 'image/png'
                 },
                 {
-                    src: 'https://via.placeholder.com/128x128.png?text=DE',
+                    src: 'https://via.placeholder.com/128x128.png?text=🇩🇪',
                     sizes: '128x128',
                     type: 'image/png'
                 },
                 {
-                    src: 'https://via.placeholder.com/256x256.png?text=DE',
+                    src: 'https://via.placeholder.com/256x256.png?text=🇩🇪',
                     sizes: '256x256',
+                    type: 'image/png'
+                },
+                {
+                    src: 'https://via.placeholder.com/512x512.png?text=🇩🇪',
+                    sizes: '512x512',
                     type: 'image/png'
                 }
             ]
         });
+
+        // 🔥 ВАЖНО: Не устанавливаем позицию воспроизведения, чтобы браузер
+        // не думал что это медиа-файл с временной шкалой
+        // (это предотвращает показ перемотки на 10 секунд)
 
         console.log('📱 Метаданные обновлены для часов:', { title, artist, album });
     }
@@ -1199,6 +1232,8 @@ class VocabularyApp {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = null;
             navigator.mediaSession.playbackState = 'none';
+            // Возвращаем исходный title страницы
+            document.title = 'Изучение немецких слов - Новый движок';
         }
     }
 
