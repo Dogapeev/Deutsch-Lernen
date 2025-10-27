@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.5 (Fix Media Session with Silent Audio)
+// app.js - Версия 5.0.6 (Fix Media Session with requestAnimationFrame Lock)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.5';
+const APP_VERSION = '5.0.6';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -50,11 +50,10 @@ class VocabularyApp {
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
 
-        // --- ВОСПРОИЗВЕДЕНИЕ ТИШИНЫ ДЛЯ УДЕРЖАНИЯ СЕССИИ ---
-        // Создаем плеер с коротким, бесшумным аудиофайлом в формате base64, который будет играть на цикле
-        const silentAudioData = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-        this.silentAudio = new Audio(silentAudioData);
-        this.silentAudio.loop = true;
+        // --- УПРАВЛЕНИЕ БЛОКИРОВКОЙ МЕДИА-СЕССИИ ---
+        this.isMediaLockActive = false;
+        // Привязываем контекст `this` для использования в requestAnimationFrame
+        this.mediaLockLoop = this.mediaLockLoop.bind(this);
         // ---
 
         this.state = {
@@ -85,6 +84,32 @@ class VocabularyApp {
         this.runMigrations();
     }
 
+    // --- МЕТОДЫ УПРАВЛЕНИЯ МЕДИА-СЕССИЕЙ ---
+
+    // Цикл, который принудительно удерживает состояние 'playing'
+    mediaLockLoop() {
+        if (!this.isMediaLockActive) return; // Выходим из цикла, если блокировка снята
+
+        if ('mediaSession' in navigator && navigator.mediaSession.playbackState !== 'playing') {
+            navigator.mediaSession.playbackState = 'playing';
+        }
+
+        requestAnimationFrame(this.mediaLockLoop); // Продолжаем цикл
+    }
+
+    // Захватываем управление медиа-сессией
+    acquireMediaLock() {
+        if (this.isMediaLockActive) return;
+        this.isMediaLockActive = true;
+        this.mediaLockLoop(); // Запускаем цикл
+    }
+
+    // Освобождаем управление медиа-сессией
+    releaseMediaLock() {
+        this.isMediaLockActive = false;
+    }
+
+
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
 
@@ -110,14 +135,11 @@ class VocabularyApp {
                 this.showNextWordManually();
             });
 
-            // Отключаем неиспользуемые элементы управления
             try {
                 navigator.mediaSession.setActionHandler('seekbackward', null);
                 navigator.mediaSession.setActionHandler('seekforward', null);
                 navigator.mediaSession.setActionHandler('seekto', null);
-            } catch (e) {
-                // Игнорируем ошибки, если какой-то из хендлеров не поддерживается
-            }
+            } catch (e) { }
         }
 
         this.elements = {
@@ -282,44 +304,36 @@ class VocabularyApp {
         }));
         document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.loadAndSwitchVocabulary(e.target.value)));
 
-        // --- AUTH EVENTS ---
         this.elements.auth.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
         this.elements.auth.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.overlay.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.signOutBtn.addEventListener('click', () => auth.signOut());
         this.elements.auth.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
         this.elements.auth.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
-
         this.elements.auth.tabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab));
         });
         this.elements.auth.forgotPasswordBtn.addEventListener('click', () => this.switchAuthTab('resetPassword'));
         this.elements.auth.backToSigninBtn.addEventListener('click', () => this.switchAuthTab('signin'));
-
         this.elements.auth.signupForm.addEventListener('submit', e => this.handleSignUpWithEmail(e));
         this.elements.auth.signinForm.addEventListener('submit', e => this.handleSignInWithEmail(e));
         this.elements.auth.resetPasswordForm.addEventListener('submit', e => this.handlePasswordReset(e));
 
-        // --- WINDOW EVENTS ---
         window.addEventListener('resize', () => this.repositionAuthContainer());
         window.addEventListener('scroll', () => this.handleScroll());
-
         this.elements.mainContent.addEventListener('click', () => this.toggleAutoPlay());
     }
 
-    // --- AUTH HANDLERS ---
     async handleSignUpWithEmail(e) {
         e.preventDefault();
         const name = e.target.signupName.value;
         const email = e.target.signupEmail.value;
         const password = e.target.signupPassword.value;
         const passwordConfirm = e.target.signupPasswordConfirm.value;
-
         if (password !== passwordConfirm) {
             this.showNotification('Пароли не совпадают!', 'error');
             return;
         }
-
         try {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             await userCredential.user.updateProfile({ displayName: name });
@@ -335,7 +349,6 @@ class VocabularyApp {
         e.preventDefault();
         const email = e.target.signinEmail.value;
         const password = e.target.signinPassword.value;
-
         try {
             await auth.signInWithEmailAndPassword(email, password);
             this.toggleAuthModal(false);
@@ -348,7 +361,6 @@ class VocabularyApp {
     async handlePasswordReset(e) {
         e.preventDefault();
         const email = e.target.resetEmail.value;
-
         try {
             await auth.sendPasswordResetEmail(email);
             this.showNotification('Письмо для сброса пароля отправлено на ваш email.', 'success');
@@ -370,17 +382,12 @@ class VocabularyApp {
 
     getFirebaseAuthErrorMessage(error) {
         switch (error.code) {
-            case 'auth/email-already-in-use':
-                return 'Этот email уже зарегистрирован.';
-            case 'auth/invalid-email':
-                return 'Неверный формат email.';
-            case 'auth/weak-password':
-                return 'Пароль слишком слабый (минимум 6 символов).';
+            case 'auth/email-already-in-use': return 'Этот email уже зарегистрирован.';
+            case 'auth/invalid-email': return 'Неверный формат email.';
+            case 'auth/weak-password': return 'Пароль слишком слабый (минимум 6 символов).';
             case 'auth/user-not-found':
-            case 'auth/wrong-password':
-                return 'Неверный email или пароль.';
-            default:
-                return 'Произошла ошибка. Попробуйте снова.';
+            case 'auth/wrong-password': return 'Неверный email или пароль.';
+            default: return 'Произошла ошибка. Попробуйте снова.';
         }
     }
 
@@ -395,7 +402,6 @@ class VocabularyApp {
         }, 4000);
     }
 
-    // --- UI/UX HANDLERS ---
     repositionAuthContainer() {
         const isMobile = window.innerWidth <= 768;
         const authContainer = this.elements.auth.container;
@@ -424,13 +430,8 @@ class VocabularyApp {
         this.lastScrollY = currentScrollY;
     }
 
-    collapseMobileHeader() {
-        this.elements.headerMobile?.classList.add('collapsed');
-    }
-
-    expandMobileHeader() {
-        this.elements.headerMobile?.classList.remove('collapsed');
-    }
+    collapseMobileHeader() { this.elements.headerMobile?.classList.add('collapsed'); }
+    expandMobileHeader() { this.elements.headerMobile?.classList.remove('collapsed'); }
 
     showLoginMessage() {
         this.stopAutoPlay();
@@ -463,7 +464,7 @@ class VocabularyApp {
     }
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
         this.stopAutoPlay();
-        this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загрузка...</p></div>`;
+        this.elements.studyArea.innerHTML = `<div class.no-words"><p>Загрузка...</p></div>`;
         if (this.state.availableVocabularies.length === 0) {
             try {
                 const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
@@ -489,7 +490,7 @@ class VocabularyApp {
         try {
             await this.fetchVocabularyData(finalVocabName);
             const vocabularyData = this.vocabulariesCache[finalVocabName];
-            if (!vocabularyData) throw new Error("Кэшированные данные не найдены после загрузки.");
+            if (!vocabularyData) throw new Error("Кэшированные данные не найдены.");
             this.allWords = vocabularyData.words;
             this.themeMap = vocabularyData.meta.themes || {};
         } catch (error) {
@@ -512,7 +513,7 @@ class VocabularyApp {
         const data = await response.json();
         if (!data.words || !data.meta || !data.meta.themes) {
             if (Array.isArray(data)) {
-                console.warn(`Словарь "${vocabName}" имеет устаревший формат (простой массив).`);
+                console.warn(`Словарь "${vocabName}" имеет устаревший формат.`);
                 this.vocabulariesCache[vocabName] = {
                     words: data.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
                     meta: { themes: {} }
@@ -584,11 +585,11 @@ class VocabularyApp {
             }
         }
         if (wordToShow) {
-            this.silentAudio.play().catch(e => console.error("Ошибка воспроизведения тишины:", e));
             this.setState({ isAutoPlaying: true });
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
             }
+            this.acquireMediaLock(); // Захватываем управление
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -599,8 +600,8 @@ class VocabularyApp {
             this.sequenceController.abort();
         }
         this.audioPlayer?.pause();
-        this.silentAudio.pause();
         this.setState({ isAutoPlaying: false });
+        this.releaseMediaLock(); // Освобождаем управление
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
