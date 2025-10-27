@@ -1,6 +1,6 @@
 // --- НАЧАЛО ФАЙЛА APP.JS ---
 
-// app.js - Версия 5.0.6 (Fix Media Session with requestAnimationFrame Lock)
+// app.js - Версия 5.0.7 (Fix Media Session with Interval Lock)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -20,7 +20,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.0.6';
+const APP_VERSION = '5.0.7';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -51,9 +51,7 @@ class VocabularyApp {
         this.headerCollapseTimeout = null;
 
         // --- УПРАВЛЕНИЕ БЛОКИРОВКОЙ МЕДИА-СЕССИИ ---
-        this.isMediaLockActive = false;
-        // Привязываем контекст `this` для использования в requestAnimationFrame
-        this.mediaLockLoop = this.mediaLockLoop.bind(this);
+        this.mediaLockInterval = null;
         // ---
 
         this.state = {
@@ -86,34 +84,30 @@ class VocabularyApp {
 
     // --- МЕТОДЫ УПРАВЛЕНИЯ МЕДИА-СЕССИЕЙ ---
 
-    // Цикл, который принудительно удерживает состояние 'playing'
-    mediaLockLoop() {
-        if (!this.isMediaLockActive) return; // Выходим из цикла, если блокировка снята
-
-        if ('mediaSession' in navigator && navigator.mediaSession.playbackState !== 'playing') {
-            navigator.mediaSession.playbackState = 'playing';
-        }
-
-        requestAnimationFrame(this.mediaLockLoop); // Продолжаем цикл
-    }
-
-    // Захватываем управление медиа-сессией
+    // Захватываем управление медиа-сессией с помощью интервала
     acquireMediaLock() {
-        if (this.isMediaLockActive) return;
-        this.isMediaLockActive = true;
-        this.mediaLockLoop(); // Запускаем цикл
+        if (this.mediaLockInterval) return;
+        this.mediaLockInterval = setInterval(() => {
+            if (this.state.isAutoPlaying && 'mediaSession' in navigator && navigator.mediaSession.playbackState !== 'playing') {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+        }, 200); // Проверяем 5 раз в секунду - надежно и не затратно
     }
 
     // Освобождаем управление медиа-сессией
     releaseMediaLock() {
-        this.isMediaLockActive = false;
+        if (this.mediaLockInterval) {
+            clearInterval(this.mediaLockInterval);
+            this.mediaLockInterval = null;
+        }
     }
 
 
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
 
-        // Устанавливаем обработчики Media Session один раз
+        // Устанавливаем обработчики Media Session один раз.
+        // Это ЕДИНСТВЕННЫЙ источник команд от ОС (часы, наушники).
         if ('mediaSession' in navigator) {
             navigator.mediaSession.setActionHandler('play', () => {
                 if (!this.state.isAutoPlaying) {
