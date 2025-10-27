@@ -588,8 +588,10 @@ class VocabularyApp {
 
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
-                this.updateMediaSessionMetadata(word, sequenceDuration);
             }
+
+            // Всегда обновляем metadata при начале последовательности
+            this.updateMediaSessionMetadata(word, sequenceDuration);
             this.startMediaSessionTimer(sequenceDuration);
 
             let phase = this.state.currentPhase;
@@ -739,12 +741,6 @@ class VocabularyApp {
                 player.loop = false;
                 player.volume = 1.0;
                 player.src = `${TTS_API_BASE_URL}${data.url}`;
-
-                // Обновляем metadata перед проигрыванием реального аудио
-                if (this.state.currentWord) {
-                    const duration = this.calculateCurrentWordDuration(this.state.currentWord);
-                    this.updateMediaSessionMetadata(this.state.currentWord, duration);
-                }
 
                 player.addEventListener('ended', onFinish, { once: true });
                 player.addEventListener('error', onFinish, { once: true });
