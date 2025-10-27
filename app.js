@@ -404,6 +404,48 @@ class VocabularyApp {
         this.state = { ...this.state, ...newState };
         this.updateUI();
         this.saveStateToLocalStorage();
+        // Обновляем Media Session если изменилось текущее слово
+        if (newState.hasOwnProperty('currentWord')) {
+            this.updateMediaSession(newState.currentWord);
+        }
+    }
+    updateMediaSession(word) {
+        if ('mediaSession' in navigator) {
+            if (word && word.german && word.russian) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: word.german,
+                    artist: word.russian,
+                    album: `Deutsch Lernen - ${word.level || 'A1'}`,
+                });
+
+                // Устанавливаем обработчики действий
+                navigator.mediaSession.setActionHandler('play', () => {
+                    if (!this.state.isAutoPlaying) {
+                        this.startAutoPlay();
+                    }
+                });
+
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    if (this.state.isAutoPlaying) {
+                        this.stopAutoPlay();
+                    }
+                });
+
+                navigator.mediaSession.setActionHandler('previoustrack', () => {
+                    this.showPreviousWord();
+                });
+
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    this.showNextWordManually();
+                });
+
+                // Устанавливаем состояние воспроизведения
+                navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
+            } else {
+                // Очищаем Media Session если нет слова
+                navigator.mediaSession.metadata = null;
+            }
+        }
     }
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
         this.stopAutoPlay();
@@ -529,6 +571,10 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
+            // Обновляем Media Session playback state
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -539,6 +585,10 @@ class VocabularyApp {
             this.sequenceController.abort();
         }
         this.setState({ isAutoPlaying: false });
+        // Обновляем Media Session playback state
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
     }
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
