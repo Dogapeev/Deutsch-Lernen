@@ -740,6 +740,12 @@ class VocabularyApp {
                 player.volume = 1.0;
                 player.src = `${TTS_API_BASE_URL}${data.url}`;
 
+                // Обновляем metadata перед проигрыванием реального аудио
+                if (this.state.currentWord) {
+                    const duration = this.calculateCurrentWordDuration(this.state.currentWord);
+                    this.updateMediaSessionMetadata(this.state.currentWord, duration);
+                }
+
                 player.addEventListener('ended', onFinish, { once: true });
                 player.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
@@ -1244,27 +1250,10 @@ class VocabularyApp {
         if (this.artworkUrl) return this.artworkUrl;
 
         // Создаем SVG с флагом Германии и буквами "DE"
-        const svg = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-                <!-- Флаг Германии: черный, красный, золотой -->
-                <rect width="512" height="170.67" fill="#000000"/>
-                <rect y="170.67" width="512" height="170.67" fill="#DD0000"/>
-                <rect y="341.33" width="512" height="170.67" fill="#FFCE00"/>
-                
-                <!-- Буквы "DE" белым цветом с тенью -->
-                <defs>
-                    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.5"/>
-                    </filter>
-                </defs>
-                <text x="256" y="310" font-family="Arial, sans-serif" font-size="200" font-weight="bold" 
-                      fill="#FFFFFF" text-anchor="middle" filter="url(#shadow)">DE</text>
-            </svg>
-        `;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="170.67" fill="#000000"/><rect y="170.67" width="512" height="170.67" fill="#DD0000"/><rect y="341.33" width="512" height="170.67" fill="#FFCE00"/><defs><filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.5"/></filter></defs><text x="256" y="310" font-family="Arial, sans-serif" font-size="200" font-weight="bold" fill="#FFFFFF" text-anchor="middle" filter="url(#shadow)">DE</text></svg>`;
 
-        // Конвертируем SVG в data URL и кешируем
-        const blob = new Blob([svg], { type: 'image/svg+xml' });
-        this.artworkUrl = URL.createObjectURL(blob);
+        // Конвертируем SVG в data URL (base64) для совместимости с Apple Watch
+        this.artworkUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
         return this.artworkUrl;
     }
 
@@ -1279,10 +1268,18 @@ class VocabularyApp {
             artist: word.russian || '',
             album: `${word.level || ''} - Deutsch Lernen`,
             artwork: [
+                { src: artworkUrl, sizes: '96x96', type: 'image/svg+xml' },
+                { src: artworkUrl, sizes: '128x128', type: 'image/svg+xml' },
+                { src: artworkUrl, sizes: '192x192', type: 'image/svg+xml' },
+                { src: artworkUrl, sizes: '256x256', type: 'image/svg+xml' },
+                { src: artworkUrl, sizes: '384x384', type: 'image/svg+xml' },
                 { src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }
             ]
         });
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
+
+        console.log('🎵 MediaSession обновлен:', word.german, '→', word.russian);
+
         try {
             navigator.mediaSession.setPositionState({
                 duration: duration,
