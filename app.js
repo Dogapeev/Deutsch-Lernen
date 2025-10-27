@@ -80,6 +80,27 @@ class VocabularyApp {
 
     init() {
         this.audioPlayer = document.getElementById('audioPlayer');
+
+        // Добавляем слушатели для синхронизации Media Session с реальным состоянием аудио
+        if (this.audioPlayer && 'mediaSession' in navigator) {
+            this.audioPlayer.addEventListener('play', () => {
+                // Обновляем только если автоплей активен
+                if (this.state.isAutoPlaying) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
+            });
+            this.audioPlayer.addEventListener('pause', () => {
+                // Всегда показываем паузу когда аудио на паузе
+                navigator.mediaSession.playbackState = 'paused';
+            });
+            this.audioPlayer.addEventListener('ended', () => {
+                // Если автоплей НЕ активен, показываем паузу
+                if (!this.state.isAutoPlaying) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
+            });
+        }
+
         this.elements = {
             mainContent: document.getElementById('mainContent'),
             studyArea: document.getElementById('studyArea'),
@@ -418,7 +439,7 @@ class VocabularyApp {
                     album: word.level || 'A1',
                 });
 
-                // Устанавливаем обработчики действий
+                // Устанавливаем обработчики действий - работают как кнопки в мобильном приложении
                 navigator.mediaSession.setActionHandler('play', () => {
                     if (!this.state.isAutoPlaying) {
                         this.startAutoPlay();
@@ -448,8 +469,7 @@ class VocabularyApp {
                     // Игнорируем ошибки если браузер не поддерживает эти действия
                 }
 
-                // Устанавливаем состояние воспроизведения
-                navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
+                // Не устанавливаем playbackState здесь - он обновится автоматически через события audioPlayer
             } else {
                 // Очищаем Media Session если нет слова
                 navigator.mediaSession.metadata = null;
@@ -580,10 +600,6 @@ class VocabularyApp {
         }
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
-            // Обновляем Media Session playback state
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
             this.runDisplaySequence(wordToShow);
         } else {
             this.showNoWordsMessage();
@@ -593,11 +609,11 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        this.setState({ isAutoPlaying: false });
-        // Обновляем Media Session playback state
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
+        // Останавливаем текущее аудио
+        if (this.audioPlayer) {
+            this.audioPlayer.pause();
         }
+        this.setState({ isAutoPlaying: false });
     }
     toggleAutoPlay() {
         if (this.state.isAutoPlaying) {
@@ -750,12 +766,6 @@ class VocabularyApp {
                 this.audioPlayer.addEventListener('ended', onFinish, { once: true });
                 this.audioPlayer.addEventListener('error', onFinish, { once: true });
                 this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
-
-                // Обновляем Media Session перед воспроизведением
-                if (this.state.currentWord) {
-                    this.updateMediaSession(this.state.currentWord);
-                }
-
                 await this.audioPlayer.play();
             } catch (error) {
                 if (error.name !== 'AbortError') {
