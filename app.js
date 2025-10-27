@@ -1207,19 +1207,30 @@ class VocabularyApp {
             this.stopAutoPlay();
         });
 
+        // Кнопка "следующий трек" будет переключать слово
         navigator.mediaSession.setActionHandler('nexttrack', () => {
             console.log('⏭️ Next Track с Apple Watch');
             this.showNextWordManually();
         });
 
+        // Кнопка "предыдущий трек" будет переключать слово
         navigator.mediaSession.setActionHandler('previoustrack', () => {
             console.log('⏮️ Previous Track с Apple Watch');
             this.showPreviousWord();
         });
 
-        // Явно отключаем кнопки перемотки, чтобы показывались только Next/Previous Track
-        navigator.mediaSession.setActionHandler('seekforward', null);
-        navigator.mediaSession.setActionHandler('seekbackward', null);
+        // --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
+        // Теперь кнопки перемотки (+10с / -10с) тоже будут переключать слова.
+        navigator.mediaSession.setActionHandler('seekforward', () => {
+            console.log('⏩ Seek Forward (+10s) с Apple Watch -> Переключаем на следующее слово');
+            this.showNextWordManually();
+        });
+        navigator.mediaSession.setActionHandler('seekbackward', () => {
+            console.log('⏪ Seek Backward (-10s) с Apple Watch -> Переключаем на предыдущее слово');
+            this.showPreviousWord();
+        });
+
+        // seekto можно оставить отключенным
         navigator.mediaSession.setActionHandler('seekto', null);
     }
 
