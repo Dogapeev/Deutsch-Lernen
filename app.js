@@ -1242,19 +1242,7 @@ class VocabularyApp {
     }
 
     generateGermanFlagArtwork(word) {
-        // Простой флаг Германии без текста
-        // Title и Artist уже показываются крупно на часах отдельно!
-
-        const svg = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-                <!-- Флаг Германии: три горизонтальные полосы -->
-                <rect y="0" width="512" height="171" fill="#000000"/>
-                <rect y="171" width="512" height="170" fill="#DD0000"/>
-                <rect y="341" width="512" height="171" fill="#FFCE00"/>
-            </svg>
-        `;
-
-        // Конвертируем SVG в data URL
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><rect width="16" height="16" fill="transparent"/></svg>`;
         return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
     }
 
@@ -1263,7 +1251,7 @@ class VocabularyApp {
     updateMediaSessionMetadata(word, duration = 2) {
         if (!('mediaSession' in navigator) || !word) return;
 
-        // Генерируем artwork с флагом Германии
+        // Генерируем прозрачную обложку 16x16
         const artworkUrl = this.generateGermanFlagArtwork(word);
 
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -1271,8 +1259,7 @@ class VocabularyApp {
             artist: word.russian || '',
             album: `${word.level || ''} - Deutsch Lernen`,
             artwork: [
-                { src: artworkUrl, sizes: '96x96', type: 'image/svg+xml' },
-                { src: artworkUrl, sizes: '128x128', type: 'image/svg+xml' }
+                { src: artworkUrl, sizes: '16x16', type: 'image/svg+xml' }
             ]
         });
         navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
