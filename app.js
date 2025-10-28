@@ -1,4 +1,4 @@
-// app.js - Версия 5.5.0 (с раздельными плеерами для стабильного виджета)
+// app.js - Версия 5.6.0 (с сохранением позиции паузы и плавным прогресс-баром)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -18,7 +18,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.5.0';
+const APP_VERSION = '5.6.0';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -58,8 +58,12 @@ class VocabularyApp {
             rafId: null,
             startTime: null,
             duration: 0,
+            pausedAt: 0,  // Время паузы в мс от начала
             isRunning: false
         };
+
+        // Состояние паузы для продолжения с места остановки
+        this.pausedSequenceState = null;
 
         this.state = {
             currentUser: null,
@@ -544,6 +548,19 @@ class VocabularyApp {
 
     startAutoPlay() {
         if (this.state.isAutoPlaying) return;
+
+        // Проверяем есть ли сохраненное состояние паузы
+        if (this.pausedSequenceState && this.pausedSequenceState.word) {
+            const pausedWord = this.pausedSequenceState.word;
+            console.log('▶️ Продолжаем с паузы:', pausedWord.german);
+            this.setState({ isAutoPlaying: true, currentWord: pausedWord });
+            this.playSilentAudio();
+            this.runDisplaySequence(pausedWord, this.pausedSequenceState);
+            this.pausedSequenceState = null; // Очищаем состояние паузы
+            return;
+        }
+
+        // Обычный запуск без паузы
         let wordToShow = this.state.currentWord;
         if (!wordToShow || this.state.currentPhase === 'translation') {
             wordToShow = this.getNextWord();
@@ -561,6 +578,23 @@ class VocabularyApp {
     }
 
     stopAutoPlay() {
+        // Сохраняем состояние паузы
+        if (this.state.isAutoPlaying && this.state.currentWord && this.progressAnimation.isRunning) {
+            const elapsed = performance.now() - this.progressAnimation.startTime;
+            this.pausedSequenceState = {
+                word: this.state.currentWord,
+                phase: this.state.currentPhase,
+                elapsedTime: elapsed,
+                totalDuration: this.progressAnimation.duration
+            };
+            this.progressAnimation.pausedAt = elapsed;
+            console.log('⏸️ Пауза на', Math.round(elapsed), 'мс из', Math.round(this.progressAnimation.duration), 'мс');
+        } else {
+            // Полная остановка - сбрасываем состояние паузы
+            this.pausedSequenceState = null;
+            this.progressAnimation.pausedAt = 0;
+        }
+
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
@@ -583,7 +617,7 @@ class VocabularyApp {
         }
     }
 
-    async runDisplaySequence(word) {
+    async runDisplaySequence(word, resumeState = null) {
         if (!word) {
             this.showNoWordsMessage();
             this.stopAutoPlay();
@@ -601,33 +635,64 @@ class VocabularyApp {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
-            // --- Новая логика с плавным прогресс-баром ---
+            // --- Логика с плавным прогресс-баром и поддержкой resume ---
             const phases = [];
             let totalDuration = 0;
+            let resumeFromMs = 0;
+            let skipPhasesUntil = 0;
+
+            // Если есть состояние паузы - настраиваем продолжение
+            if (resumeState && resumeState.word.id === word.id) {
+                resumeFromMs = resumeState.elapsedTime;
+                totalDuration = resumeState.totalDuration;
+
+                // Вычисляем какие фазы пропустить (уже выполнены)
+                let accumulated = 0;
+                skipPhasesUntil = 0;
+
+                console.log('🔄 Продолжение с', Math.round(resumeFromMs), 'мс из', Math.round(totalDuration), 'мс');
+            }
 
             // Определяем все этапы и их "вес" (приблизительная длительность в мс для расчёта шкалы)
-            phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
+            phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted), name: 'fade' });
 
             // Этапы озвучки немецкого слова
             for (let i = 0; i < this.state.repeatMode; i++) {
                 const delayDuration = (i === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
-                // Озвучка + задержка перед ней
-                phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i) });
+                phases.push({
+                    duration: delayDuration + 1800,
+                    task: () => this._playGermanPhase(word, checkAborted, i),
+                    name: `german-${i}`
+                });
             }
 
             // Остальные этапы
             if (this.state.showMorphemes) {
-                phases.push({ duration: DELAYS.BEFORE_MORPHEMES, task: () => this._revealMorphemesPhase(word, checkAborted) });
+                phases.push({
+                    duration: DELAYS.BEFORE_MORPHEMES,
+                    task: () => this._revealMorphemesPhase(word, checkAborted),
+                    name: 'morphemes'
+                });
             }
             if (this.state.showSentences && word.sentence) {
                 const sentenceDuration = this.state.sentenceSoundEnabled ? 3500 : 0;
-                phases.push({ duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
+                phases.push({
+                    duration: DELAYS.BEFORE_SENTENCE + sentenceDuration,
+                    task: () => this._playSentencePhase(word, checkAborted),
+                    name: 'sentence'
+                });
             }
             const translationDuration = this.state.translationSoundEnabled ? 1800 : 0;
-            phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
+            phases.push({
+                duration: DELAYS.BEFORE_TRANSLATION + translationDuration,
+                task: () => this._revealTranslationPhase(word, checkAborted),
+                name: 'translation'
+            });
 
-            // Рассчитываем общую "длительность" как сумму всех этапов
-            totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            // Рассчитываем общую длительность если не resume
+            if (!resumeState || resumeState.word.id !== word.id) {
+                totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            }
 
             // Обновляем метаданные (включая обложку)
             this.updateMediaSessionMetadata(word, totalDuration / 1000);
@@ -637,17 +702,31 @@ class VocabularyApp {
                 navigator.mediaSession.playbackState = 'playing';
             }
 
-            // Запускаем плавный прогресс-бар на всю длительность блока слова
-            this.startSmoothProgress(totalDuration);
+            // Запускаем плавный прогресс-бар (с offset если resume)
+            this.startSmoothProgress(totalDuration, resumeFromMs);
 
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
             }
 
-            // Последовательно выполняем каждый этап
-            for (const phase of phases) {
+            // Вычисляем с какой фазы начинать если resume
+            let startPhaseIndex = 0;
+            if (resumeState && resumeState.word.id === word.id) {
+                let accumulated = 0;
+                for (let i = 0; i < phases.length; i++) {
+                    accumulated += phases[i].duration;
+                    if (accumulated > resumeFromMs) {
+                        startPhaseIndex = i;
+                        console.log('▶️ Начинаем с фазы', i, ':', phases[i].name);
+                        break;
+                    }
+                }
+            }
+
+            // Последовательно выполняем каждый этап (начиная с startPhaseIndex)
+            for (let i = startPhaseIndex; i < phases.length; i++) {
                 checkAborted();
-                await phase.task(); // Выполняем задачу этапа
+                await phases[i].task(); // Выполняем задачу этапа
             }
 
             checkAborted();
@@ -1005,6 +1084,7 @@ class VocabularyApp {
         if (this.currentHistoryIndex <= 0) return;
         const wasAutoPlaying = this.state.isAutoPlaying;
         this.stopAutoPlay();
+        this.pausedSequenceState = null; // Очищаем состояние паузы при смене слова
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
         this.setState({ currentWord: word, currentPhase: 'initial' });
@@ -1015,6 +1095,7 @@ class VocabularyApp {
     showNextWordManually() {
         const wasAutoPlaying = this.state.isAutoPlaying;
         this.stopAutoPlay();
+        this.pausedSequenceState = null; // Очищаем состояние паузы при смене слова
         let nextWord;
         if (this.currentHistoryIndex < this.wordHistory.length - 1) {
             this.currentHistoryIndex++;
@@ -1344,12 +1425,14 @@ class VocabularyApp {
     }
 
     // Методы для плавного прогресс-бара
-    startSmoothProgress(durationMs) {
+    startSmoothProgress(durationMs, resumeFromMs = 0) {
         this.stopSmoothProgress();
 
-        this.progressAnimation.startTime = performance.now();
+        this.progressAnimation.startTime = performance.now() - resumeFromMs;
         this.progressAnimation.duration = durationMs;
         this.progressAnimation.isRunning = true;
+
+        console.log('🎬 Прогресс-бар:', resumeFromMs > 0 ? `продолжение с ${Math.round(resumeFromMs)}мс` : 'старт с 0');
 
         const animate = (currentTime) => {
             if (!this.progressAnimation.isRunning) return;
