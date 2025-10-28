@@ -564,9 +564,6 @@ class VocabularyApp {
         }
     }
 
-    // ИСПРАВЛЕННЫЙ метод runDisplaySequence с плавным прогрессом
-    // Замените метод runDisplaySequence в вашем app.js (строки 567-664) на этот код
-
     async runDisplaySequence(word) {
         if (!word) {
             this.showNoWordsMessage();
@@ -585,123 +582,50 @@ class VocabularyApp {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
-            // Определяем все этапы
+            // --- Новая логика пошагового прогресса ---
             const phases = [];
+            let totalDuration = 0;
 
-            // Функция для БЕЗОПАСНОГО обновления Media Session position
-            // (не вызывается во время смены audio src!)
+            // Функция для обновления Media Session
             const updatePosition = (currentPosition, total) => {
                 if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
                     try {
                         navigator.mediaSession.setPositionState({
                             duration: total,
                             playbackRate: 1,
-                            position: Math.min(currentPosition, total)
+                            position: currentPosition
                         });
                     } catch (e) { /* Игнорируем ошибки */ }
                 }
             };
 
-            // Fade-in карточки
-            phases.push({
-                duration: DELAYS.CARD_FADE_IN,
-                updateProgress: true,  // ✅ Безопасно обновлять
-                task: () => this._fadeInNewCard(word, checkAborted)
-            });
+            // Определяем все этапы и их "вес" (приблизительная длительность в мс для расчёта шкалы)
+            phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
 
             // Этапы озвучки немецкого слова
             for (let i = 0; i < this.state.repeatMode; i++) {
                 const delayDuration = (i === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
-
-                // Задержка перед озвучкой
-                phases.push({
-                    duration: delayDuration,
-                    updateProgress: true,  // ✅ Безопасно обновлять
-                    task: async () => {
-                        await delay(delayDuration);
-                        checkAborted();
-                    }
-                });
-
-                // Озвучка немецкого слова
-                phases.push({
-                    duration: 1800,
-                    updateProgress: false,  // ⚠️ НЕ обновлять во время смены src!
-                    task: async () => {
-                        await this.speakGerman(word);
-                        checkAborted();
-                    }
-                });
+                // Озвучка + задержка перед ней
+                phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i) });
             }
 
-            // Морфемы
+            // Остальные этапы
             if (this.state.showMorphemes) {
-                phases.push({
-                    duration: DELAYS.BEFORE_MORPHEMES,
-                    updateProgress: true,  // ✅ Безопасно обновлять
-                    task: () => this._revealMorphemesPhase(word, checkAborted)
-                });
+                phases.push({ duration: DELAYS.BEFORE_MORPHEMES, task: () => this._revealMorphemesPhase(word, checkAborted) });
             }
-
-            // Предложение
             if (this.state.showSentences && word.sentence) {
-                // Задержка + отображение
-                phases.push({
-                    duration: DELAYS.BEFORE_SENTENCE,
-                    updateProgress: true,  // ✅ Безопасно обновлять
-                    task: async () => {
-                        await delay(DELAYS.BEFORE_SENTENCE);
-                        checkAborted();
-                        document.getElementById('wordCard')?.classList.add('phase-sentence');
-                        this.displaySentence(word);
-                    }
-                });
-
-                // Озвучка предложения (если включено)
-                if (this.state.sentenceSoundEnabled) {
-                    phases.push({
-                        duration: 3500,
-                        updateProgress: false,  // ⚠️ НЕ обновлять во время смены src!
-                        task: async () => {
-                            await this.speakSentence(word);
-                            checkAborted();
-                        }
-                    });
-                }
+                const sentenceDuration = this.state.sentenceSoundEnabled ? 3500 : 0;
+                phases.push({ duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
             }
-
-            // Перевод
-            // Задержка + отображение
-            phases.push({
-                duration: DELAYS.BEFORE_TRANSLATION,
-                updateProgress: true,  // ✅ Безопасно обновлять
-                task: async () => {
-                    await delay(DELAYS.BEFORE_TRANSLATION);
-                    checkAborted();
-                    document.getElementById('wordCard')?.classList.add('phase-translation');
-                    this.displayFinalTranslation(word);
-                }
-            });
-
-            // Озвучка перевода
             const translationDuration = this.state.translationSoundEnabled ? 1800 : 0;
-            phases.push({
-                duration: translationDuration,
-                updateProgress: false,  // ⚠️ НЕ обновлять во время смены src!
-                task: async () => {
-                    await this.speakRussian(word);
-                    checkAborted();
-                    if (this.state.isAutoPlaying) {
-                        this.setState({ studiedToday: this.state.studiedToday + 1 });
-                    }
-                }
-            });
+            phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
 
-            // Рассчитываем общую длительность
-            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            // Рассчитываем общую "длительность" как сумму всех этапов
+            totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
 
-            // Обновляем метаданные Media Session
+            // Обновляем метаданные (включая обложку) и сбрасываем прогресс в 0
             this.updateMediaSessionMetadata(word, totalDuration / 1000);
+            updatePosition(0, totalDuration / 1000);
 
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
@@ -709,40 +633,21 @@ class VocabularyApp {
 
             let accumulatedProgress = 0;
 
-            // 🔑 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Обновляем прогресс только в безопасные моменты
+            // Последовательно выполняем каждый этап и обновляем прогресс ПОСЛЕ его завершения
             for (const phase of phases) {
                 checkAborted();
+                await phase.task(); // Выполняем задачу этапа
 
-                // Обновляем прогресс только если это безопасно (не во время смены audio src)
-                if (phase.updateProgress) {
-                    updatePosition(accumulatedProgress / 1000, totalDuration / 1000);
-                }
-
-                // Выполняем задачу этапа
-                await phase.task();
-
-                // После выполнения задачи обновляем накопленный прогресс
+                // Обновляем полосу прогресса
                 accumulatedProgress += phase.duration;
-
-                // Если это был этап с аудио, обновляем прогресс ПОСЛЕ завершения воспроизведения
-                if (!phase.updateProgress) {
-                    updatePosition(accumulatedProgress / 1000, totalDuration / 1000);
-                }
+                updatePosition(accumulatedProgress / 1000, totalDuration / 1000);
             }
 
             checkAborted();
 
-            // Финальное обновление прогресса до 100%
-            updatePosition(totalDuration / 1000, totalDuration / 1000);
-
             // Если автоплей включен, готовимся к следующему слову
             if (this.state.isAutoPlaying) {
-                // 🔑 ВАЖНО: Восстанавливаем тихий трек ЗДЕСЬ (в конце слова, а не после каждой озвучки)
                 await this._prepareNextWord(checkAborted);
-
-                // Теперь можно вернуть тихий трек для следующего слова
-                this.playSilentAudio();
-
                 const nextWord = this.getNextWord();
                 this.setState({ currentWord: nextWord, currentPhase: 'initial' });
                 this.runDisplaySequence(nextWord);
@@ -829,21 +734,22 @@ class VocabularyApp {
 
             const onAbort = () => {
                 player.pause();
-                cleanup();
+                cleanupAndRestoreSilentTrack();
                 reject(new DOMException('Aborted', 'AbortError'));
             };
 
             const onFinish = () => {
-                cleanup();
+                cleanupAndRestoreSilentTrack();
                 resolve();
             };
 
-            const cleanup = () => {
+            const cleanupAndRestoreSilentTrack = () => {
                 player.removeEventListener('ended', onFinish);
                 player.removeEventListener('error', onFinish);
                 this.sequenceController?.signal.removeEventListener('abort', onAbort);
-                // 🔑 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: НЕ возвращаемся к тихому треку здесь!
-                // Тихий трек будет восстановлен только в конце всего слова
+                if (this.state.isAutoPlaying) {
+                    this.playSilentAudio();
+                }
             };
 
             try {
@@ -857,7 +763,6 @@ class VocabularyApp {
                     return reject(new DOMException('Aborted', 'AbortError'));
                 }
 
-                // Останавливаем текущее воспроизведение
                 player.pause();
                 player.loop = false;
                 player.volume = 1.0;
