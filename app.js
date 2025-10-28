@@ -564,6 +564,9 @@ class VocabularyApp {
         }
     }
 
+    // ИСПРАВЛЕННЫЙ метод runDisplaySequence с плавным прогрессом
+    // Замените метод runDisplaySequence в вашем app.js (строки 567-664) на этот код
+
     async runDisplaySequence(word) {
         if (!word) {
             this.showNoWordsMessage();
@@ -584,7 +587,6 @@ class VocabularyApp {
 
             // --- Новая логика пошагового прогресса ---
             const phases = [];
-            let totalDuration = 0;
 
             // Функция для обновления Media Session
             const updatePosition = (currentPosition, total) => {
@@ -593,39 +595,107 @@ class VocabularyApp {
                         navigator.mediaSession.setPositionState({
                             duration: total,
                             playbackRate: 1,
-                            position: currentPosition
+                            position: Math.min(currentPosition, total) // Предотвращаем превышение
                         });
                     } catch (e) { /* Игнорируем ошибки */ }
                 }
             };
 
-            // Определяем все этапы и их "вес" (приблизительная длительность в мс для расчёта шкалы)
-            phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
+            // Определяем все этапы и их "вес" (приблизительная длительность в мс)
+            phases.push({
+                duration: DELAYS.CARD_FADE_IN,
+                task: () => this._fadeInNewCard(word, checkAborted)
+            });
 
-            // Этапы озвучки немецкого слова
+            // Этапы озвучки немецкого слова - РАЗБИВАЕМ НА ПОДЭТАПЫ для плавного прогресса
             for (let i = 0; i < this.state.repeatMode; i++) {
                 const delayDuration = (i === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
-                // Озвучка + задержка перед ней
-                phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i) });
+
+                // Подэтап 1: Задержка перед озвучкой
+                phases.push({
+                    duration: delayDuration,
+                    task: async () => {
+                        await delay(delayDuration);
+                        checkAborted();
+                    }
+                });
+
+                // Подэтап 2: Озвучка немецкого слова
+                phases.push({
+                    duration: 1800,
+                    task: async () => {
+                        await this.speakGerman(word);
+                        checkAborted(); // ✅ Обязательная проверка после speak
+                    }
+                });
             }
 
-            // Остальные этапы
+            // Морфемы
             if (this.state.showMorphemes) {
-                phases.push({ duration: DELAYS.BEFORE_MORPHEMES, task: () => this._revealMorphemesPhase(word, checkAborted) });
+                phases.push({
+                    duration: DELAYS.BEFORE_MORPHEMES,
+                    task: () => this._revealMorphemesPhase(word, checkAborted)
+                });
             }
+
+            // Предложение (если есть)
             if (this.state.showSentences && word.sentence) {
-                const sentenceDuration = this.state.sentenceSoundEnabled ? 3500 : 0;
-                phases.push({ duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
+                // Подэтап 1: Задержка + отображение
+                phases.push({
+                    duration: DELAYS.BEFORE_SENTENCE,
+                    task: async () => {
+                        await delay(DELAYS.BEFORE_SENTENCE);
+                        checkAborted();
+                        document.getElementById('wordCard')?.classList.add('phase-sentence');
+                        this.displaySentence(word);
+                    }
+                });
+
+                // Подэтап 2: Озвучка (только если настройка включена)
+                // ✅ ВАЖНО: В оригинале озвучка внутри if, поэтому добавляем фазу только при включенной настройке
+                if (this.state.sentenceSoundEnabled) {
+                    phases.push({
+                        duration: 3500,
+                        task: async () => {
+                            await this.speakSentence(word);
+                            checkAborted(); // ✅ Обязательная проверка после speak
+                        }
+                    });
+                }
             }
+
+            // Перевод
+            // Подэтап 1: Задержка + отображение
+            phases.push({
+                duration: DELAYS.BEFORE_TRANSLATION,
+                task: async () => {
+                    await delay(DELAYS.BEFORE_TRANSLATION);
+                    checkAborted();
+                    document.getElementById('wordCard')?.classList.add('phase-translation');
+                    this.displayFinalTranslation(word);
+                }
+            });
+
+            // Подэтап 2: Озвучка перевода
+            // ✅ ВАЖНО: В оригинале speakRussian вызывается ВСЕГДА (проверка внутри метода)
             const translationDuration = this.state.translationSoundEnabled ? 1800 : 0;
-            phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
+            phases.push({
+                duration: translationDuration,
+                task: async () => {
+                    await this.speakRussian(word); // ✅ Вызываем всегда (проверка внутри метода)
+                    checkAborted(); // ✅ Обязательная проверка после speak
+                    // ✅ ВАЖНО: Счетчик обновляется ПОСЛЕ озвучки перевода (как в оригинале)
+                    if (this.state.isAutoPlaying) {
+                        this.setState({ studiedToday: this.state.studiedToday + 1 });
+                    }
+                }
+            });
 
-            // Рассчитываем общую "длительность" как сумму всех этапов
-            totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            // Рассчитываем общую длительность
+            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
 
-            // Обновляем метаданные (включая обложку) и сбрасываем прогресс в 0
+            // Обновляем метаданные Media Session
             this.updateMediaSessionMetadata(word, totalDuration / 1000);
-            updatePosition(0, totalDuration / 1000);
 
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
@@ -633,17 +703,24 @@ class VocabularyApp {
 
             let accumulatedProgress = 0;
 
-            // Последовательно выполняем каждый этап и обновляем прогресс ПОСЛЕ его завершения
+            // 🔑 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Обновляем прогресс ПЕРЕД началом каждого этапа
             for (const phase of phases) {
                 checkAborted();
-                await phase.task(); // Выполняем задачу этапа
 
-                // Обновляем полосу прогресса
-                accumulatedProgress += phase.duration;
+                // Обновляем прогресс ПЕРЕД началом этапа (это устраняет "отскакивание")
                 updatePosition(accumulatedProgress / 1000, totalDuration / 1000);
+
+                // Выполняем задачу этапа
+                await phase.task();
+
+                // Увеличиваем накопленный прогресс для следующего этапа
+                accumulatedProgress += phase.duration;
             }
 
             checkAborted();
+
+            // Финальное обновление прогресса до 100%
+            updatePosition(totalDuration / 1000, totalDuration / 1000);
 
             // Если автоплей включен, готовимся к следующему слову
             if (this.state.isAutoPlaying) {
