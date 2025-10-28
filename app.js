@@ -1,4 +1,4 @@
-// app.js - Версия 5.4.0 (с плавным прогресс-баром)
+// app.js - Версия 5.5.0 (с раздельными плеерами для стабильного виджета)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -18,7 +18,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.4.0';
+const APP_VERSION = '5.5.0';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -47,9 +47,10 @@ class VocabularyApp {
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
 
-        // Единый плеер для всего аудио
-        this.mediaPlayer = null;
-        this.silentAudioSrc = null; // URL для тихого фонового трека
+        // Два плеера: один для MediaSession (silent audio), другой для TTS
+        this.mediaPlayer = null;      // Для silent audio и управления виджетом
+        this.ttsPlayer = null;         // Для воспроизведения голосовых файлов
+        this.silentAudioSrc = null;    // URL для тихого фонового трека
         this.audioContext = null;
 
         // Прогресс бар анимация
@@ -89,10 +90,16 @@ class VocabularyApp {
     }
 
     init() {
-        // Инициализация единого плеера
+        // Инициализация плеера для MediaSession (silent audio)
         this.mediaPlayer = document.createElement('audio');
-        this.mediaPlayer.id = 'unifiedMediaPlayer';
+        this.mediaPlayer.id = 'mediaSessionPlayer';
         document.body.appendChild(this.mediaPlayer);
+
+        // Инициализация скрытого плеера для TTS (голосовые файлы)
+        this.ttsPlayer = document.createElement('audio');
+        this.ttsPlayer.id = 'ttsPlayer';
+        this.ttsPlayer.style.display = 'none';
+        document.body.appendChild(this.ttsPlayer);
 
         this.initAudioContext();
         this.initMediaSession();
@@ -559,6 +566,9 @@ class VocabularyApp {
         }
         this.setState({ isAutoPlaying: false });
         this.pauseSilentAudio();
+        if (this.ttsPlayer) {
+            this.ttsPlayer.pause(); // Останавливаем TTS плеер
+        }
         this.stopSmoothProgress();
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
@@ -735,26 +745,23 @@ class VocabularyApp {
                 return resolve();
             }
 
-            const player = this.mediaPlayer;
+            const player = this.ttsPlayer; // Используем отдельный плеер для TTS
 
             const onAbort = () => {
                 player.pause();
-                cleanupAndRestoreSilentTrack();
+                cleanup();
                 reject(new DOMException('Aborted', 'AbortError'));
             };
 
             const onFinish = () => {
-                cleanupAndRestoreSilentTrack();
+                cleanup();
                 resolve();
             };
 
-            const cleanupAndRestoreSilentTrack = () => {
+            const cleanup = () => {
                 player.removeEventListener('ended', onFinish);
                 player.removeEventListener('error', onFinish);
                 this.sequenceController?.signal.removeEventListener('abort', onAbort);
-                if (this.state.isAutoPlaying) {
-                    this.playSilentAudio();
-                }
             };
 
             try {
