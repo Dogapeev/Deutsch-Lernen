@@ -1255,7 +1255,7 @@ class VocabularyApp {
                     font-family="Helvetica, Arial, sans-serif" 
                     font-size="280" 
                     font-weight="regular" 
-                    fill="#6969696" 
+                    fill="#808080" 
                     text-anchor="middle"
                 >
                     DE
