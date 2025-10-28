@@ -1,4 +1,4 @@
-// app.js - Версия 5.3.1 (с пошаговым обновлением Media Session)
+// app.js - Версия 5.4.0 (с плавным прогресс-баром)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -18,7 +18,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.3.1';
+const APP_VERSION = '5.4.0';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -51,6 +51,14 @@ class VocabularyApp {
         this.mediaPlayer = null;
         this.silentAudioSrc = null; // URL для тихого фонового трека
         this.audioContext = null;
+
+        // Прогресс бар анимация
+        this.progressAnimation = {
+            rafId: null,
+            startTime: null,
+            duration: 0,
+            isRunning: false
+        };
 
         this.state = {
             currentUser: null,
@@ -551,6 +559,7 @@ class VocabularyApp {
         }
         this.setState({ isAutoPlaying: false });
         this.pauseSilentAudio();
+        this.stopSmoothProgress();
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
@@ -582,22 +591,9 @@ class VocabularyApp {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
-            // --- Новая логика пошагового прогресса ---
+            // --- Новая логика с плавным прогресс-баром ---
             const phases = [];
             let totalDuration = 0;
-
-            // Функция для обновления Media Session
-            const updatePosition = (currentPosition, total) => {
-                if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
-                    try {
-                        navigator.mediaSession.setPositionState({
-                            duration: total,
-                            playbackRate: 1,
-                            position: currentPosition
-                        });
-                    } catch (e) { /* Игнорируем ошибки */ }
-                }
-            };
 
             // Определяем все этапы и их "вес" (приблизительная длительность в мс для расчёта шкалы)
             phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
@@ -623,27 +619,31 @@ class VocabularyApp {
             // Рассчитываем общую "длительность" как сумму всех этапов
             totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
 
-            // Обновляем метаданные (включая обложку) и сбрасываем прогресс в 0
+            // Обновляем метаданные (включая обложку)
             this.updateMediaSessionMetadata(word, totalDuration / 1000);
-            updatePosition(0, totalDuration / 1000);
+
+            // Устанавливаем playbackState в 'playing' один раз в начале блока слова
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+
+            // Запускаем плавный прогресс-бар на всю длительность блока слова
+            this.startSmoothProgress(totalDuration);
 
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
             }
 
-            let accumulatedProgress = 0;
-
-            // Последовательно выполняем каждый этап и обновляем прогресс ПОСЛЕ его завершения
+            // Последовательно выполняем каждый этап
             for (const phase of phases) {
                 checkAborted();
                 await phase.task(); // Выполняем задачу этапа
-
-                // Обновляем полосу прогресса
-                accumulatedProgress += phase.duration;
-                updatePosition(accumulatedProgress / 1000, totalDuration / 1000);
             }
 
             checkAborted();
+
+            // Завершаем прогресс-бар (100%)
+            this.completeSmoothProgress();
 
             // Если автоплей включен, готовимся к следующему слову
             if (this.state.isAutoPlaying) {
@@ -651,6 +651,11 @@ class VocabularyApp {
                 const nextWord = this.getNextWord();
                 this.setState({ currentWord: nextWord, currentPhase: 'initial' });
                 this.runDisplaySequence(nextWord);
+            } else {
+                // Если автоплей выключен, устанавливаем playbackState в 'paused'
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
             }
 
         } catch (error) {
@@ -1305,17 +1310,10 @@ class VocabularyApp {
                 { src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }
             ]
         });
-        navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
 
         console.log('🎵 MediaSession обновлен:', word.german, '→', word.russian);
 
-        try {
-            navigator.mediaSession.setPositionState({
-                duration: Math.max(1, duration), // Длительность не может быть 0
-                playbackRate: 1,
-                position: 0
-            });
-        } catch (e) { /* Игнорируем */ }
+        // Не устанавливаем playbackState здесь - это делается в runDisplaySequence
     }
 
     async playSilentAudio() {
@@ -1336,6 +1334,64 @@ class VocabularyApp {
     pauseSilentAudio() {
         if (!this.mediaPlayer) return;
         this.mediaPlayer.pause();
+    }
+
+    // Методы для плавного прогресс-бара
+    startSmoothProgress(durationMs) {
+        this.stopSmoothProgress();
+
+        this.progressAnimation.startTime = performance.now();
+        this.progressAnimation.duration = durationMs;
+        this.progressAnimation.isRunning = true;
+
+        const animate = (currentTime) => {
+            if (!this.progressAnimation.isRunning) return;
+
+            const elapsed = currentTime - this.progressAnimation.startTime;
+            const progress = Math.min(elapsed / this.progressAnimation.duration, 0.98); // Максимум 98%
+
+            // Обновляем MediaSession position
+            if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+                try {
+                    const durationSec = this.progressAnimation.duration / 1000;
+                    navigator.mediaSession.setPositionState({
+                        duration: durationSec,
+                        playbackRate: 1,
+                        position: progress * durationSec
+                    });
+                } catch (e) { /* Игнорируем */ }
+            }
+
+            if (progress < 0.98) {
+                this.progressAnimation.rafId = requestAnimationFrame(animate);
+            }
+        };
+
+        this.progressAnimation.rafId = requestAnimationFrame(animate);
+    }
+
+    stopSmoothProgress() {
+        if (this.progressAnimation.rafId) {
+            cancelAnimationFrame(this.progressAnimation.rafId);
+            this.progressAnimation.rafId = null;
+        }
+        this.progressAnimation.isRunning = false;
+    }
+
+    completeSmoothProgress() {
+        this.stopSmoothProgress();
+
+        // Устанавливаем прогресс на 100%
+        if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+            try {
+                const durationSec = this.progressAnimation.duration / 1000;
+                navigator.mediaSession.setPositionState({
+                    duration: durationSec,
+                    playbackRate: 1,
+                    position: durationSec
+                });
+            } catch (e) { /* Игнорируем */ }
+        }
     }
 
 } // Конец класса VocabularyApp
