@@ -1,4 +1,4 @@
-// app.js - Версия 5.5.0 (Восстановлена остановка/продолжение с момента остановки)
+// app.js - Версия 5.4.0 (с плавным прогресс-баром)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -18,7 +18,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.5.0';
+const APP_VERSION = '5.4.0';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -51,6 +51,14 @@ class VocabularyApp {
         this.mediaPlayer = null;
         this.silentAudioSrc = null; // URL для тихого фонового трека
         this.audioContext = null;
+
+        // Прогресс бар анимация
+        this.progressAnimation = {
+            rafId: null,
+            startTime: null,
+            duration: 0,
+            isRunning: false
+        };
 
         this.state = {
             currentUser: null,
@@ -251,7 +259,6 @@ class VocabularyApp {
         }));
         document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.loadAndSwitchVocabulary(e.target.value)));
 
-        // --- AUTH EVENTS ---
         this.elements.auth.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
         this.elements.auth.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.overlay.addEventListener('click', () => this.toggleAuthModal(false));
@@ -269,14 +276,11 @@ class VocabularyApp {
         this.elements.auth.signinForm.addEventListener('submit', e => this.handleSignInWithEmail(e));
         this.elements.auth.resetPasswordForm.addEventListener('submit', e => this.handlePasswordReset(e));
 
-        // --- WINDOW EVENTS ---
         window.addEventListener('resize', () => this.repositionAuthContainer());
         window.addEventListener('scroll', () => this.handleScroll());
-
         this.elements.mainContent.addEventListener('click', () => this.toggleAutoPlay());
     }
 
-    // --- AUTH HANDLERS ---
     async handleSignUpWithEmail(e) {
         e.preventDefault();
         const name = e.target.signupName.value;
@@ -364,7 +368,6 @@ class VocabularyApp {
         }, 4000);
     }
 
-    // --- UI/UX HANDLERS ---
     repositionAuthContainer() {
         const isMobile = window.innerWidth <= 768;
         const authContainer = this.elements.auth.container;
@@ -414,6 +417,7 @@ class VocabularyApp {
         this.updateUI();
         this.saveStateToLocalStorage();
     }
+
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
         this.stopAutoPlay();
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загрузка...</p></div>`;
@@ -422,7 +426,7 @@ class VocabularyApp {
                 const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
                 if (!response.ok) throw new Error('Сервер не отвечает.');
                 const vocabs = await response.json();
-                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей. Убедитесь, что файлы .json лежат в папке /vocabularies/');
+                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей.');
                 this.state.availableVocabularies = vocabs;
             } catch (error) {
                 console.error(error);
@@ -442,7 +446,7 @@ class VocabularyApp {
         try {
             await this.fetchVocabularyData(finalVocabName);
             const vocabularyData = this.vocabulariesCache[finalVocabName];
-            if (!vocabularyData) throw new Error("Кэшированные данные не найдены после загрузки.");
+            if (!vocabularyData) throw new Error("Кэшированные данные не найдены.");
             this.allWords = vocabularyData.words;
             this.themeMap = vocabularyData.meta.themes || {};
         } catch (error) {
@@ -455,6 +459,7 @@ class VocabularyApp {
         this.renderVocabularySelector();
         this.handleFilterChange(isInitialLoad);
     }
+
     async fetchVocabularyData(vocabName) {
         if (this.vocabulariesCache[vocabName] && this.vocabulariesCache[vocabName].words) {
             return;
@@ -465,20 +470,20 @@ class VocabularyApp {
         const data = await response.json();
         if (!data.words || !data.meta || !data.meta.themes) {
             if (Array.isArray(data)) {
-                console.warn(`Словарь "${vocabName}" имеет устаревший формат (простой массив). Рекомендуется обновить его до структуры {meta, words}.`);
                 this.vocabulariesCache[vocabName] = {
                     words: data.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
                     meta: { themes: {} }
                 };
                 return;
             }
-            throw new Error(`Неверный формат словаря "${vocabName}": отсутствует 'words' или 'meta.themes'`);
+            throw new Error(`Неверный формат словаря "${vocabName}"`);
         }
         this.vocabulariesCache[vocabName] = {
             words: data.words.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
             meta: data.meta
         };
     }
+
     handleLoadingError(errorMessage) {
         this.allWords = [];
         this.themeMap = {};
@@ -490,6 +495,7 @@ class VocabularyApp {
         this.renderVocabularySelector();
         this.updateUI();
     }
+
     updateDynamicFilters() {
         const words = this.allWords;
         const availableLevels = [...new Set(words.map(w => w.level).filter(Boolean))].sort();
@@ -506,6 +512,7 @@ class VocabularyApp {
             this.state.selectedTheme = 'all';
         }
     }
+
     renderVocabularySelector() {
         const vocabs = this.state.availableVocabularies;
         const showSelector = vocabs && vocabs.length > 0;
@@ -530,18 +537,13 @@ class VocabularyApp {
 
     startAutoPlay() {
         if (this.state.isAutoPlaying) return;
-
         let wordToShow = this.state.currentWord;
-
-        // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Не сбрасываем фазу если слово уже есть и фаза не 'translation'
         if (!wordToShow || this.state.currentPhase === 'translation') {
             wordToShow = this.getNextWord();
             if (wordToShow) {
                 this.setState({ currentWord: wordToShow, currentPhase: 'initial' });
             }
         }
-        // Если есть текущее слово и фаза не 'translation' - продолжаем с текущей фазы
-
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
             this.playSilentAudio();
@@ -557,6 +559,7 @@ class VocabularyApp {
         }
         this.setState({ isAutoPlaying: false });
         this.pauseSilentAudio();
+        this.stopSmoothProgress();
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
@@ -588,58 +591,76 @@ class VocabularyApp {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
-            // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Проверяем текущую фазу и начинаем с неё
+            // --- Новая логика с плавным прогресс-баром ---
+            const phases = [];
+            let totalDuration = 0;
+
+            // Определяем все этапы и их "вес" (приблизительная длительность в мс для расчёта шкалы)
+            phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
+
+            // Этапы озвучки немецкого слова
+            for (let i = 0; i < this.state.repeatMode; i++) {
+                const delayDuration = (i === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
+                // Озвучка + задержка перед ней
+                phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i) });
+            }
+
+            // Остальные этапы
+            if (this.state.showMorphemes) {
+                phases.push({ duration: DELAYS.BEFORE_MORPHEMES, task: () => this._revealMorphemesPhase(word, checkAborted) });
+            }
+            if (this.state.showSentences && word.sentence) {
+                const sentenceDuration = this.state.sentenceSoundEnabled ? 3500 : 0;
+                phases.push({ duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
+            }
+            const translationDuration = this.state.translationSoundEnabled ? 1800 : 0;
+            phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
+
+            // Рассчитываем общую "длительность" как сумму всех этапов
+            totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+
+            // Обновляем метаданные (включая обложку)
+            this.updateMediaSessionMetadata(word, totalDuration / 1000);
+
+            // Устанавливаем playbackState в 'playing' один раз в начале блока слова
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+
+            // Запускаем плавный прогресс-бар на всю длительность блока слова
+            this.startSmoothProgress(totalDuration);
+
             if (word.id !== this.state.currentWord?.id) {
                 this.setState({ currentWord: word, currentPhase: 'initial' });
             }
 
-            let phase = this.state.currentPhase;
-
-            // Выполняем только те фазы, которые ещё не пройдены
-            if (phase === 'initial') {
-                await this._fadeInNewCard(word, checkAborted);
-                if (!this.state.isAutoPlaying) return;
-                await this._playGermanPhase(word, checkAborted);
-                this.setState({ currentPhase: 'german' });
-                phase = 'german';
+            // Последовательно выполняем каждый этап
+            for (const phase of phases) {
+                checkAborted();
+                await phase.task(); // Выполняем задачу этапа
             }
 
             checkAborted();
 
-            if (phase === 'german') {
-                await this._revealMorphemesPhase(word, checkAborted);
-                this.setState({ currentPhase: 'morphemes' });
-                phase = 'morphemes';
-            }
+            // Завершаем прогресс-бар (100%)
+            this.completeSmoothProgress();
 
-            checkAborted();
-
-            if (phase === 'morphemes') {
-                await this._playSentencePhase(word, checkAborted);
-                this.setState({ currentPhase: 'sentence' });
-                phase = 'sentence';
-            }
-
-            checkAborted();
-
-            if (phase === 'sentence') {
-                await this._revealTranslationPhase(word, checkAborted);
-                this.setState({ currentPhase: 'translation' });
-            }
-
-            checkAborted();
-
-            // Если автоплей включен, переходим к следующему слову
+            // Если автоплей включен, готовимся к следующему слову
             if (this.state.isAutoPlaying) {
                 await this._prepareNextWord(checkAborted);
                 const nextWord = this.getNextWord();
                 this.setState({ currentWord: nextWord, currentPhase: 'initial' });
                 this.runDisplaySequence(nextWord);
+            } else {
+                // Если автоплей выключен, устанавливаем playbackState в 'paused'
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
             }
 
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('▶️ Последовательность корректно прервана. Текущая фаза:', this.state.currentPhase);
+                console.log('▶️ Последовательность корректно прервана.');
             } else {
                 console.error('Ошибка в последовательности воспроизведения:', error);
                 this.stopAutoPlay();
@@ -658,14 +679,13 @@ class VocabularyApp {
         this.addToHistory(word);
     }
 
-    async _playGermanPhase(word, checkAborted) {
-        const repeats = this.state.repeatMode;
-        for (let i = 0; i < repeats; i++) {
-            await delay(i === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
-            checkAborted();
-            await this.speakGerman(word);
-            checkAborted();
-        }
+    async _playGermanPhase(word, checkAborted, repeatIndex) {
+        // Задержка перед озвучкой
+        await delay(repeatIndex === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
+        checkAborted();
+        // Сама озвучка
+        await this.speakGerman(word);
+        checkAborted();
     }
 
     async _revealMorphemesPhase(word, checkAborted) {
@@ -1290,17 +1310,10 @@ class VocabularyApp {
                 { src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }
             ]
         });
-        navigator.mediaSession.playbackState = this.state.isAutoPlaying ? 'playing' : 'paused';
 
         console.log('🎵 MediaSession обновлен:', word.german, '→', word.russian);
 
-        try {
-            navigator.mediaSession.setPositionState({
-                duration: Math.max(1, duration), // Длительность не может быть 0
-                playbackRate: 1,
-                position: 0
-            });
-        } catch (e) { /* Игнорируем */ }
+        // Не устанавливаем playbackState здесь - это делается в runDisplaySequence
     }
 
     async playSilentAudio() {
@@ -1321,6 +1334,64 @@ class VocabularyApp {
     pauseSilentAudio() {
         if (!this.mediaPlayer) return;
         this.mediaPlayer.pause();
+    }
+
+    // Методы для плавного прогресс-бара
+    startSmoothProgress(durationMs) {
+        this.stopSmoothProgress();
+
+        this.progressAnimation.startTime = performance.now();
+        this.progressAnimation.duration = durationMs;
+        this.progressAnimation.isRunning = true;
+
+        const animate = (currentTime) => {
+            if (!this.progressAnimation.isRunning) return;
+
+            const elapsed = currentTime - this.progressAnimation.startTime;
+            const progress = Math.min(elapsed / this.progressAnimation.duration, 0.98); // Максимум 98%
+
+            // Обновляем MediaSession position
+            if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+                try {
+                    const durationSec = this.progressAnimation.duration / 1000;
+                    navigator.mediaSession.setPositionState({
+                        duration: durationSec,
+                        playbackRate: 1,
+                        position: progress * durationSec
+                    });
+                } catch (e) { /* Игнорируем */ }
+            }
+
+            if (progress < 0.98) {
+                this.progressAnimation.rafId = requestAnimationFrame(animate);
+            }
+        };
+
+        this.progressAnimation.rafId = requestAnimationFrame(animate);
+    }
+
+    stopSmoothProgress() {
+        if (this.progressAnimation.rafId) {
+            cancelAnimationFrame(this.progressAnimation.rafId);
+            this.progressAnimation.rafId = null;
+        }
+        this.progressAnimation.isRunning = false;
+    }
+
+    completeSmoothProgress() {
+        this.stopSmoothProgress();
+
+        // Устанавливаем прогресс на 100%
+        if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+            try {
+                const durationSec = this.progressAnimation.duration / 1000;
+                navigator.mediaSession.setPositionState({
+                    duration: durationSec,
+                    playbackRate: 1,
+                    position: durationSec
+                });
+            } catch (e) { /* Игнорируем */ }
+        }
     }
 
 } // Конец класса VocabularyApp
