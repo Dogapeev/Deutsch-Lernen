@@ -8,7 +8,7 @@ import { delay } from './utils/helpers.js';
 // --- НОВАЯ МОДУЛЬНАЯ ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 // Импортируем нужные функции из Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
 
@@ -125,7 +125,7 @@ class VocabularyApp {
 
         this.bindEvents();
         this.repositionAuthContainer();
-        auth.onAuthStateChanged(user => this.handleAuthStateChanged(user));
+        onAuthStateChanged(auth, user => this.handleAuthStateChanged(user));
     }
 
     handleAuthStateChanged(user) {
@@ -252,7 +252,7 @@ class VocabularyApp {
         this.elements.auth.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
         this.elements.auth.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
         this.elements.auth.overlay.addEventListener('click', () => this.toggleAuthModal(false));
-        this.elements.auth.signOutBtn.addEventListener('click', () => auth.signOut());
+        this.elements.auth.signOutBtn.addEventListener('click', () => signOut(auth));
         this.elements.auth.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
         this.elements.auth.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
 
