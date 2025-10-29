@@ -998,24 +998,41 @@ class VocabularyApp {
     }
 
     addToHistory(word) {
+        // Не добавляем слово, если оно то же самое, что и текущее в истории (предотвращает дубликаты)
         if (!word || (this.wordHistory[this.currentHistoryIndex] && this.wordHistory[this.currentHistoryIndex].id === word.id)) return;
+
+        // Если мы "отмотали" историю назад и теперь запускаем новое слово,
+        // то вся "будущая" история, которая была после той точки, стирается.
+        // Это стандартное и правильное поведение для истории.
         if (this.currentHistoryIndex < this.wordHistory.length - 1) {
             this.wordHistory.splice(this.currentHistoryIndex + 1);
         }
+
         this.wordHistory.push(word);
+
+        // Ограничиваем размер истории, чтобы не занимать много памяти
         if (this.wordHistory.length > 50) this.wordHistory.shift();
+
+        // Перемещаем указатель на только что добавленное, самое последнее слово
         this.currentHistoryIndex = this.wordHistory.length - 1;
+
         this.updateNavigationButtons();
     }
 
     showPreviousWord() {
+        // Не делаем ничего, если мы в самом начале истории
         if (this.currentHistoryIndex <= 0) return;
+
         const wasAutoPlaying = this.state.isAutoPlaying;
         this.stopAutoPlay();
+
+        // Просто перемещаем указатель назад
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
+
         this.setState({ currentWord: word, currentPhase: 'initial', currentPhaseIndex: 0 });
         this.runDisplaySequence(word);
+
         if (wasAutoPlaying) this.startAutoPlay();
     }
 
@@ -1023,18 +1040,29 @@ class VocabularyApp {
         const wasAutoPlaying = this.state.isAutoPlaying;
         this.stopAutoPlay();
         let nextWord;
+
+        // КЛЮЧЕВАЯ ЛОГИКА:
+        // Сначала проверяем, есть ли слова "впереди" в нашей истории.
+        // Это происходит, если пользователь нажимал "Назад".
         if (this.currentHistoryIndex < this.wordHistory.length - 1) {
+            // Если есть - просто двигаемся по истории вперед
             this.currentHistoryIndex++;
             nextWord = this.wordHistory[this.currentHistoryIndex];
         } else {
+            // И только если мы уже в конце истории - генерируем новое слово
             nextWord = this.getNextWord();
         }
+
         if (!nextWord) {
             this.showNoWordsMessage();
             return;
         }
+
+        // Запускаем воспроизведение. Новое слово будет добавлено в историю
+        // внутри функции runDisplaySequence -> _fadeInNewCard -> addToHistory
         this.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
         this.runDisplaySequence(nextWord);
+
         if (wasAutoPlaying) this.startAutoPlay();
     }
 
