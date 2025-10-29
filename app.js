@@ -1,4 +1,4 @@
-// app.js - Версия 5.4.4 (с восстановленной функциональностью Apple Watch)
+// app.js - Версия 5.4.0 (с плавным прогресс-баром)
 "use strict";
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 const firebaseConfig = {
@@ -15,7 +15,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.4.4';
+const APP_VERSION = '5.4.0';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 const DELAYS = {
     INITIAL_WORD: 500,
@@ -29,6 +29,8 @@ const DELAYS = {
 };
 const delay = ms => new Promise(res => setTimeout(res, ms));
 class VocabularyApp {
+    code
+    Code
     constructor() {
         this.appVersion = APP_VERSION;
         this.allWords = [];
@@ -554,8 +556,6 @@ class VocabularyApp {
         this.setState({ isAutoPlaying: false });
         this.pauseSilentAudio();
         this.stopSmoothProgress();
-
-        // Устанавливаем playbackState в паузу
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
@@ -587,8 +587,9 @@ class VocabularyApp {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
-            // --- Логика с плавным прогресс-баром ---
+            // --- Новая логика с плавным прогресс-баром ---
             const phases = [];
+            let totalDuration = 0;
 
             // Определяем все этапы и их "вес" (приблизительная длительность в мс для расчёта шкалы)
             phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
@@ -612,9 +613,9 @@ class VocabularyApp {
             phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
 
             // Рассчитываем общую "длительность" как сумму всех этапов
-            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
 
-            // Обновляем метаданные (включая обложку) и устанавливаем playbackState
+            // Обновляем метаданные (включая обложку)
             this.updateMediaSessionMetadata(word, totalDuration / 1000);
 
             // Устанавливаем playbackState в 'playing' один раз в начале блока слова
@@ -996,10 +997,6 @@ class VocabularyApp {
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
         this.setState({ currentWord: word, currentPhase: 'initial' });
-
-        // Обновляем метаданные для нового слова
-        this.updateMediaSessionMetadata(word);
-
         this.runDisplaySequence(word);
         if (wasAutoPlaying) this.startAutoPlay();
     }
@@ -1019,10 +1016,6 @@ class VocabularyApp {
             return;
         }
         this.setState({ currentWord: nextWord, currentPhase: 'initial' });
-
-        // Обновляем метаданные для нового слова
-        this.updateMediaSessionMetadata(nextWord);
-
         this.runDisplaySequence(nextWord);
         if (wasAutoPlaying) this.startAutoPlay();
     }
@@ -1315,6 +1308,8 @@ class VocabularyApp {
         });
 
         console.log('🎵 MediaSession обновлен:', word.german, '→', word.russian);
+
+        // Не устанавливаем playbackState здесь - это делается в runDisplaySequence
     }
 
     async playSilentAudio() {
@@ -1337,16 +1332,13 @@ class VocabularyApp {
         this.mediaPlayer.pause();
     }
 
-    // Методы для плавного прогресс-бара (ИСПРАВЛЕНО)
+    // Методы для плавного прогресс-бара
     startSmoothProgress(durationMs) {
         this.stopSmoothProgress();
 
         this.progressAnimation.startTime = performance.now();
         this.progressAnimation.duration = durationMs;
         this.progressAnimation.isRunning = true;
-
-        // ИСПРАВЛЕНИЕ: вычисляем durationSec один раз здесь
-        const durationSec = durationMs / 1000;
 
         const animate = (currentTime) => {
             if (!this.progressAnimation.isRunning) return;
@@ -1357,14 +1349,13 @@ class VocabularyApp {
             // Обновляем MediaSession position
             if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
                 try {
+                    const durationSec = this.progressAnimation.duration / 1000;
                     navigator.mediaSession.setPositionState({
                         duration: durationSec,
                         playbackRate: 1,
                         position: progress * durationSec
                     });
-                } catch (e) {
-                    // Игнорируем ошибки (могут возникать если position > duration)
-                }
+                } catch (e) { /* Игнорируем */ }
             }
 
             if (progress < 0.98) {
@@ -1395,14 +1386,10 @@ class VocabularyApp {
                     playbackRate: 1,
                     position: durationSec
                 });
-            } catch (e) {
-                // Игнорируем ошибки
-            }
+            } catch (e) { /* Игнорируем */ }
         }
     }
 } // Конец класса VocabularyApp
-
-// --- ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ---
 document.addEventListener('DOMContentLoaded', () => {
     try {
         const app = new VocabularyApp();
@@ -1411,6 +1398,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ Приложение инициализировано. Версия:', APP_VERSION);
     } catch (error) {
         console.error('❌ Критическая ошибка:', error);
-        document.body.innerHTML = `<div style="text-align:center;padding:50px;"><h1>Произошла ошибка</h1><p>Попробуйте очистить кэш браузера.</p></div>`;
+        document.body.innerHTML = <div style="text-align:center;padding:50px;"><h1>Произошла ошибка</h1><p>Попробуйте очистить кэш браузера.</p></div>;
     }
 });
