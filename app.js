@@ -1,4 +1,4 @@
-// app.js - Версия 5.4.0 (с исправленной функцией паузы/возобновления)
+// app.js - Версия 5.4.2 (финальная, со всеми исправлениями)
 "use strict";
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
@@ -18,7 +18,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.4.1'; // Версия с исправлением
+const APP_VERSION = '5.4.2';
 const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
 const DELAYS = {
@@ -65,7 +65,7 @@ class VocabularyApp {
             isAutoPlaying: false,
             currentWord: null,
             currentPhase: 'initial',
-            currentPhaseIndex: 0, // <-- ИЗМЕНЕНИЕ: Добавлено для отслеживания позиции в блоке
+            currentPhaseIndex: 0, // Для отслеживания позиции в блоке
             studiedToday: 0,
             lastStudyDate: null,
             soundEnabled: true,
@@ -537,18 +537,15 @@ class VocabularyApp {
     }
 
     startAutoPlay() {
-        // --- ИЗМЕНЕНИЕ: Логика возобновления ---
         if (this.state.isAutoPlaying) return;
 
         let wordToShow = this.state.currentWord;
         let startPhaseIndex = this.state.currentPhaseIndex || 0;
 
-        // Если нет текущего слова или последовательность для него была завершена, берем следующее
         if (!wordToShow || startPhaseIndex === 0) {
             wordToShow = this.getNextWord();
             startPhaseIndex = 0;
             if (wordToShow) {
-                // Устанавливаем новое слово и сбрасываем индекс фазы
                 this.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
             }
         }
@@ -556,7 +553,6 @@ class VocabularyApp {
         if (wordToShow) {
             this.setState({ isAutoPlaying: true });
             this.playSilentAudio();
-            // Запускаем последовательность с сохраненного (или нового) места
             this.runDisplaySequence(wordToShow, startPhaseIndex);
         } else {
             this.showNoWordsMessage();
@@ -584,7 +580,6 @@ class VocabularyApp {
     }
 
     async runDisplaySequence(word, startFromIndex = 0) {
-        // --- ИЗМЕНЕНИЕ: Вся функция была обновлена для поддержки возобновления ---
         if (!word) {
             this.showNoWordsMessage();
             this.stopAutoPlay();
@@ -602,13 +597,16 @@ class VocabularyApp {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
+            // Устанавливаем статус 'playing' ОДИН РАЗ в начале блока слова.
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+
             const phases = [];
-            // Фаза 0: Появление карточки. Выполняется только если начинаем с начала.
             if (startFromIndex === 0) {
                 phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
             }
 
-            // Этапы озвучки немецкого слова
             for (let i = 0; i < this.state.repeatMode; i++) {
                 const delayDuration = (i === 0 && startFromIndex === 0) ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
                 phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i, startFromIndex > 0) });
@@ -626,7 +624,6 @@ class VocabularyApp {
 
             const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
 
-            // Считаем прошедшее время, если мы возобновляем воспроизведение
             let elapsedMs = 0;
             if (startFromIndex > 0) {
                 for (let i = 0; i < startFromIndex; i++) {
@@ -635,37 +632,31 @@ class VocabularyApp {
             }
 
             this.updateMediaSessionMetadata(word, totalDuration / 1000);
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
 
-            // Запускаем прогресс-бар со смещением
             this.startSmoothProgress(totalDuration, elapsedMs);
 
             if (startFromIndex > 0) {
                 this.updateCardViewToPhase(word, startFromIndex, phases);
             }
 
-            // Основной цикл выполнения
             for (let i = startFromIndex; i < phases.length; i++) {
                 const phase = phases[i];
                 checkAborted();
-                this.setState({ currentPhaseIndex: i }); // Сохраняем текущую позицию
+                this.setState({ currentPhaseIndex: i });
                 await phase.task();
             }
 
             checkAborted();
             this.completeSmoothProgress();
-
-            // Слово завершено, сбрасываем индекс для следующего
             this.setState({ currentPhaseIndex: 0 });
 
             if (this.state.isAutoPlaying) {
                 await this._prepareNextWord(checkAborted);
                 const nextWord = this.getNextWord();
                 this.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-                this.runDisplaySequence(nextWord); // Запускаем следующее слово с начала
+                this.runDisplaySequence(nextWord);
             } else {
+                // Устанавливаем 'paused', только когда блок ЗАВЕРШИЛСЯ и автоплей выключен.
                 if ('mediaSession' in navigator) {
                     navigator.mediaSession.playbackState = 'paused';
                 }
@@ -681,28 +672,26 @@ class VocabularyApp {
         }
     }
 
-    // Новая служебная функция для восстановления вида карточки при возобновлении
     updateCardViewToPhase(word, phaseIndex) {
         if (!document.getElementById('wordCard')) {
             this.renderInitialCard(word);
         }
 
-        // Восстанавливаем видимость элементов, которые должны были появиться до текущей фазы
         const card = document.getElementById('wordCard');
         if (!card) return;
 
-        // Примерная логика: если мы уже зашли далеко, показываем предыдущие элементы
-        // Это можно улучшить, добавив имена фазам
-        if (phaseIndex > this.state.repeatMode) { // После озвучки слова
+        const morphemePhaseStarts = this.state.repeatMode + 1;
+        const sentencePhaseStarts = morphemePhaseStarts + (this.state.showMorphemes ? 1 : 0);
+
+        if (phaseIndex >= morphemePhaseStarts) {
             card.classList.add('phase-morphemes');
             this.displayMorphemesAndTranslations(word);
         }
-        if (phaseIndex > this.state.repeatMode + (this.state.showMorphemes ? 1 : 0)) { // После морфем
+        if (phaseIndex >= sentencePhaseStarts) {
             card.classList.add('phase-sentence');
             this.displaySentence(word);
         }
     }
-
 
     async _fadeInNewCard(word, checkAborted) {
         const oldCard = document.getElementById('wordCard');
@@ -716,7 +705,6 @@ class VocabularyApp {
     }
 
     async _playGermanPhase(word, checkAborted, repeatIndex, isResuming) {
-        // Задержка перед озвучкой. Если возобновляем, задержка меньше.
         const waitTime = isResuming ? 100 : (repeatIndex === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
         await delay(waitTime);
         checkAborted();
@@ -750,7 +738,6 @@ class VocabularyApp {
         await this.speakRussian(word);
         checkAborted();
         if (this.state.isAutoPlaying) {
-            // Проверяем, что это не возобновление на последней фазе
             if (this.state.currentPhaseIndex >= 0) {
                 this.setState({ studiedToday: this.state.studiedToday + 1 });
             }
@@ -833,7 +820,7 @@ class VocabularyApp {
 
     toggleSetting(key) {
         const wasAutoPlaying = this.state.isAutoPlaying;
-        if (wasAutoPlaying) this.stopAutoPlay(); // Применяем настройки только в состоянии паузы
+        if (wasAutoPlaying) this.stopAutoPlay();
 
         let newState = { [key]: !this.state[key] };
         if (key === 'showMorphemes' && !newState[key]) {
@@ -843,12 +830,9 @@ class VocabularyApp {
 
         const word = this.state.currentWord;
         if (word && document.getElementById('wordCard')) {
-            // Обновляем вид карточки, но не запускаем анимацию заново
             this.renderInitialCard(word);
             this.updateCardViewToPhase(word, this.state.currentPhaseIndex);
         }
-
-        // Не перезапускаем автоматически, чтобы пользователь мог оценить изменения
     }
 
     updateCardView(word) {
@@ -1000,14 +984,13 @@ class VocabularyApp {
         const nextWord = this.getNextWord();
         this.wordHistory = [];
         this.currentHistoryIndex = -1;
-        // --- ИЗМЕНЕНИЕ: Сброс индекса фазы при смене фильтров ---
         this.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
         if (nextWord) {
             if (isInitialLoad) {
                 this.renderInitialCard(nextWord);
                 this.addToHistory(nextWord);
             } else {
-                this.runDisplaySequence(nextWord); // Запустится с начала
+                this.runDisplaySequence(nextWord);
             }
         } else {
             this.showNoWordsMessage();
@@ -1031,7 +1014,6 @@ class VocabularyApp {
         this.stopAutoPlay();
         this.currentHistoryIndex--;
         const word = this.wordHistory[this.currentHistoryIndex];
-        // --- ИЗМЕНЕНИЕ: Сброс индекса фазы при переходе к предыдущему слову ---
         this.setState({ currentWord: word, currentPhase: 'initial', currentPhaseIndex: 0 });
         this.runDisplaySequence(word);
         if (wasAutoPlaying) this.startAutoPlay();
@@ -1051,7 +1033,6 @@ class VocabularyApp {
             this.showNoWordsMessage();
             return;
         }
-        // --- ИЗМЕНЕНИЕ: Сброс индекса фазы при переходе к следующему слову ---
         this.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
         this.runDisplaySequence(nextWord);
         if (wasAutoPlaying) this.startAutoPlay();
@@ -1224,7 +1205,7 @@ class VocabularyApp {
         this.setState({ currentWord: null });
     }
 
-    // --- МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ С APPLE WATCH ---
+    // --- МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ СИСТЕМОЙ ---
 
     initAudioContext() {
         try {
@@ -1290,7 +1271,6 @@ class VocabularyApp {
         console.log('✅ Инициализация MediaSession');
 
         const action = (handlerName) => (() => {
-            console.log(`▶️ MediaSession action: ${handlerName}`);
             this[handlerName]();
         });
 
@@ -1303,37 +1283,24 @@ class VocabularyApp {
         navigator.mediaSession.setActionHandler('seekto', null);
     }
 
-    generateGermanFlagArtwork(word) {
-        // Минималистичный квадрат: черный фон + белые буквы "DE"
+    generateGermanFlagArtwork() {
         const svg = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-                <!-- Черный фон -->
                 <rect width="512" height="512" fill="#000000"/>
-                
-                <!-- буквы DE по центру -->
                 <text 
-                    x="256" 
-                    y="310" 
-                    font-family="Helvetica, Arial, sans-serif" 
-                    font-size="280" 
-                    font-weight="regular" 
-                    fill="#707070" 
-                    text-anchor="middle"
-                >
+                    x="256" y="310" font-family="Helvetica, Arial, sans-serif" 
+                    font-size="280" font-weight="regular" fill="#707070" text-anchor="middle">
                     DE
                 </text>
             </svg>
         `;
-
-        // Современный способ: без base64, напрямую через encodeURIComponent
         return 'data:image/svg+xml,' + encodeURIComponent(svg);
     }
 
     updateMediaSessionMetadata(word, duration = 2) {
         if (!('mediaSession' in navigator) || !word) return;
 
-        // Генерируем минималистичную обложку
-        const artworkUrl = this.generateGermanFlagArtwork(word);
+        const artworkUrl = this.generateGermanFlagArtwork();
 
         navigator.mediaSession.metadata = new MediaMetadata({
             title: word.german || '',
@@ -1343,8 +1310,6 @@ class VocabularyApp {
                 { src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }
             ]
         });
-
-        console.log('🎵 MediaSession обновлен:', word.german, '→', word.russian);
     }
 
     async playSilentAudio() {
@@ -1367,20 +1332,16 @@ class VocabularyApp {
         this.mediaPlayer.pause();
     }
 
-    // Методы для плавного прогресс-бара
     startSmoothProgress(durationMs, elapsedMs = 0) {
-        // --- ИЗМЕНЕНИЕ: Добавлен параметр elapsedMs для возобновления с нужного места ---
         this.stopSmoothProgress();
-
-        this.progressAnimation.startTime = performance.now() - elapsedMs; // Учитываем уже прошедшее время
+        this.progressAnimation.startTime = performance.now() - elapsedMs;
         this.progressAnimation.duration = durationMs;
         this.progressAnimation.isRunning = true;
 
         const animate = (currentTime) => {
             if (!this.progressAnimation.isRunning) return;
-
             const elapsed = currentTime - this.progressAnimation.startTime;
-            const progress = Math.min(elapsed / this.progressAnimation.duration, 0.98); // Максимум 98%
+            const progress = Math.min(elapsed / this.progressAnimation.duration, 0.99);
 
             if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
                 try {
@@ -1393,7 +1354,7 @@ class VocabularyApp {
                 } catch (e) { /* Игнорируем */ }
             }
 
-            if (progress < 0.98) {
+            if (progress < 0.99) {
                 this.progressAnimation.rafId = requestAnimationFrame(animate);
             }
         };
@@ -1411,15 +1372,16 @@ class VocabularyApp {
 
     completeSmoothProgress() {
         this.stopSmoothProgress();
-
         if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
             try {
                 const durationSec = this.progressAnimation.duration / 1000;
-                navigator.mediaSession.setPositionState({
-                    duration: durationSec,
-                    playbackRate: 1,
-                    position: durationSec
-                });
+                if (durationSec > 0) {
+                    navigator.mediaSession.setPositionState({
+                        duration: durationSec,
+                        playbackRate: 1,
+                        position: durationSec
+                    });
+                }
             } catch (e) { /* Игнорируем */ }
         }
     }
