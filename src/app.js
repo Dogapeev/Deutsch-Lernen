@@ -1,44 +1,30 @@
 // app.js - Версия 5.4.6 (проверенная, с полным функционалом паузы/возобновления)
 "use strict";
 
-// --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBWkVK2-gnHLDk2XBxenqsSm4Dp8Ey9kcY",
-    authDomain: "deutsch-lernen-aiweb.firebaseapp.com",
-    projectId: "deutsch-lernen-aiweb",
-    storageBucket: "deutsch-lernen-aiweb.appspot.com",
-    messagingSenderId: "495823275301",
-    appId: "1:495823275301:web:f724cdedce75a1538946cc",
-    measurementId: "G-DV24PZW6R3"
-};
+// --- ИМПОРТЫ МОДУЛЕЙ ---
+import { APP_VERSION, TTS_API_BASE_URL, DELAYS, FIREBASE_CONFIG } from './utils/constants.js';
+import { delay } from './utils/helpers.js';
 
-// Инициализируем Firebase и создаем константы для доступа к сервисам
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// --- НОВАЯ МОДУЛЬНАЯ ИНИЦИАЛИЗАЦИЯ FIREBASE ---
+// Импортируем нужные функции из Firebase SDK
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-// --- КОНФИГУРАЦИЯ И КОНСТАНТЫ ---
-const APP_VERSION = '5.4.6'; // Версия обновлена
-const TTS_API_BASE_URL = 'https://deutsch-lernen-sandbox.onrender.com';
 
-const DELAYS = {
-    INITIAL_WORD: 500,
-    BETWEEN_REPEATS: 1000,
-    BEFORE_MORPHEMES: 1000,
-    BEFORE_SENTENCE: 2000,
-    BEFORE_TRANSLATION: 1000,
-    BEFORE_NEXT_WORD: 1500,
-    CARD_FADE_OUT: 750,
-    CARD_FADE_IN: 300
-};
-const delay = ms => new Promise(res => setTimeout(res, ms));
+// Инициализируем Firebase и получаем доступ к сервисам
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 
 class VocabularyApp {
 
     constructor() {
-        this.appVersion = APP_VERSION;
+        this.appVersion = APP_VERSION; // Используем импортированную версию
         this.allWords = [];
         this.vocabulariesCache = {};
+        // ... остальной код конструктора без изменений ...
         this.playbackSequence = [];
         this.currentSequenceIndex = -1;
         this.sequenceController = null;
@@ -88,6 +74,10 @@ class VocabularyApp {
         this.loadStateFromLocalStorage();
         this.runMigrations();
     }
+
+    // ... ВЕСЬ ОСТАЛЬНОЙ КОД КЛАССА VocabularyApp ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ ...
+    // ... просто скопируй его сюда из своего старого файла ...
+    // ... или используй этот, если уверен, что я ничего не пропустил ...
 
     init() {
         this.mediaPlayer = document.createElement('audio');
@@ -191,9 +181,9 @@ class VocabularyApp {
     }
 
     async signInWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
+        const provider = new GoogleAuthProvider();
         try {
-            await auth.signInWithPopup(provider);
+            await signInWithPopup(auth, provider);
             this.toggleAuthModal(false);
         } catch (error) {
             console.error("Ошибка входа через Google:", error);
@@ -294,8 +284,8 @@ class VocabularyApp {
         }
 
         try {
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            await userCredential.user.updateProfile({ displayName: name });
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(userCredential.user, { displayName: name });
             this.toggleAuthModal(false);
             this.showNotification(`Добро пожаловать, ${name}!`, 'success');
         } catch (error) {
@@ -310,7 +300,7 @@ class VocabularyApp {
         const password = e.target.signinPassword.value;
 
         try {
-            await auth.signInWithEmailAndPassword(email, password);
+            await signInWithEmailAndPassword(auth, email, password);
             this.toggleAuthModal(false);
         } catch (error) {
             console.error("Ошибка входа:", error);
@@ -323,7 +313,7 @@ class VocabularyApp {
         const email = e.target.resetEmail.value;
 
         try {
-            await auth.sendPasswordResetEmail(email);
+            await sendPasswordResetEmail(auth, email);
             this.showNotification('Письмо для сброса пароля отправлено на ваш email.', 'success');
             this.switchAuthTab('signin');
         } catch (error) {
