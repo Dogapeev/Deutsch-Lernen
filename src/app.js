@@ -1441,7 +1441,17 @@ document.addEventListener('DOMContentLoaded', () => {
         window.app = app;
         console.log('✅ Приложение инициализировано. Версия:', APP_VERSION);
     } catch (error) {
-        console.error('❌ Критическая ошибка:', error);
-        document.body.innerHTML = `<div style="text-align:center;padding:50px;"><h1>Произошла ошибка</h1><p>Попробуйте очистить кэш браузера.</p></div>`;
+        // --- НАША ЛОВУШКА ДЛЯ ОШИБОК ---
+        console.error('❌ КРИТИЧЕСКАЯ ОШИБКА ПОЙМАНА:', error);
+        document.body.innerHTML = `
+            <div style="font-family: monospace; padding: 20px; background-color: #fff0f0; border: 2px solid red; margin: 10px; border-radius: 8px;">
+                <h1 style="color: red;">Произошла критическая ошибка</h1>
+                <h2>Сообщение:</h2>
+                <p style="background: #ffebeb; padding: 10px; border-radius: 5px; word-wrap: break-word;">${error.message}</p>
+                <h2>Стек вызовов (где именно сломалось):</h2>
+                <pre style="white-space: pre-wrap; background: #ffebeb; padding: 10px; border-radius: 5px; word-wrap: break-word;">${error.stack}</pre>
+            </div>
+        `;
+        // --- КОНЕЦ ЛОВУШКИ ---
     }
 });
