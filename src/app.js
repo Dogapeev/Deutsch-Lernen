@@ -651,7 +651,7 @@ class VocabularyApp {
             }
 
             checkAborted();
-            this.completeSmoothProgress();
+            this.audioEngine.completeSmoothProgress();
             this.setState({ currentPhaseIndex: 0 });
 
             if (this.state.isAutoPlaying) {
