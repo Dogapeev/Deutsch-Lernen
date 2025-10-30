@@ -510,25 +510,22 @@ class VocabularyApp {
 
     // src/app.js
 
+    // src/app.js
     startAutoPlay() {
         if (this.state.isAutoPlaying) return;
 
         let wordToShow = this.state.currentWord;
         let startPhaseIndex = this.state.currentPhaseIndex || 0;
 
-        // ЭТА УМНАЯ ЛОГИКА ТЕПЕРЬ РАБОТАЕТ ПРАВИЛЬНО В ОБОИХ СЦЕНАРИЯХ
-        // Если слова нет, или оно только что закончило играть (phaseIndex === 0),
-        // то мы берем СЛЕДУЮЩЕЕ слово.
+        // Эта та самая логика из эталона!
         if (!wordToShow || startPhaseIndex === 0) {
             wordToShow = this.getNextWord();
-            startPhaseIndex = 0; // Для нового слова всегда начинаем с нуля
+            startPhaseIndex = 0;
             if (wordToShow) {
-                // Обновляем состояние, чтобы все знали о новом слове
                 this.stateManager.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
             }
         }
 
-        // Если есть что показывать (либо новое слово, либо старое для продолжения)
         if (wordToShow) {
             this.stateManager.setState({ isAutoPlaying: true });
             this.audioEngine.playSilentAudio();
@@ -565,6 +562,8 @@ class VocabularyApp {
             this.startAutoPlay();
         }
     }
+
+    // src/app.js
 
     async runDisplaySequence(word, startFromIndex = 0) {
         if (!word) {
@@ -619,27 +618,35 @@ class VocabularyApp {
             }
 
             this.audioEngine.updateMediaSessionMetadata(word, totalDuration / 1000);
-
             this.audioEngine.startSmoothProgress(totalDuration, elapsedMs);
 
             if (startFromIndex > 0) {
                 this.updateCardViewToPhase(word, startFromIndex, phases);
             }
 
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ (как в эталоне) ---
             for (let i = startFromIndex; i < phases.length; i++) {
                 const phase = phases[i];
-                checkAborted();
+
+                // 1. Устанавливаем индекс НЕПОСРЕДСТВЕННО ПЕРЕД запуском задачи.
                 this.stateManager.setState({ currentPhaseIndex: i });
+
+                checkAborted();
+                // 2. Выполняем задачу.
                 await phase.task();
             }
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
             checkAborted();
             this.audioEngine.completeSmoothProgress();
+
+            // Сбрасываем индекс на 0 ПОСЛЕ УСПЕШНОГО завершения всех фаз.
             this.stateManager.setState({ currentPhaseIndex: 0 });
 
             if (this.state.isAutoPlaying) {
                 await this._prepareNextWord(checkAborted);
                 const nextWord = this.getNextWord();
+                // Обновляем состояние для нового слова и снова сбрасываем фазу на 0.
                 this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
                 this.runDisplaySequence(nextWord);
             } else {
@@ -884,15 +891,11 @@ class VocabularyApp {
         this.generatePlaybackSequence();
 
         if (this.playbackSequence.length > 0) {
-            // "Взводим" плейлист, устанавливая индекс ПЕРЕД первым словом.
-            this.currentSequenceIndex = -1;
-
-            // Показываем пользователю первое слово, но не меняем пока состояние плеера.
+            this.currentSequenceIndex = -1; // "Взводим" плейлист
             const firstWord = this.playbackSequence[0];
             this.stateManager.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
             this.renderInitialCard(firstWord);
         } else {
-            // Если слов нет, очищаем всё.
             this.currentSequenceIndex = -1;
             this.stateManager.setState({ currentWord: null });
             this.showNoWordsMessage();
