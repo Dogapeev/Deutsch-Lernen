@@ -521,24 +521,36 @@ class VocabularyApp {
     }
 
     startAutoPlay() {
+        // Если уже играет, ничего не делаем
         if (this.state.isAutoPlaying) return;
 
+        // Определяем, с чего начать
         let wordToShow = this.state.currentWord;
         let startPhaseIndex = this.state.currentPhaseIndex || 0;
 
+        // Если нет текущего слова или мы на самой первой фазе, 
+        // значит, нужно взять следующее слово.
         if (!wordToShow || startPhaseIndex === 0) {
             wordToShow = this.getNextWord();
-            startPhaseIndex = 0;
+            startPhaseIndex = 0; // Начинаем всегда с нуля для нового слова
             if (wordToShow) {
+                // Устанавливаем новое слово в состояние, но еще не запускаем
                 this.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
             }
         }
 
+        // Если есть что показывать, запускаем!
         if (wordToShow) {
+            // Устанавливаем флаг и запускаем всю последовательность
             this.setState({ isAutoPlaying: true });
             this.audioEngine.playSilentAudio();
-            this.runDisplaySequence(wordToShow, startPhaseIndex);
+
+            // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ:
+            // Мы всегда запускаем runDisplaySequence с начала.
+            // Он сам подхватит wordToShow и startPhaseIndex из this.state.
+            this.runDisplaySequence(this.state.currentWord, this.state.currentPhaseIndex);
         } else {
+            // Если слов нет, показываем сообщение
             this.showNoWordsMessage();
         }
     }
