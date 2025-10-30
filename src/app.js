@@ -514,31 +514,31 @@ class VocabularyApp {
         // Если уже играет, ничего не делаем
         if (this.state.isAutoPlaying) return;
 
-        // Определяем, с чего начать, используя локальные переменные
+        // ШАГ 1: Определяем, с чего начать, используя локальные переменные
         let wordToShow = this.state.currentWord;
         let startPhaseIndex = this.state.currentPhaseIndex || 0;
 
-        // Если нет текущего слова или мы на самой первой фазе, 
-        // значит, нужно взять следующее слово.
+        // ШАГ 2: Проверяем, нужно ли брать СЛЕДУЮЩЕЕ слово
+        // Это происходит, если слова нет ИЛИ мы находимся в самом начале последовательности (phaseIndex === 0)
         if (!wordToShow || startPhaseIndex === 0) {
             wordToShow = this.getNextWord();
-            startPhaseIndex = 0; // Начинаем всегда с нуля для нового слова
+            startPhaseIndex = 0; // Для нового слова всегда начинаем с нулевой фазы
             if (wordToShow) {
-                // Устанавливаем новое слово в состояние, но дальше используем локальную переменную
+                // Обновляем состояние, чтобы UI и другие части приложения знали о новом слове
                 this.stateManager.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
             }
         }
 
-        // Если есть что показывать, запускаем!
+        // ШАГ 3: Если есть что показывать (либо новое слово, либо старое для продолжения)
         if (wordToShow) {
-            // Устанавливаем флаг и запускаем всю последовательность
+            // Устанавливаем флаг автопроигрывания
             this.stateManager.setState({ isAutoPlaying: true });
             this.audioEngine.playSilentAudio();
 
-            // ИСПРАВЛЕНИЕ: Используем локальные переменные, которые гарантированно корректны
+            // ШАГ 4: Запускаем последовательность с ПРАВИЛЬНЫМИ, актуальными локальными переменными
             this.runDisplaySequence(wordToShow, startPhaseIndex);
         } else {
-            // Если слов нет, показываем сообщение
+            // Если слов для показа нет
             this.showNoWordsMessage();
         }
     }
