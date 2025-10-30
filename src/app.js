@@ -5,6 +5,7 @@
 import { APP_VERSION, TTS_API_BASE_URL, DELAYS, FIREBASE_CONFIG } from './utils/constants.js';
 import { delay } from './utils/helpers.js';
 import { AudioEngine } from './core/AudioEngine.js';
+import { StateManager } from './core/StateManager.js';
 
 // --- НОВАЯ МОДУЛЬНАЯ ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 // Импортируем нужные функции из Firebase SDK
@@ -36,34 +37,23 @@ class VocabularyApp {
 
         this.audioEngine = new AudioEngine();
 
-        this.state = {
-            currentUser: null,
-            isAutoPlaying: false,
-            currentWord: null,
-            currentPhase: 'initial',
-            currentPhaseIndex: 0,
-            studiedToday: 0,
-            lastStudyDate: null,
-            soundEnabled: true,
-            translationSoundEnabled: true,
-            sentenceSoundEnabled: true,
-            sequenceMode: 'sequential',
-            repeatMode: 2,
-            currentVocabulary: 'vocabulary',
-            availableVocabularies: [],
-            selectedLevels: ['A1', 'A2', 'B1', 'B2'],
-            availableLevels: [],
-            selectedTheme: 'all',
-            availableThemes: [],
-            showArticles: true,
-            showMorphemes: true,
-            showMorphemeTranslations: true,
-            showSentences: true,
-        };
+        // --- НОВЫЙ БЛОК ---
+        // 1. Создаем экземпляр StateManager
+        this.stateManager = new StateManager();
 
-        this.loadStateFromLocalStorage();
-        this.runMigrations();
+        // 2. Получаем начальное состояние
+        this.state = this.stateManager.getState();
+
+        // 3. Подписываемся на все будущие изменения состояния
+        this.stateManager.subscribe(newState => this.handleStateUpdate(newState));
+        // --- КОНЕЦ НОВОГО БЛОКА ---
     }
+
+    handleStateUpdate(newState) {
+        this.state = newState;
+        this.updateUI();
+    }
+
     setupMediaSessionHandlers() {
         if (!('mediaSession' in navigator)) return;
 
@@ -80,6 +70,11 @@ class VocabularyApp {
     }
 
     init() {
+        // --- ДОБАВИТЬ В НАЧАЛО МЕТОДА ---
+        this.stateManager.init();
+        this.state = this.stateManager.getState(); // Получаем состояние после загрузки из localStorage
+        // ---------------------------------
+
         this.elements = {
             mainContent: document.getElementById('mainContent'),
             studyArea: document.getElementById('studyArea'),
@@ -125,13 +120,13 @@ class VocabularyApp {
     handleAuthStateChanged(user) {
         clearTimeout(this.headerCollapseTimeout);
         if (user) {
-            this.setState({ currentUser: user });
+            this.stateManager.setState({ currentUser: user });
             this.updateAuthUI(user);
             console.log("✅ Пользователь вошел:", user.displayName);
             this.loadAndSwitchVocabulary(this.state.currentVocabulary, true);
             this.headerCollapseTimeout = setTimeout(() => this.collapseMobileHeader(), 3000);
         } else {
-            this.setState({ currentUser: null });
+            this.stateManager.setState({ currentUser: null });
             this.updateAuthUI(null);
             this.allWords = [];
             this.showLoginMessage();
@@ -392,15 +387,8 @@ class VocabularyApp {
         this.stopAutoPlay();
         const msg = 'Войдите в аккаунт, чтобы создавать свои словари и отслеживать прогресс.';
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
-        this.setState({ currentWord: null });
+        this.stateManager.setState({ currentWord: null });
         this.updateUI();
-    }
-
-    setState(newState, callback) {
-        this.state = { ...this.state, ...newState };
-        this.updateUI();
-        this.saveStateToLocalStorage();
-        if (callback) callback();
     }
 
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
@@ -537,14 +525,14 @@ class VocabularyApp {
             startPhaseIndex = 0; // Начинаем всегда с нуля для нового слова
             if (wordToShow) {
                 // Устанавливаем новое слово в состояние, но дальше используем локальную переменную
-                this.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
+                this.stateManager.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
             }
         }
 
         // Если есть что показывать, запускаем!
         if (wordToShow) {
             // Устанавливаем флаг и запускаем всю последовательность
-            this.setState({ isAutoPlaying: true });
+            this.stateManager.setState({ isAutoPlaying: true });
             this.audioEngine.playSilentAudio();
 
             // ИСПРАВЛЕНИЕ: Используем локальные переменные, которые гарантированно корректны
@@ -559,7 +547,7 @@ class VocabularyApp {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        this.setState({ isAutoPlaying: false });
+        this.stateManager.setState({ isAutoPlaying: false });
         this.audioEngine.pauseSilentAudio();
         this.audioEngine.stopSmoothProgress();
         if ('mediaSession' in navigator) {
@@ -646,18 +634,18 @@ class VocabularyApp {
             for (let i = startFromIndex; i < phases.length; i++) {
                 const phase = phases[i];
                 checkAborted();
-                this.setState({ currentPhaseIndex: i });
+                this.stateManager.setState({ currentPhaseIndex: i });
                 await phase.task();
             }
 
             checkAborted();
             this.audioEngine.completeSmoothProgress();
-            this.setState({ currentPhaseIndex: 0 });
+            this.stateManager.setState({ currentPhaseIndex: 0 });
 
             if (this.state.isAutoPlaying) {
                 await this._prepareNextWord(checkAborted);
                 const nextWord = this.getNextWord();
-                this.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
+                this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
                 this.runDisplaySequence(nextWord);
             } else {
                 if ('mediaSession' in navigator) {
@@ -741,7 +729,7 @@ class VocabularyApp {
         checkAborted();
         if (this.state.isAutoPlaying) {
             if (this.state.currentPhaseIndex >= 0) {
-                this.setState({ studiedToday: this.state.studiedToday + 1 });
+                this.stateManager.setState({ studiedToday: this.state.studiedToday + 1 });
             }
         }
     }
@@ -795,7 +783,7 @@ class VocabularyApp {
         if (key === 'showMorphemes' && !newState[key]) {
             newState.showMorphemeTranslations = false;
         }
-        this.setState(newState);
+        this.stateManager.setState(newState);
 
         const word = this.state.currentWord;
         if (word && document.getElementById('wordCard')) {
@@ -896,58 +884,6 @@ class VocabularyApp {
         this.elements.mainContent.classList.toggle('is-clickable', !this.state.isAutoPlaying);
     }
 
-    loadStateFromLocalStorage() {
-        const safeJsonParse = (k, d) => { try { const i = localStorage.getItem(k); return i ? JSON.parse(i) : d; } catch { return d; } };
-        const today = new Date().toDateString();
-        const lastStudyDate = localStorage.getItem('lastStudyDate');
-        this.state.studiedToday = (lastStudyDate === today) ? (parseInt(localStorage.getItem('studiedToday')) || 0) : 0;
-        this.state.lastStudyDate = today;
-        this.state.soundEnabled = safeJsonParse('soundEnabled', true);
-        this.state.translationSoundEnabled = safeJsonParse('translationSoundEnabled', true);
-        this.state.sentenceSoundEnabled = safeJsonParse('sentenceSoundEnabled', true);
-        const oldRepeatMode = safeJsonParse('repeatMode', 2);
-        if (oldRepeatMode === 'random') {
-            this.state.sequenceMode = 'random';
-            this.state.repeatMode = 2;
-        } else {
-            this.state.sequenceMode = safeJsonParse('sequenceMode', 'sequential');
-            this.state.repeatMode = typeof oldRepeatMode === 'string' ? parseInt(oldRepeatMode, 10) : oldRepeatMode;
-        }
-        this.state.selectedLevels = safeJsonParse('selectedLevels', ['A1', 'A2', 'B1', 'B2']);
-        this.state.selectedTheme = localStorage.getItem('selectedTheme') || 'all';
-        this.state.showArticles = safeJsonParse('showArticles', true);
-        this.state.showMorphemes = safeJsonParse('showMorphemes', true);
-        this.state.showMorphemeTranslations = safeJsonParse('showMorphemeTranslations', true);
-        this.state.showSentences = safeJsonParse('showSentences', true);
-        this.state.currentVocabulary = localStorage.getItem('currentVocabulary') || 'vocabulary';
-    }
-
-    saveStateToLocalStorage() {
-        localStorage.setItem('appVersion', this.appVersion);
-        localStorage.setItem('lastStudyDate', this.state.lastStudyDate);
-        localStorage.setItem('studiedToday', this.state.studiedToday);
-        localStorage.setItem('soundEnabled', JSON.stringify(this.state.soundEnabled));
-        localStorage.setItem('translationSoundEnabled', JSON.stringify(this.state.translationSoundEnabled));
-        localStorage.setItem('sentenceSoundEnabled', JSON.stringify(this.state.sentenceSoundEnabled));
-        localStorage.setItem('sequenceMode', this.state.sequenceMode);
-        localStorage.setItem('repeatMode', JSON.stringify(this.state.repeatMode));
-        localStorage.setItem('selectedLevels', JSON.stringify(this.state.selectedLevels));
-        localStorage.setItem('selectedTheme', this.state.selectedTheme);
-        localStorage.setItem('showArticles', JSON.stringify(this.state.showArticles));
-        localStorage.setItem('showMorphemes', JSON.stringify(this.state.showMorphemes));
-        localStorage.setItem('showMorphemeTranslations', JSON.stringify(this.state.showMorphemeTranslations));
-        localStorage.setItem('showSentences', JSON.stringify(this.state.showSentences));
-        localStorage.setItem('currentVocabulary', this.state.currentVocabulary);
-    }
-
-    runMigrations() {
-        const savedVersion = localStorage.getItem('appVersion') || '1.0';
-        if (parseFloat(savedVersion) < 2.8) {
-            localStorage.removeItem('germanWords');
-            localStorage.setItem('appVersion', this.appVersion);
-        }
-    }
-
     handleFilterChange(isInitialLoad = false) {
         this.stopAutoPlay();
         this.generatePlaybackSequence();
@@ -955,7 +891,7 @@ class VocabularyApp {
         if (this.playbackSequence.length > 0) {
             this.currentSequenceIndex = 0;
             const firstWord = this.playbackSequence[this.currentSequenceIndex];
-            this.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
+            this.stateManager.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
 
             if (!isInitialLoad) {
                 this.runDisplaySequence(firstWord);
@@ -963,7 +899,7 @@ class VocabularyApp {
                 this.renderInitialCard(firstWord);
             }
         } else {
-            this.setState({ currentWord: null });
+            this.stateManager.setState({ currentWord: null });
             this.showNoWordsMessage();
         }
         this.updateNavigationButtons();
@@ -977,7 +913,7 @@ class VocabularyApp {
         // Прерываем текущую последовательность, не меняя глобальное состояние
         this._interruptSequence();
         if (wasAutoPlaying) {
-            this.setState({ isAutoPlaying: false }); // Временно выключаем, чтобы старая последовательность не продолжилась
+            this.stateManager.setState({ isAutoPlaying: false }); // Временно выключаем, чтобы старая последовательность не продолжилась
         }
 
         this.currentSequenceIndex--;
@@ -986,11 +922,11 @@ class VocabularyApp {
         }
 
         const word = this.playbackSequence[this.currentSequenceIndex];
-        this.setState({ currentWord: word, currentPhase: 'initial', currentPhaseIndex: 0 });
+        this.stateManager.setState({ currentWord: word, currentPhase: 'initial', currentPhaseIndex: 0 });
         this.runDisplaySequence(word);
 
         if (wasAutoPlaying) {
-            this.setState({ isAutoPlaying: true }); // Восстанавливаем состояние автопроигрывания для новой последовательности
+            this.stateManager.setState({ isAutoPlaying: true }); // Восстанавливаем состояние автопроигрывания для новой последовательности
         }
     }
 
@@ -1002,7 +938,7 @@ class VocabularyApp {
         // Прерываем текущую последовательность, не меняя глобальное состояние
         this._interruptSequence();
         if (wasAutoPlaying) {
-            this.setState({ isAutoPlaying: false }); // Временно выключаем
+            this.stateManager.setState({ isAutoPlaying: false }); // Временно выключаем
         }
 
         const nextWord = this.getNextWord();
@@ -1012,11 +948,11 @@ class VocabularyApp {
             return;
         }
 
-        this.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
+        this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
         this.runDisplaySequence(nextWord);
 
         if (wasAutoPlaying) {
-            this.setState({ isAutoPlaying: true }); // Восстанавливаем
+            this.stateManager.setState({ isAutoPlaying: true }); // Восстанавливаем
         }
     }
 
@@ -1129,42 +1065,46 @@ class VocabularyApp {
     toggleLevel(level) {
         if (!this.state.availableLevels.includes(level)) return;
         const newLevels = this.state.selectedLevels.includes(level) ? (this.state.selectedLevels.length > 1 ? this.state.selectedLevels.filter(l => l !== level) : this.state.selectedLevels) : [...this.state.selectedLevels, level];
-        this.setState({ selectedLevels: newLevels });
+        this.stateManager.setState({ selectedLevels: newLevels });
         this.handleFilterChange();
     }
 
     setTheme(theme) {
-        this.setState({ selectedTheme: theme });
+        this.stateManager.setState({ selectedTheme: theme });
         this.handleFilterChange();
     }
 
-    setRepeatMode(mode) { this.setState({ repeatMode: mode }); }
+    setRepeatMode(mode) { this.stateManager.setState({ repeatMode: mode }); }
+
+    // src/app.js
 
     setSequenceMode(mode) {
         const wasAutoPlaying = this.state.isAutoPlaying;
         if (wasAutoPlaying) this.stopAutoPlay();
 
-        this.setState({ sequenceMode: mode }, () => {
-            this.generatePlaybackSequence();
+        // 1. Обновляем состояние через менеджер
+        this.stateManager.setState({ sequenceMode: mode });
 
-            let newIndex = 0;
-            if (this.state.currentWord) {
-                const foundIndex = this.playbackSequence.findIndex(w => w.id === this.state.currentWord.id);
-                if (foundIndex !== -1) {
-                    newIndex = foundIndex;
-                }
-            }
+        // 2. Сразу же выполняем остальную логику, которая раньше была в коллбэке
+        this.generatePlaybackSequence();
 
-            if (this.playbackSequence.length > 0) {
-                this.currentSequenceIndex = newIndex;
-                const newWord = this.playbackSequence[this.currentSequenceIndex];
-                this.setState({ currentWord: newWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-                this.renderInitialCard(newWord);
-                if (wasAutoPlaying) this.startAutoPlay();
-            } else {
-                this.showNoWordsMessage();
+        let newIndex = 0;
+        if (this.state.currentWord) {
+            const foundIndex = this.playbackSequence.findIndex(w => w.id === this.state.currentWord.id);
+            if (foundIndex !== -1) {
+                newIndex = foundIndex;
             }
-        });
+        }
+
+        if (this.playbackSequence.length > 0) {
+            this.currentSequenceIndex = newIndex;
+            const newWord = this.playbackSequence[this.currentSequenceIndex];
+            this.stateManager.setState({ currentWord: newWord, currentPhase: 'initial', currentPhaseIndex: 0 });
+            this.renderInitialCard(newWord);
+            if (wasAutoPlaying) this.startAutoPlay();
+        } else {
+            this.showNoWordsMessage();
+        }
     }
 
     getActiveWords() {
@@ -1222,7 +1162,7 @@ class VocabularyApp {
     showNoWordsMessage(customMessage = '') {
         const msg = customMessage || (this.allWords && this.allWords.length > 0 ? 'Нет слов для выбранных фильтров.<br>Попробуйте изменить уровень или тему.' : 'Загрузка словаря...');
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
-        this.setState({ currentWord: null });
+        this.stateManager.setState({ currentWord: null });
     }
 
 } // Конец класса VocabularyApp
