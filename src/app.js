@@ -1,4 +1,4 @@
-// app.js - Версия 5.4.6 (проверенная, с полным функционалом паузы/возобновления)
+// app.js - Версия 5.4.7 (рефакторинг LessonEngine)
 "use strict";
 
 // --- ИМПОРТЫ МОДУЛЕЙ ---
@@ -6,74 +6,57 @@ import { APP_VERSION, TTS_API_BASE_URL, DELAYS, FIREBASE_CONFIG } from './utils/
 import { delay } from './utils/helpers.js';
 import { AudioEngine } from './core/AudioEngine.js';
 import { StateManager } from './core/StateManager.js';
+import { LessonEngine } from './core/LessonEngine.js';
 
 // --- НОВАЯ МОДУЛЬНАЯ ИНИЦИАЛИЗАЦИЯ FIREBASE ---
-// Импортируем нужные функции из Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-
 
 // Инициализируем Firebase и получаем доступ к сервисам
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-
 class VocabularyApp {
 
     constructor() {
-        this.appVersion = APP_VERSION; // Используем импортированную версию
+        this.appVersion = APP_VERSION;
         this.allWords = [];
         this.vocabulariesCache = {};
-        // ... остальной код конструктора без изменений ...
-        this.playbackSequence = [];
-        this.currentSequenceIndex = -1;
-        this.sequenceController = null;
         this.themeMap = {};
         this.elements = {};
         this.lastScrollY = 0;
         this.headerCollapseTimeout = null;
 
+        // --- ИНИЦИАЛИЗАЦИЯ ОСНОВНЫХ МОДУЛЕЙ ---
         this.audioEngine = new AudioEngine();
-
-        // --- НОВЫЙ БЛОК ---
-        // 1. Создаем экземпляр StateManager
         this.stateManager = new StateManager();
 
-        // 2. Получаем начальное состояние
-        this.state = this.stateManager.getState();
+        const uiBridge = {
+            renderInitialCard: (...args) => this.renderInitialCard(...args),
+            showNoWordsMessage: (...args) => this.showNoWordsMessage(...args),
+            updateCardViewToPhase: (...args) => this.updateCardViewToPhase(...args),
+            fadeInNewCard: (...args) => this._fadeInNewCard(...args),
+            revealMorphemesPhase: (...args) => this._revealMorphemesPhase(...args),
+            revealSentencePhase: (...args) => this._revealSentencePhase(...args),
+            revealTranslationPhase: (...args) => this._revealTranslationPhase(...args),
+            prepareNextWord: (...args) => this._prepareNextWord(...args),
+        };
 
-        // 3. Подписываемся на все будущие изменения состояния
-        this.stateManager.subscribe(newState => this.handleStateUpdate(newState));
-        // --- КОНЕЦ НОВОГО БЛОКА ---
-    }
-
-    handleStateUpdate(newState) {
-        this.state = newState;
-        this.updateUI();
-    }
-
-    setupMediaSessionHandlers() {
-        if (!('mediaSession' in navigator)) return;
-
-        const action = (handlerName) => (() => {
-            this[handlerName]();
+        this.lessonEngine = new LessonEngine({
+            stateManager: this.stateManager,
+            audioEngine: this.audioEngine,
+            ui: uiBridge
         });
 
-        navigator.mediaSession.setActionHandler('play', action('startAutoPlay'));
-        navigator.mediaSession.setActionHandler('pause', action('stopAutoPlay'));
-        navigator.mediaSession.setActionHandler('nexttrack', action('showNextWordManually'));
-        navigator.mediaSession.setActionHandler('previoustrack', action('showPreviousWord'));
-        navigator.mediaSession.setActionHandler('seekforward', action('showNextWordManually'));
-        navigator.mediaSession.setActionHandler('seekbackward', action('showPreviousWord'));
+        this.state = this.stateManager.getState();
+        this.stateManager.subscribe(newState => this.handleStateUpdate(newState));
     }
 
     init() {
-        // --- ДОБАВИТЬ В НАЧАЛО МЕТОДА ---
         this.stateManager.init();
-        this.state = this.stateManager.getState(); // Получаем состояние после загрузки из localStorage
-        // ---------------------------------
+        this.state = this.stateManager.getState();
 
         this.elements = {
             mainContent: document.getElementById('mainContent'),
@@ -113,10 +96,189 @@ class VocabularyApp {
 
         this.bindEvents();
         this.repositionAuthContainer();
-        this.setupMediaSessionHandlers(); // Создадим этот метод
+        this.setupMediaSessionHandlers();
         onAuthStateChanged(auth, user => this.handleAuthStateChanged(user));
     }
 
+    handleStateUpdate(newState) {
+        this.state = newState;
+        this.updateUI();
+    }
+
+    setupMediaSessionHandlers() {
+        if (!('mediaSession' in navigator)) return;
+        navigator.mediaSession.setActionHandler('play', () => this.lessonEngine.start());
+        navigator.mediaSession.setActionHandler('pause', () => this.lessonEngine.stop());
+        navigator.mediaSession.setActionHandler('nexttrack', () => this.lessonEngine.next());
+        navigator.mediaSession.setActionHandler('previoustrack', () => this.lessonEngine.previous());
+        navigator.mediaSession.setActionHandler('seekforward', () => this.lessonEngine.next());
+        navigator.mediaSession.setActionHandler('seekbackward', () => this.lessonEngine.previous());
+    }
+
+    bindEvents() {
+        document.getElementById('settingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(true));
+        document.getElementById('closeSettingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(false));
+        this.elements.settingsOverlay.addEventListener('click', () => this.toggleSettingsPanel(false));
+
+        document.querySelectorAll('[id^=toggleButton]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.lessonEngine.toggle(); }));
+        document.querySelectorAll('[id^=prevButton]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.lessonEngine.previous(); }));
+        document.querySelectorAll('[id^=nextButton]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.lessonEngine.next(); }));
+
+        document.querySelectorAll('[id^=soundToggle]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.toggleSetting('soundEnabled'); }));
+        document.querySelectorAll('[id^=translationSoundToggle]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.toggleSetting('translationSoundEnabled'); }));
+        document.querySelectorAll('[id^=sentenceSoundToggle]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.toggleSetting('sentenceSoundEnabled'); }));
+        document.querySelectorAll('[id^=toggleArticles]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.toggleSetting('showArticles'); }));
+        document.querySelectorAll('[id^=toggleMorphemes]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.toggleSetting('showMorphemes'); }));
+        document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.toggleSetting('showMorphemeTranslations'); }));
+        document.querySelectorAll('[id^=toggleSentences]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.toggleSetting('showSentences'); }));
+
+        document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); this.toggleLevel(e.target.dataset.level); }));
+        document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); this.setRepeatMode(parseInt(e.currentTarget.dataset.mode)); }));
+        document.querySelectorAll('.sequence-selector, .sequence-selector-mobile').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); this.setSequenceMode(e.currentTarget.dataset.mode); }));
+        document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', e => this.loadAndSwitchVocabulary(e.target.value)));
+
+        this.elements.auth.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
+        this.elements.auth.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
+        this.elements.auth.overlay.addEventListener('click', () => this.toggleAuthModal(false));
+        this.elements.auth.signOutBtn.addEventListener('click', () => signOut(auth));
+        this.elements.auth.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
+        this.elements.auth.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
+        this.elements.auth.tabs.forEach(tab => tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab)));
+        this.elements.auth.forgotPasswordBtn.addEventListener('click', () => this.switchAuthTab('resetPassword'));
+        this.elements.auth.backToSigninBtn.addEventListener('click', () => this.switchAuthTab('signin'));
+        this.elements.auth.signupForm.addEventListener('submit', e => this.handleSignUpWithEmail(e));
+        this.elements.auth.signinForm.addEventListener('submit', e => this.handleSignInWithEmail(e));
+        this.elements.auth.resetPasswordForm.addEventListener('submit', e => this.handlePasswordReset(e));
+
+        window.addEventListener('resize', () => this.repositionAuthContainer());
+        window.addEventListener('scroll', () => this.handleScroll());
+        this.elements.mainContent.addEventListener('click', () => this.lessonEngine.toggle());
+    }
+
+    // --- МЕТОДЫ-КОНТРОЛЛЕРЫ НАСТРОЕК ---
+
+    toggleSetting(key) {
+        if (this.state.isAutoPlaying) this.lessonEngine.stop();
+
+        let newState = { [key]: !this.state[key] };
+        if (key === 'showMorphemes' && !newState[key]) {
+            newState.showMorphemeTranslations = false;
+        }
+        this.stateManager.setState(newState);
+
+        const word = this.state.currentWord;
+        if (word && document.getElementById('wordCard')) {
+            this.renderInitialCard(word);
+            // Восстанавливаем визуальное состояние карточки до текущей фазы
+            const phases = this.lessonEngine.playbackSequence; // Это не совсем верно, но для простоты пока оставим
+            this.updateCardViewToPhase(word, this.state.currentPhaseIndex, phases);
+        }
+    }
+
+    toggleLevel(level) {
+        if (!this.state.availableLevels.includes(level)) return;
+        const newLevels = this.state.selectedLevels.includes(level)
+            ? (this.state.selectedLevels.length > 1 ? this.state.selectedLevels.filter(l => l !== level) : this.state.selectedLevels)
+            : [...this.state.selectedLevels, level];
+        this.stateManager.setState({ selectedLevels: newLevels });
+        this.handleFilterChange();
+    }
+
+    setTheme(theme) {
+        this.stateManager.setState({ selectedTheme: theme });
+        this.handleFilterChange();
+    }
+
+    setRepeatMode(mode) {
+        this.stateManager.setState({ repeatMode: mode });
+    }
+
+    setSequenceMode(mode) {
+        this.lessonEngine.stop();
+        this.stateManager.setState({ sequenceMode: mode });
+        this.handleFilterChange();
+    }
+
+    // --- УПРАВЛЕНИЕ СЛОВАРЯМИ И ФИЛЬТРАМИ ---
+
+    handleFilterChange(isInitialLoad = false) {
+        this.lessonEngine.stop();
+        this.lessonEngine.generatePlaybackSequence(this.allWords);
+
+        const { playbackSequence } = this.lessonEngine;
+
+        if (playbackSequence.length > 0) {
+            const firstWord = playbackSequence[0];
+            this.stateManager.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
+            this.renderInitialCard(firstWord);
+        } else {
+            this.stateManager.setState({ currentWord: null });
+            this.showNoWordsMessage();
+        }
+        this.updateNavigationButtons();
+    }
+
+    async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
+        this.lessonEngine.stop();
+        this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загрузка...</p></div>`;
+        if (this.state.availableVocabularies.length === 0) {
+            try {
+                const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
+                if (!response.ok) throw new Error('Сервер не отвечает.');
+                const vocabs = await response.json();
+                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей.');
+                this.stateManager.setState({ availableVocabularies: vocabs });
+            } catch (error) {
+                console.error(error); this.handleLoadingError(error.message); return;
+            }
+        }
+        let finalVocabName = vocabNameToLoad;
+        const vocabExists = this.state.availableVocabularies.some(v => v.name === finalVocabName);
+        if (!vocabExists) {
+            finalVocabName = this.state.availableVocabularies[0]?.name;
+            if (!finalVocabName) { this.handleLoadingError("Не найдено ни одного словаря."); return; }
+        }
+        try {
+            await this.fetchVocabularyData(finalVocabName);
+            const vocabularyData = this.vocabulariesCache[finalVocabName];
+            if (!vocabularyData) throw new Error("Кэш не найден.");
+            this.allWords = vocabularyData.words;
+            this.themeMap = vocabularyData.meta.themes || {};
+        } catch (error) {
+            console.error(`Ошибка загрузки словаря "${finalVocabName}":`, error);
+            this.handleLoadingError(`Не удалось загрузить словарь: ${finalVocabName}.`);
+            return;
+        }
+        this.stateManager.setState({ currentVocabulary: finalVocabName });
+        this.updateDynamicFilters();
+        this.renderVocabularySelector();
+        this.handleFilterChange(isInitialLoad);
+    }
+
+    async fetchVocabularyData(vocabName) {
+        if (this.vocabulariesCache[vocabName]) return;
+        this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загружаю: ${vocabName}...</p></div>`;
+        const response = await fetch(`${TTS_API_BASE_URL}/api/vocabulary/${vocabName}`);
+        if (!response.ok) throw new Error(`Ошибка сервера ${response.status}`);
+        const data = await response.json();
+        const words = Array.isArray(data) ? data : data.words;
+        if (!words) throw new Error(`Неверный формат словаря "${vocabName}"`);
+        this.vocabulariesCache[vocabName] = {
+            words: words.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
+            meta: data.meta || { themes: {} }
+        };
+    }
+
+    handleLoadingError(errorMessage) {
+        this.allWords = []; this.themeMap = {};
+        this.stateManager.setState({ currentWord: null, availableLevels: [], availableThemes: [] });
+        this.renderThemeButtons();
+        this.showNoWordsMessage(errorMessage);
+        this.renderVocabularySelector();
+        this.updateUI();
+    }
+
+    // --- АВТОРИЗАЦИЯ И UI --- (Без изменений)
     handleAuthStateChanged(user) {
         clearTimeout(this.headerCollapseTimeout);
         if (user) {
@@ -178,86 +340,6 @@ class VocabularyApp {
             console.error("Ошибка входа через Google:", error);
             this.showNotification(`Ошибка: ${error.message}`, 'error');
         }
-    }
-
-    bindEvents() {
-        document.getElementById('settingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(true));
-        document.getElementById('closeSettingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(false));
-        this.elements.settingsOverlay.addEventListener('click', () => this.toggleSettingsPanel(false));
-        document.querySelectorAll('[id^=toggleButton]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleAutoPlay();
-        }));
-        document.querySelectorAll('[id^=prevButton]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.showPreviousWord();
-        }));
-        document.querySelectorAll('[id^=nextButton]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.showNextWordManually();
-        }));
-        document.querySelectorAll('[id^=soundToggle]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleSetting('soundEnabled');
-        }));
-        document.querySelectorAll('[id^=translationSoundToggle]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleSetting('translationSoundEnabled');
-        }));
-        document.querySelectorAll('[id^=sentenceSoundToggle]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleSetting('sentenceSoundEnabled');
-        }));
-        document.querySelectorAll('[id^=toggleArticles]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleSetting('showArticles');
-        }));
-        document.querySelectorAll('[id^=toggleMorphemes]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleSetting('showMorphemes');
-        }));
-        document.querySelectorAll('[id^=toggleMorphemeTranslations]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleSetting('showMorphemeTranslations');
-        }));
-        document.querySelectorAll('[id^=toggleSentences]').forEach(b => b.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.toggleSetting('showSentences');
-        }));
-        document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', e => {
-            e.stopPropagation();
-            this.toggleLevel(e.target.dataset.level);
-        }));
-        document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(btn => btn.addEventListener('click', e => {
-            e.stopPropagation();
-            this.setRepeatMode(parseInt(e.currentTarget.dataset.mode));
-        }));
-        document.querySelectorAll('.sequence-selector, .sequence-selector-mobile').forEach(btn => btn.addEventListener('click', e => {
-            e.stopPropagation();
-            this.setSequenceMode(e.currentTarget.dataset.mode);
-        }));
-        document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', (e) => this.loadAndSwitchVocabulary(e.target.value)));
-
-        this.elements.auth.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
-        this.elements.auth.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
-        this.elements.auth.overlay.addEventListener('click', () => this.toggleAuthModal(false));
-        this.elements.auth.signOutBtn.addEventListener('click', () => signOut(auth));
-        this.elements.auth.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
-        this.elements.auth.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
-
-        this.elements.auth.tabs.forEach(tab => {
-            tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab));
-        });
-        this.elements.auth.forgotPasswordBtn.addEventListener('click', () => this.switchAuthTab('resetPassword'));
-        this.elements.auth.backToSigninBtn.addEventListener('click', () => this.switchAuthTab('signin'));
-
-        this.elements.auth.signupForm.addEventListener('submit', e => this.handleSignUpWithEmail(e));
-        this.elements.auth.signinForm.addEventListener('submit', e => this.handleSignInWithEmail(e));
-        this.elements.auth.resetPasswordForm.addEventListener('submit', e => this.handlePasswordReset(e));
-
-        window.addEventListener('resize', () => this.repositionAuthContainer());
-        window.addEventListener('scroll', () => this.handleScroll());
-        this.elements.mainContent.addEventListener('click', () => this.toggleAutoPlay());
     }
 
     async handleSignUpWithEmail(e) {
@@ -322,17 +404,12 @@ class VocabularyApp {
 
     getFirebaseAuthErrorMessage(error) {
         switch (error.code) {
-            case 'auth/email-already-in-use':
-                return 'Этот email уже зарегистрирован.';
-            case 'auth/invalid-email':
-                return 'Неверный формат email.';
-            case 'auth/weak-password':
-                return 'Пароль слишком слабый (минимум 6 символов).';
+            case 'auth/email-already-in-use': return 'Этот email уже зарегистрирован.';
+            case 'auth/invalid-email': return 'Неверный формат email.';
+            case 'auth/weak-password': return 'Пароль слишком слабый (минимум 6 символов).';
             case 'auth/user-not-found':
-            case 'auth/wrong-password':
-                return 'Неверный email или пароль.';
-            default:
-                return 'Произошла ошибка. Попробуйте снова.';
+            case 'auth/wrong-password': return 'Неверный email или пароль.';
+            default: return 'Произошла ошибка. Попробуйте снова.';
         }
     }
 
@@ -342,9 +419,7 @@ class VocabularyApp {
         notification.textContent = message;
         notification.className = `notification ${type}`;
         notification.classList.add('visible');
-        setTimeout(() => {
-            notification.classList.remove('visible');
-        }, 4000);
+        setTimeout(() => { notification.classList.remove('visible'); }, 4000);
     }
 
     repositionAuthContainer() {
@@ -354,13 +429,9 @@ class VocabularyApp {
         const mobileHeader = this.elements.headerMobile;
         const desktopHeader = document.querySelector('.header');
         if (isMobile) {
-            if (authContainer.parentElement !== mobileHeader) {
-                mobileHeader.appendChild(authContainer);
-            }
+            if (authContainer.parentElement !== mobileHeader) mobileHeader.appendChild(authContainer);
         } else {
-            if (authContainer.parentElement !== desktopHeader) {
-                desktopHeader.appendChild(authContainer);
-            }
+            if (authContainer.parentElement !== desktopHeader) desktopHeader.appendChild(authContainer);
         }
     }
 
@@ -375,115 +446,118 @@ class VocabularyApp {
         this.lastScrollY = currentScrollY;
     }
 
-    collapseMobileHeader() {
-        this.elements.headerMobile?.classList.add('collapsed');
-    }
-
-    expandMobileHeader() {
-        this.elements.headerMobile?.classList.remove('collapsed');
-    }
+    collapseMobileHeader() { this.elements.headerMobile?.classList.add('collapsed'); }
+    expandMobileHeader() { this.elements.headerMobile?.classList.remove('collapsed'); }
 
     showLoginMessage() {
-        this.stopAutoPlay();
+        this.lessonEngine.stop();
         const msg = 'Войдите в аккаунт, чтобы создавать свои словари и отслеживать прогресс.';
         this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
         this.stateManager.setState({ currentWord: null });
         this.updateUI();
     }
 
-    async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
-        this.stopAutoPlay();
-        this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загрузка...</p></div>`;
-        if (this.state.availableVocabularies.length === 0) {
-            try {
-                const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
-                if (!response.ok) throw new Error('Сервер не отвечает.');
-                const vocabs = await response.json();
-                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей.');
-                this.state.availableVocabularies = vocabs;
-            } catch (error) {
-                console.error(error);
-                this.handleLoadingError(error.message);
-                return;
-            }
+    // --- UI-МЕТОДЫ (Останутся здесь до создания UIController) ---
+
+    async _fadeInNewCard(word, checkAborted) {
+        const oldCard = document.getElementById('wordCard');
+        if (oldCard) {
+            oldCard.classList.add('word-crossfade', 'word-fade-out');
+            await delay(DELAYS.CARD_FADE_IN);
+            checkAborted();
         }
-        let finalVocabName = vocabNameToLoad;
-        const vocabExists = this.state.availableVocabularies.some(v => v.name === finalVocabName);
-        if (!vocabExists) {
-            finalVocabName = this.state.availableVocabularies[0]?.name;
-            if (!finalVocabName) {
-                this.handleLoadingError("Не найдено ни одного словаря для загрузки.");
-                return;
-            }
-        }
-        try {
-            await this.fetchVocabularyData(finalVocabName);
-            const vocabularyData = this.vocabulariesCache[finalVocabName];
-            if (!vocabularyData) throw new Error("Кэшированные данные не найдены.");
-            this.allWords = vocabularyData.words;
-            this.themeMap = vocabularyData.meta.themes || {};
-        } catch (error) {
-            console.error(`Ошибка загрузки словаря "${finalVocabName}":`, error);
-            this.handleLoadingError(`Не удалось загрузить данные словаря: ${finalVocabName}.`);
-            return;
-        }
-        this.state.currentVocabulary = finalVocabName;
-        this.updateDynamicFilters();
-        this.renderVocabularySelector();
-        this.handleFilterChange(isInitialLoad);
+        this.renderInitialCard(word);
     }
 
-    async fetchVocabularyData(vocabName) {
-        if (this.vocabulariesCache[vocabName] && this.vocabulariesCache[vocabName].words) {
-            return;
-        }
-        this.elements.studyArea.innerHTML = `<div class="no-words"><p>Загружаю словарь: ${vocabName}...</p></div>`;
-        const response = await fetch(`${TTS_API_BASE_URL}/api/vocabulary/${vocabName}`);
-        if (!response.ok) throw new Error(`Ошибка сервера ${response.status}`);
-        const data = await response.json();
-        if (!data.words || !data.meta || !data.meta.themes) {
-            if (Array.isArray(data)) {
-                this.vocabulariesCache[vocabName] = {
-                    words: data.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
-                    meta: { themes: {} }
-                };
-                return;
-            }
-            throw new Error(`Неверный формат словаря "${vocabName}"`);
-        }
-        this.vocabulariesCache[vocabName] = {
-            words: data.words.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
-            meta: data.meta
-        };
+    async _revealMorphemesPhase(word, checkAborted) {
+        await delay(DELAYS.BEFORE_MORPHEMES);
+        checkAborted();
+        document.getElementById('wordCard')?.classList.add('phase-morphemes');
+        this.displayMorphemesAndTranslations(word);
     }
 
-    handleLoadingError(errorMessage) {
-        this.allWords = [];
-        this.themeMap = {};
-        this.state.currentWord = null;
-        this.state.availableLevels = [];
-        this.state.availableThemes = [];
-        this.renderThemeButtons();
-        this.showNoWordsMessage(errorMessage);
-        this.renderVocabularySelector();
-        this.updateUI();
+    async _revealSentencePhase(word, checkAborted) {
+        await delay(DELAYS.BEFORE_SENTENCE);
+        checkAborted();
+        document.getElementById('wordCard')?.classList.add('phase-sentence');
+        this.displaySentence(word);
+    }
+
+    async _revealTranslationPhase(word, checkAborted) {
+        await delay(DELAYS.BEFORE_TRANSLATION);
+        checkAborted();
+        document.getElementById('wordCard')?.classList.add('phase-translation');
+        this.displayFinalTranslation(word);
+    }
+
+    async _prepareNextWord(checkAborted) {
+        await delay(DELAYS.BEFORE_NEXT_WORD);
+        checkAborted();
+        const card = document.getElementById('wordCard');
+        if (card) {
+            card.classList.add('word-crossfade', 'word-fade-out');
+            await delay(DELAYS.CARD_FADE_OUT);
+            checkAborted();
+        }
+    }
+
+    updateUI() {
+        if (!this.elements.mainContent) return;
+        this.setupIcons(); this.updateStats(); this.updateControlButtons();
+        this.updateNavigationButtons(); this.updateLevelButtons();
+        this.updateThemeButtons(); this.updateRepeatControlsState();
+    }
+
+    renderInitialCard(word) {
+        if (!word) { this.showNoWordsMessage(); return; }
+        this.elements.mainContent.querySelector('.level-indicator')?.remove();
+        if (word.level) {
+            const levelHtml = `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>`;
+            this.elements.mainContent.insertAdjacentHTML('afterbegin', levelHtml);
+        }
+        const cardHtml = `
+            <div class="card card-appear" id="wordCard">
+                <div class="word-container">
+                    ${this.formatGermanWord(word)}
+                    <div class="pronunciation">${word.pronunciation || ''}</div>
+                    <div class="swappable-area">
+                        <div id="morphemeTranslations" class="morpheme-translations"></div>
+                        <div id="translationContainer" class="translation-container"></div>
+                    </div>
+                    <div id="sentenceContainer" class="sentence-container"></div>
+                </div>
+            </div>`;
+        this.elements.studyArea.innerHTML = cardHtml;
+        // this.updateUI(); // Вызывается из handleStateUpdate, здесь может быть лишним
+    }
+
+    showNoWordsMessage(customMessage = '') {
+        const msg = customMessage || (this.allWords.length > 0 ? 'Нет слов для выбранных фильтров.' : 'Загрузка словаря...');
+        this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
     }
 
     updateDynamicFilters() {
         const words = this.allWords;
         const availableLevels = [...new Set(words.map(w => w.level).filter(Boolean))].sort();
-        this.state.availableLevels = availableLevels;
         let newSelectedLevels = this.state.selectedLevels.filter(l => availableLevels.includes(l));
         if (newSelectedLevels.length === 0 && availableLevels.length > 0) {
             newSelectedLevels = [...availableLevels];
         }
-        this.state.selectedLevels = newSelectedLevels;
         const availableThemes = [...new Set(words.map(w => w.theme).filter(Boolean))].sort();
-        this.state.availableThemes = availableThemes;
-        this.renderThemeButtons();
-        if (this.state.selectedTheme !== 'all' && !availableThemes.includes(this.state.selectedTheme)) {
-            this.state.selectedTheme = 'all';
+
+        let newSelectedTheme = this.state.selectedTheme;
+        if (newSelectedTheme !== 'all' && !availableThemes.includes(newSelectedTheme)) {
+            newSelectedTheme = 'all';
         }
+
+        this.stateManager.setState({
+            availableLevels,
+            selectedLevels: newSelectedLevels,
+            availableThemes,
+            selectedTheme: newSelectedTheme
+        });
+
+        this.renderThemeButtons();
     }
 
     renderVocabularySelector() {
@@ -508,185 +582,20 @@ class VocabularyApp {
         document.querySelectorAll('[id^=vocabularySelector]').forEach(createOptions);
     }
 
-    // src/app.js
-
-    // src/app.js
-    startAutoPlay() {
-        if (this.state.isAutoPlaying) return;
-
-        let wordToShow = this.state.currentWord;
-        let startPhaseIndex = this.state.currentPhaseIndex || 0;
-
-        // Эта та самая логика из эталона!
-        if (!wordToShow || startPhaseIndex === 0) {
-            wordToShow = this.getNextWord();
-            startPhaseIndex = 0;
-            if (wordToShow) {
-                this.stateManager.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
-            }
-        }
-
-        if (wordToShow) {
-            this.stateManager.setState({ isAutoPlaying: true });
-            this.audioEngine.playSilentAudio();
-            this.runDisplaySequence(wordToShow, startPhaseIndex);
-        } else {
-            this.showNoWordsMessage();
-        }
-    }
-
-    stopAutoPlay() {
-        if (this.sequenceController) {
-            this.sequenceController.abort();
-        }
-        this.stateManager.setState({ isAutoPlaying: false });
-        this.audioEngine.pauseSilentAudio();
-        this.audioEngine.stopSmoothProgress();
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
-        }
-    }
-
-    // НОВЫЙ МЕТОД: Прерывает текущую последовательность без изменения глобального состояния плеера
-    _interruptSequence() {
-        if (this.sequenceController) {
-            this.sequenceController.abort();
-        }
-        this.audioEngine.stopSmoothProgress();
-    }
-
-    toggleAutoPlay() {
-        if (this.state.isAutoPlaying) {
-            this.stopAutoPlay();
-        } else {
-            this.startAutoPlay();
-        }
-    }
-
-    // src/app.js
-
-    // src/app.js - ЗАМЕНИТЬ ВЕСЬ МЕТОД
-
-    async runDisplaySequence(word, startFromIndex = 0) {
-        if (!word) {
-            this.showNoWordsMessage();
-            this.stopAutoPlay();
-            return;
-        }
-
-        if (this.sequenceController) {
-            this.sequenceController.abort();
-        }
-        this.sequenceController = new AbortController();
-        const { signal } = this.sequenceController;
-        this.audioEngine.setSequenceController(this.sequenceController);
-
-        try {
-            const checkAborted = () => {
-                if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-            };
-
-            // --- НОВАЯ ЛОГИКА ---
-            // ШАГ 1: ВСЕГДА строим ПОЛНЫЙ список фаз. Индексы теперь стабильны.
-            const phases = [];
-
-            // Фаза 0: Анимация появления новой карточки.
-            phases.push({ task: () => this._fadeInNewCard(word, checkAborted), isAnimation: true });
-
-            // Фазы 1, 2, ...: Повторения немецкого слова.
-            for (let i = 0; i < this.state.repeatMode; i++) {
-                const isFirstRepeat = (i === 0);
-                phases.push({ task: () => this._playGermanPhase(word, checkAborted, isFirstRepeat) });
-            }
-
-            // Последующие фазы: Морфемы, предложение, перевод.
-            if (this.state.showMorphemes) {
-                phases.push({ task: () => this._revealMorphemesPhase(word, checkAborted) });
-            }
-            if (this.state.showSentences && word.sentence) {
-                phases.push({ task: () => this._playSentencePhase(word, checkAborted) });
-            }
-            phases.push({ task: () => this._revealTranslationPhase(word, checkAborted) });
-            // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
-
-            // Общая длительность рассчитывается по всем фазам.
-            // Здесь мы можем сделать заглушки для длительности, чтобы прогресс-бар был точнее.
-            // Но пока оставим как есть для простоты.
-            // const totalDuration = ...
-
-            this.audioEngine.updateMediaSessionMetadata(word);
-            // this.audioEngine.startSmoothProgress(totalDuration);
-
-            // Если мы возобновляем, нужно мгновенно привести UI в правильное состояние.
-            if (startFromIndex > 0) {
-                this.updateCardViewToPhase(word, startFromIndex, phases);
-            }
-
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
-
-            // ШАГ 2: Запускаем цикл с нужного места.
-            for (let i = startFromIndex; i < phases.length; i++) {
-                const phase = phases[i];
-
-                // Пропускаем анимацию появления, если мы возобновляем, а не начинаем с нуля.
-                if (phase.isAnimation && startFromIndex > 0) {
-                    continue;
-                }
-
-                this.stateManager.setState({ currentPhaseIndex: i });
-                checkAborted();
-                await phase.task();
-            }
-
-            checkAborted();
-            this.audioEngine.completeSmoothProgress();
-            this.stateManager.setState({ currentPhaseIndex: 0 });
-
-            if (this.state.isAutoPlaying) {
-                await this._prepareNextWord(checkAborted);
-                const nextWord = this.getNextWord();
-                this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-                this.runDisplaySequence(nextWord); // Запускаем следующее слово с самого начала (индекс 0).
-            } else {
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'paused';
-                }
-            }
-
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                console.log('▶️ Последовательность корректно прервана. Позиция сохранена.');
-            } else {
-                console.error('Ошибка в последовательности воспроизведения:', error);
-                this.stopAutoPlay();
-            }
-        }
-    }
-
     updateCardViewToPhase(word, phaseIndex, phases) {
-        if (!document.getElementById('wordCard')) {
-            this.renderInitialCard(word);
-        }
+        if (!document.getElementById('wordCard')) { this.renderInitialCard(word); }
         const card = document.getElementById('wordCard');
-        if (!card) return;
+        if (!card || !phases || phases.length === 0) return;
 
-        // "Проигрываем" все визуальные изменения до текущей фазы
         let morphemesRevealed = false;
         let sentenceRevealed = false;
 
         for (let i = 0; i < phaseIndex; i++) {
-            const taskName = phases[i].task.name; // Получаем имя функции задачи
-            if (taskName.includes('_revealMorphemesPhase')) {
-                morphemesRevealed = true;
-            }
-            if (taskName.includes('_playSentencePhase')) {
-                sentenceRevealed = true;
-            }
+            const taskName = phases[i].task.toString();
+            if (taskName.includes('revealMorphemesPhase')) morphemesRevealed = true;
+            if (taskName.includes('revealSentencePhase')) sentenceRevealed = true;
         }
 
-        // Применяем финальное состояние UI
         if (morphemesRevealed) {
             card.classList.add('phase-morphemes');
             this.displayMorphemesAndTranslations(word);
@@ -697,153 +606,46 @@ class VocabularyApp {
         }
     }
 
-    async _fadeInNewCard(word, checkAborted) {
-        const oldCard = document.getElementById('wordCard');
-        if (oldCard) {
-            oldCard.classList.add('word-crossfade', 'word-fade-out');
-            await delay(DELAYS.CARD_FADE_IN);
-            checkAborted();
-        }
-        this.renderInitialCard(word);
-    }
-
-    async _playGermanPhase(word, checkAborted, isFirstRepeat) {
-        // Вместо isResuming и repeatIndex теперь используем isFirstRepeat
-        const waitTime = isFirstRepeat ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
-        await delay(waitTime);
-        checkAborted();
-        await this.speakGerman(word);
-        checkAborted();
-    }
-
-    async _revealMorphemesPhase(word, checkAborted) {
-        await delay(DELAYS.BEFORE_MORPHEMES);
-        checkAborted();
-        document.getElementById('wordCard')?.classList.add('phase-morphemes');
-        this.displayMorphemesAndTranslations(word);
-    }
-
-    async _playSentencePhase(word, checkAborted) {
-        await delay(DELAYS.BEFORE_SENTENCE);
-        checkAborted();
-        document.getElementById('wordCard')?.classList.add('phase-sentence');
-        this.displaySentence(word);
-        if (this.state.showSentences && word.sentence) {
-            await this.speakSentence(word);
-            checkAborted();
-        }
-    }
-
-    async _revealTranslationPhase(word, checkAborted) {
-        await delay(DELAYS.BEFORE_TRANSLATION);
-        checkAborted();
-        document.getElementById('wordCard')?.classList.add('phase-translation');
-        this.displayFinalTranslation(word);
-        await this.speakRussian(word);
-        checkAborted();
-        if (this.state.isAutoPlaying) {
-            if (this.state.currentPhaseIndex >= 0) {
-                this.stateManager.setState({ studiedToday: this.state.studiedToday + 1 });
+    displayMorphemesAndTranslations(word) {
+        const { showMorphemes, showMorphemeTranslations } = this.state;
+        const mainWordElement = document.querySelector('.word .main-word');
+        const translationsContainer = document.getElementById('morphemeTranslations');
+        const wordElement = document.querySelector('.word');
+        if (!mainWordElement || !translationsContainer || !wordElement || !word) return;
+        wordElement.classList.remove('show-morphemes');
+        translationsContainer.classList.remove('visible');
+        translationsContainer.innerHTML = '';
+        if (word.morphemes && word.morphemes.length > 0 && showMorphemes) {
+            const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`;
+            mainWordElement.innerHTML = word.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML);
+            wordElement.classList.add('show-morphemes');
+            if (showMorphemeTranslations) {
+                translationsContainer.innerHTML = word.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join('');
+                translationsContainer.classList.add('visible');
             }
         }
     }
 
-    async _prepareNextWord(checkAborted) {
-        await delay(DELAYS.BEFORE_NEXT_WORD);
-        checkAborted();
-        const card = document.getElementById('wordCard');
-        if (card) {
-            card.classList.add('word-crossfade', 'word-fade-out');
-            await delay(DELAYS.CARD_FADE_OUT);
-            checkAborted();
+    displaySentence(word) {
+        const { showSentences } = this.state;
+        const container = document.getElementById('sentenceContainer');
+        if (!container || !word) return;
+        if (showSentences && word.sentence) {
+            container.innerHTML = `<div class="sentence">${word.sentence}<div class="sentence-translation">${word.sentence_ru}</div></div>`;
+            container.classList.add('visible');
+        } else {
+            container.innerHTML = '';
+            container.classList.remove('visible');
         }
     }
 
-    async speakGerman(word) {
-        if (this.state.soundEnabled && word && word.id) {
-            // Добавлен this.state.currentVocabulary
-            await this.audioEngine.speakById(word.id, 'german', this.state.currentVocabulary);
-
-            // Добавлена проверка и вызов playSilentAudio
-            if (this.state.isAutoPlaying) {
-                this.audioEngine.playSilentAudio();
-            }
-        }
-    }
-    async speakRussian(word) {
-        if (this.state.translationSoundEnabled && word && word.id) {
-            await this.audioEngine.speakById(word.id, 'russian', this.state.currentVocabulary);
-
-            if (this.state.isAutoPlaying) {
-                this.audioEngine.playSilentAudio();
-            }
-        }
-    }
-    async speakSentence(word) {
-        if (this.state.sentenceSoundEnabled && word && word.id && word.sentence) {
-            await this.audioEngine.speakById(word.id, 'sentence', this.state.currentVocabulary);
-
-            if (this.state.isAutoPlaying) {
-                this.audioEngine.playSilentAudio();
-            }
-        }
-    }
-
-    toggleSetting(key) {
-        const wasAutoPlaying = this.state.isAutoPlaying;
-        if (wasAutoPlaying) this.stopAutoPlay();
-
-        let newState = { [key]: !this.state[key] };
-        if (key === 'showMorphemes' && !newState[key]) {
-            newState.showMorphemeTranslations = false;
-        }
-        this.stateManager.setState(newState);
-
-        const word = this.state.currentWord;
-        if (word && document.getElementById('wordCard')) {
-            this.renderInitialCard(word);
-            this.updateCardViewToPhase(word, this.state.currentPhaseIndex);
-        }
-    }
-
-    updateCardView(word) {
-        this.renderInitialCard(word);
+    displayFinalTranslation(word, withAnimation = true) {
         const card = document.getElementById('wordCard');
         if (!card) return;
-        this.updateCardViewToPhase(word, this.state.currentPhaseIndex);
-    }
-
-    updateUI() {
-        if (!this.elements.mainContent) return;
-        this.setupIcons();
-        this.updateStats();
-        this.updateControlButtons();
-        this.updateNavigationButtons();
-        this.updateLevelButtons();
-        this.updateThemeButtons();
-        this.updateRepeatControlsState();
-    }
-
-    renderThemeButtons() {
-        if (!this.elements.themeButtonsContainer) return;
-        const wrapper = this.elements.themeButtonsContainer;
-        wrapper.innerHTML = `<span class="block-label"><svg class="icon"><use xlink:href="#icon-category"></use></svg>Темы</span>`;
-        const createBtn = (theme, text) => {
-            const btn = document.createElement('button');
-            btn.className = 'block-btn';
-            btn.dataset.theme = theme;
-            btn.textContent = text;
-            btn.addEventListener('click', () => this.setTheme(theme));
-            return btn;
-        };
-        if (this.state.availableThemes.length > 0) {
-            wrapper.appendChild(createBtn('all', 'Все темы'));
-            this.state.availableThemes.forEach(theme => {
-                const themeName = this.themeMap[theme] || theme.charAt(0).toUpperCase() + theme.slice(1);
-                wrapper.appendChild(createBtn(theme, themeName));
-            });
+        const translationContainer = document.getElementById('translationContainer');
+        if (translationContainer) {
+            translationContainer.innerHTML = `<div class="translation ${withAnimation ? 'translation-appear' : ''}">${word.russian}</div>`;
         }
-        this.updateThemeButtons();
     }
 
     setupIcons() {
@@ -898,149 +700,13 @@ class VocabularyApp {
         this.elements.mainContent.classList.toggle('is-clickable', !this.state.isAutoPlaying);
     }
 
-    handleFilterChange(isInitialLoad = false) {
-        this.stopAutoPlay();
-        this.generatePlaybackSequence();
-
-        if (this.playbackSequence.length > 0) {
-            this.currentSequenceIndex = -1; // "Взводим" плейлист
-            const firstWord = this.playbackSequence[0];
-            this.stateManager.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-            this.renderInitialCard(firstWord);
-        } else {
-            this.currentSequenceIndex = -1;
-            this.stateManager.setState({ currentWord: null });
-            this.showNoWordsMessage();
-        }
-        this.updateNavigationButtons();
-    }
-
-    // ИЗМЕНЕНО: Метод теперь использует _interruptSequence для бесшовного перехода
-    showPreviousWord() {
-        if (this.playbackSequence.length <= 1) return;
-
-        const wasAutoPlaying = this.state.isAutoPlaying;
-        // Прерываем текущую последовательность, не меняя глобальное состояние
-        this._interruptSequence();
-        if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: false }); // Временно выключаем, чтобы старая последовательность не продолжилась
-        }
-
-        this.currentSequenceIndex--;
-        if (this.currentSequenceIndex < 0) {
-            this.currentSequenceIndex = this.playbackSequence.length - 1;
-        }
-
-        const word = this.playbackSequence[this.currentSequenceIndex];
-        this.stateManager.setState({ currentWord: word, currentPhase: 'initial', currentPhaseIndex: 0 });
-        this.runDisplaySequence(word);
-
-        if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: true }); // Восстанавливаем состояние автопроигрывания для новой последовательности
-        }
-    }
-
-    // ИЗМЕНЕНО: Метод теперь использует _interruptSequence для бесшовного перехода
-    showNextWordManually() {
-        if (this.playbackSequence.length <= 1) return;
-
-        const wasAutoPlaying = this.state.isAutoPlaying;
-        // Прерываем текущую последовательность, не меняя глобальное состояние
-        this._interruptSequence();
-        if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: false }); // Временно выключаем
-        }
-
-        const nextWord = this.getNextWord();
-
-        if (!nextWord) {
-            this.showNoWordsMessage();
-            return;
-        }
-
-        this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-        this.runDisplaySequence(nextWord);
-
-        if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: true }); // Восстанавливаем
-        }
-    }
-
-    renderInitialCard(word) {
-        if (!word) {
-            this.showNoWordsMessage();
-            return;
-        }
-        this.elements.mainContent.querySelector('.level-indicator')?.remove();
-        if (word.level) {
-            const levelHtml = `<div class="level-indicator ${word.level.toLowerCase()}">${word.level}</div>`;
-            this.elements.mainContent.insertAdjacentHTML('afterbegin', levelHtml);
-        }
-        const cardHtml = `
-            <div class="card card-appear" id="wordCard">
-                <div class="word-container">
-                    ${this.formatGermanWord(word)}
-                    <div class="pronunciation">${word.pronunciation || ''}</div>
-                    <div class="swappable-area">
-                        <div id="morphemeTranslations" class="morpheme-translations"></div>
-                        <div id="translationContainer" class="translation-container"></div>
-                    </div>
-                    <div id="sentenceContainer" class="sentence-container"></div>
-                </div>
-            </div>`;
-        this.elements.studyArea.innerHTML = cardHtml;
-        this.updateUI();
-    }
-
-    displayMorphemesAndTranslations(word) {
-        const { showMorphemes, showMorphemeTranslations } = this.state;
-        const mainWordElement = document.querySelector('.word .main-word');
-        const translationsContainer = document.getElementById('morphemeTranslations');
-        const wordElement = document.querySelector('.word');
-        if (!mainWordElement || !translationsContainer || !wordElement || !word) return;
-        wordElement.classList.remove('show-morphemes');
-        translationsContainer.classList.remove('visible');
-        translationsContainer.innerHTML = '';
-        if (word.morphemes && word.morphemes.length > 0 && showMorphemes) {
-            const separatorHTML = `<span class="morpheme-separator"><span class="morpheme-separator-desktop">-</span><span class="morpheme-separator-mobile">|</span></span>`;
-            mainWordElement.innerHTML = word.morphemes.map(item => `<span class="morpheme">${item.m || ''}</span>`).join(separatorHTML);
-            wordElement.classList.add('show-morphemes');
-            if (showMorphemeTranslations) {
-                translationsContainer.innerHTML = word.morphemes.map(item => `<div class="morpheme-translation-item"><span class="morpheme-part">${item.m || ''}</span><span class="translation-part">${item.t || '?'}</span></div>`).join('');
-                translationsContainer.classList.add('visible');
-            }
-        }
-    }
-
-    displaySentence(word) {
-        const { showSentences } = this.state;
-        const container = document.getElementById('sentenceContainer');
-        if (!container || !word) return;
-        if (showSentences && word.sentence) {
-            container.innerHTML = `<div class="sentence">${word.sentence}<div class="sentence-translation">${word.sentence_ru}</div></div>`;
-            container.classList.add('visible');
-        } else {
-            container.innerHTML = '';
-            container.classList.remove('visible');
-        }
-    }
-
-    displayFinalTranslation(word, withAnimation = true) {
-        const card = document.getElementById('wordCard');
-        if (!card) return;
-        const translationContainer = document.getElementById('translationContainer');
-        if (translationContainer) {
-            translationContainer.innerHTML = `<div class="translation ${withAnimation ? 'translation-appear' : ''}">${word.russian}</div>`;
-        }
-    }
-
     updateStats() {
         if (this.elements.totalWords) this.elements.totalWords.textContent = this.getActiveWords().length;
         if (this.elements.studiedToday) this.elements.studiedToday.textContent = this.state.studiedToday;
     }
 
     updateNavigationButtons() {
-        const canNavigate = this.playbackSequence.length > 1;
+        const canNavigate = this.lessonEngine.playbackSequence.length > 1;
         document.querySelectorAll('[id^=prevButton]').forEach(btn => btn.disabled = !canNavigate);
         document.querySelectorAll('[id^=nextButton]').forEach(btn => btn.disabled = !canNavigate);
     }
@@ -1058,6 +724,28 @@ class VocabularyApp {
         document.querySelectorAll('.block-btn[data-theme]').forEach(b => b.classList.toggle('active', b.dataset.theme === this.state.selectedTheme));
     }
 
+    renderThemeButtons() {
+        if (!this.elements.themeButtonsContainer) return;
+        const wrapper = this.elements.themeButtonsContainer;
+        wrapper.innerHTML = `<span class="block-label"><svg class="icon"><use xlink:href="#icon-category"></use></svg>Темы</span>`;
+        const createBtn = (theme, text) => {
+            const btn = document.createElement('button');
+            btn.className = 'block-btn';
+            btn.dataset.theme = theme;
+            btn.textContent = text;
+            btn.addEventListener('click', () => this.setTheme(theme));
+            return btn;
+        };
+        if (this.state.availableThemes.length > 0) {
+            wrapper.appendChild(createBtn('all', 'Все темы'));
+            this.state.availableThemes.forEach(theme => {
+                const themeName = this.themeMap[theme] || theme.charAt(0).toUpperCase() + theme.slice(1);
+                wrapper.appendChild(createBtn(theme, themeName));
+            });
+        }
+        this.updateThemeButtons();
+    }
+
     updateRepeatControlsState() {
         document.querySelectorAll('.repeat-selector, .repeat-selector-mobile').forEach(button => {
             button.classList.toggle('active', parseInt(button.dataset.mode) === this.state.repeatMode);
@@ -1072,84 +760,10 @@ class VocabularyApp {
         this.elements.settingsOverlay.classList.toggle('visible', show);
     }
 
-    toggleLevel(level) {
-        if (!this.state.availableLevels.includes(level)) return;
-        const newLevels = this.state.selectedLevels.includes(level) ? (this.state.selectedLevels.length > 1 ? this.state.selectedLevels.filter(l => l !== level) : this.state.selectedLevels) : [...this.state.selectedLevels, level];
-        this.stateManager.setState({ selectedLevels: newLevels });
-        this.handleFilterChange();
-    }
-
-    setTheme(theme) {
-        this.stateManager.setState({ selectedTheme: theme });
-        this.handleFilterChange();
-    }
-
-    setRepeatMode(mode) { this.stateManager.setState({ repeatMode: mode }); }
-
-    // src/app.js
-
-    setSequenceMode(mode) {
-        const wasAutoPlaying = this.state.isAutoPlaying;
-        if (wasAutoPlaying) this.stopAutoPlay();
-
-        // 1. Обновляем состояние через менеджер
-        this.stateManager.setState({ sequenceMode: mode });
-
-        // 2. Сразу же выполняем остальную логику, которая раньше была в коллбэке
-        this.generatePlaybackSequence();
-
-        let newIndex = 0;
-        if (this.state.currentWord) {
-            const foundIndex = this.playbackSequence.findIndex(w => w.id === this.state.currentWord.id);
-            if (foundIndex !== -1) {
-                newIndex = foundIndex;
-            }
-        }
-
-        if (this.playbackSequence.length > 0) {
-            this.currentSequenceIndex = newIndex;
-            const newWord = this.playbackSequence[this.currentSequenceIndex];
-            this.stateManager.setState({ currentWord: newWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-            this.renderInitialCard(newWord);
-            if (wasAutoPlaying) this.startAutoPlay();
-        } else {
-            this.showNoWordsMessage();
-        }
-    }
-
     getActiveWords() {
         const { selectedLevels, selectedTheme } = this.state;
         if (!this.allWords || this.allWords.length === 0) return [];
         return this.allWords.filter(w => w?.level && selectedLevels.includes(w.level) && (selectedTheme === 'all' || w.theme === selectedTheme));
-    }
-
-    getNextWord() {
-        if (this.playbackSequence.length === 0) {
-            this.currentSequenceIndex = -1;
-            return null;
-        }
-
-        this.currentSequenceIndex++;
-        if (this.currentSequenceIndex >= this.playbackSequence.length) {
-            this.currentSequenceIndex = 0;
-        }
-
-        return this.playbackSequence[this.currentSequenceIndex];
-    }
-
-    _shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-    }
-
-    generatePlaybackSequence() {
-        const activeWords = this.getActiveWords();
-        this.playbackSequence = [...activeWords];
-        if (this.state.sequenceMode === 'random' && this.playbackSequence.length > 1) {
-            this._shuffleArray(this.playbackSequence);
-        }
     }
 
     parseGermanWord(word) {
@@ -1168,14 +782,7 @@ class VocabularyApp {
         const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : '';
         return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`;
     }
-
-    showNoWordsMessage(customMessage = '') {
-        const msg = customMessage || (this.allWords && this.allWords.length > 0 ? 'Нет слов для выбранных фильтров.<br>Попробуйте изменить уровень или тему.' : 'Загрузка словаря...');
-        this.elements.studyArea.innerHTML = `<div class="no-words"><p>${msg}</p></div>`;
-        this.stateManager.setState({ currentWord: null });
-    }
-
-} // Конец класса VocabularyApp
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
