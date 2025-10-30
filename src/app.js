@@ -511,34 +511,19 @@ class VocabularyApp {
     // src/app.js
 
     startAutoPlay() {
-        // Если уже играет, ничего не делаем
         if (this.state.isAutoPlaying) return;
 
-        // ШАГ 1: Определяем, с чего начать, используя локальные переменные
-        let wordToShow = this.state.currentWord;
-        let startPhaseIndex = this.state.currentPhaseIndex || 0;
+        const wordToShow = this.state.currentWord;
+        const startPhaseIndex = this.state.currentPhaseIndex || 0;
 
-        // ШАГ 2: Проверяем, нужно ли брать СЛЕДУЮЩЕЕ слово
-        // Это происходит, если слова нет ИЛИ мы находимся в самом начале последовательности (phaseIndex === 0)
-        if (!wordToShow || startPhaseIndex === 0) {
-            wordToShow = this.getNextWord();
-            startPhaseIndex = 0; // Для нового слова всегда начинаем с нулевой фазы
-            if (wordToShow) {
-                // Обновляем состояние, чтобы UI и другие части приложения знали о новом слове
-                this.stateManager.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
-            }
-        }
-
-        // ШАГ 3: Если есть что показывать (либо новое слово, либо старое для продолжения)
+        // Мы просто берём то, что есть, и запускаем.
+        // Логику "проскакивания" мы УДАЛИЛИ.
+        // Исполнительный блок IF, который ты процитировал, ОСТАЛСЯ.
         if (wordToShow) {
-            // Устанавливаем флаг автопроигрывания
             this.stateManager.setState({ isAutoPlaying: true });
             this.audioEngine.playSilentAudio();
-
-            // ШАГ 4: Запускаем последовательность с ПРАВИЛЬНЫМИ, актуальными локальными переменными
             this.runDisplaySequence(wordToShow, startPhaseIndex);
         } else {
-            // Если слов для показа нет
             this.showNoWordsMessage();
         }
     }
@@ -891,14 +876,11 @@ class VocabularyApp {
         if (this.playbackSequence.length > 0) {
             this.currentSequenceIndex = 0;
             const firstWord = this.playbackSequence[this.currentSequenceIndex];
+            // Просто устанавливаем первое слово и ждём действий пользователя
             this.stateManager.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-
-            if (!isInitialLoad) {
-                this.runDisplaySequence(firstWord);
-            } else {
-                this.renderInitialCard(firstWord);
-            }
+            this.renderInitialCard(firstWord);
         } else {
+            // Если слов нет, очищаем состояние
             this.stateManager.setState({ currentWord: null });
             this.showNoWordsMessage();
         }
