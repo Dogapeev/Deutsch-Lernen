@@ -565,6 +565,8 @@ class VocabularyApp {
 
     // src/app.js
 
+    // src/app.js - ЗАМЕНИТЬ ВЕСЬ МЕТОД
+
     async runDisplaySequence(word, startFromIndex = 0) {
         if (!word) {
             this.showNoWordsMessage();
@@ -584,71 +586,69 @@ class VocabularyApp {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
-
+            // --- НОВАЯ ЛОГИКА ---
+            // ШАГ 1: ВСЕГДА строим ПОЛНЫЙ список фаз. Индексы теперь стабильны.
             const phases = [];
-            if (startFromIndex === 0) {
-                phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this._fadeInNewCard(word, checkAborted) });
-            }
 
+            // Фаза 0: Анимация появления новой карточки.
+            phases.push({ task: () => this._fadeInNewCard(word, checkAborted), isAnimation: true });
+
+            // Фазы 1, 2, ...: Повторения немецкого слова.
             for (let i = 0; i < this.state.repeatMode; i++) {
-                const delayDuration = (i === 0 && startFromIndex === 0) ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
-                phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i, startFromIndex > 0) });
+                const isFirstRepeat = (i === 0);
+                phases.push({ task: () => this._playGermanPhase(word, checkAborted, isFirstRepeat) });
             }
 
+            // Последующие фазы: Морфемы, предложение, перевод.
             if (this.state.showMorphemes) {
-                phases.push({ duration: DELAYS.BEFORE_MORPHEMES, task: () => this._revealMorphemesPhase(word, checkAborted) });
+                phases.push({ task: () => this._revealMorphemesPhase(word, checkAborted) });
             }
             if (this.state.showSentences && word.sentence) {
-                const sentenceDuration = this.state.sentenceSoundEnabled ? 3500 : 0;
-                phases.push({ duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
+                phases.push({ task: () => this._playSentencePhase(word, checkAborted) });
             }
-            const translationDuration = this.state.translationSoundEnabled ? 1800 : 0;
-            phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
+            phases.push({ task: () => this._revealTranslationPhase(word, checkAborted) });
+            // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
-            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            // Общая длительность рассчитывается по всем фазам.
+            // Здесь мы можем сделать заглушки для длительности, чтобы прогресс-бар был точнее.
+            // Но пока оставим как есть для простоты.
+            // const totalDuration = ...
 
-            let elapsedMs = 0;
-            if (startFromIndex > 0) {
-                for (let i = 0; i < startFromIndex; i++) {
-                    elapsedMs += phases[i]?.duration || 0;
-                }
-            }
+            this.audioEngine.updateMediaSessionMetadata(word);
+            // this.audioEngine.startSmoothProgress(totalDuration);
 
-            this.audioEngine.updateMediaSessionMetadata(word, totalDuration / 1000);
-            this.audioEngine.startSmoothProgress(totalDuration, elapsedMs);
-
+            // Если мы возобновляем, нужно мгновенно привести UI в правильное состояние.
             if (startFromIndex > 0) {
                 this.updateCardViewToPhase(word, startFromIndex, phases);
             }
 
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ (как в эталоне) ---
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+
+            // ШАГ 2: Запускаем цикл с нужного места.
             for (let i = startFromIndex; i < phases.length; i++) {
                 const phase = phases[i];
 
-                // 1. Устанавливаем индекс НЕПОСРЕДСТВЕННО ПЕРЕД запуском задачи.
-                this.stateManager.setState({ currentPhaseIndex: i });
+                // Пропускаем анимацию появления, если мы возобновляем, а не начинаем с нуля.
+                if (phase.isAnimation && startFromIndex > 0) {
+                    continue;
+                }
 
+                this.stateManager.setState({ currentPhaseIndex: i });
                 checkAborted();
-                // 2. Выполняем задачу.
                 await phase.task();
             }
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
             checkAborted();
             this.audioEngine.completeSmoothProgress();
-
-            // Сбрасываем индекс на 0 ПОСЛЕ УСПЕШНОГО завершения всех фаз.
             this.stateManager.setState({ currentPhaseIndex: 0 });
 
             if (this.state.isAutoPlaying) {
                 await this._prepareNextWord(checkAborted);
                 const nextWord = this.getNextWord();
-                // Обновляем состояние для нового слова и снова сбрасываем фазу на 0.
                 this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-                this.runDisplaySequence(nextWord);
+                this.runDisplaySequence(nextWord); // Запускаем следующее слово с самого начала (индекс 0).
             } else {
                 if ('mediaSession' in navigator) {
                     navigator.mediaSession.playbackState = 'paused';
@@ -665,22 +665,33 @@ class VocabularyApp {
         }
     }
 
-    updateCardViewToPhase(word, phaseIndex) {
+    updateCardViewToPhase(word, phaseIndex, phases) {
         if (!document.getElementById('wordCard')) {
             this.renderInitialCard(word);
         }
-
         const card = document.getElementById('wordCard');
         if (!card) return;
 
-        const morphemePhaseStarts = this.state.repeatMode + 1;
-        const sentencePhaseStarts = morphemePhaseStarts + (this.state.showMorphemes ? 1 : 0);
+        // "Проигрываем" все визуальные изменения до текущей фазы
+        let morphemesRevealed = false;
+        let sentenceRevealed = false;
 
-        if (phaseIndex >= morphemePhaseStarts) {
+        for (let i = 0; i < phaseIndex; i++) {
+            const taskName = phases[i].task.name; // Получаем имя функции задачи
+            if (taskName.includes('_revealMorphemesPhase')) {
+                morphemesRevealed = true;
+            }
+            if (taskName.includes('_playSentencePhase')) {
+                sentenceRevealed = true;
+            }
+        }
+
+        // Применяем финальное состояние UI
+        if (morphemesRevealed) {
             card.classList.add('phase-morphemes');
             this.displayMorphemesAndTranslations(word);
         }
-        if (phaseIndex >= sentencePhaseStarts) {
+        if (sentenceRevealed) {
             card.classList.add('phase-sentence');
             this.displaySentence(word);
         }
@@ -696,8 +707,9 @@ class VocabularyApp {
         this.renderInitialCard(word);
     }
 
-    async _playGermanPhase(word, checkAborted, repeatIndex, isResuming) {
-        const waitTime = isResuming ? 100 : (repeatIndex === 0 ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS);
+    async _playGermanPhase(word, checkAborted, isFirstRepeat) {
+        // Вместо isResuming и repeatIndex теперь используем isFirstRepeat
+        const waitTime = isFirstRepeat ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
         await delay(waitTime);
         checkAborted();
         await this.speakGerman(word);
