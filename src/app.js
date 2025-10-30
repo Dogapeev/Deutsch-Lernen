@@ -520,11 +520,13 @@ class VocabularyApp {
         document.querySelectorAll('[id^=vocabularySelector]').forEach(createOptions);
     }
 
+    // src/app.js
+
     startAutoPlay() {
         // Если уже играет, ничего не делаем
         if (this.state.isAutoPlaying) return;
 
-        // Определяем, с чего начать
+        // Определяем, с чего начать, используя локальные переменные
         let wordToShow = this.state.currentWord;
         let startPhaseIndex = this.state.currentPhaseIndex || 0;
 
@@ -534,7 +536,7 @@ class VocabularyApp {
             wordToShow = this.getNextWord();
             startPhaseIndex = 0; // Начинаем всегда с нуля для нового слова
             if (wordToShow) {
-                // Устанавливаем новое слово в состояние, но еще не запускаем
+                // Устанавливаем новое слово в состояние, но дальше используем локальную переменную
                 this.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
             }
         }
@@ -545,10 +547,8 @@ class VocabularyApp {
             this.setState({ isAutoPlaying: true });
             this.audioEngine.playSilentAudio();
 
-            // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ:
-            // Мы всегда запускаем runDisplaySequence с начала.
-            // Он сам подхватит wordToShow и startPhaseIndex из this.state.
-            this.runDisplaySequence(this.state.currentWord, this.state.currentPhaseIndex);
+            // ИСПРАВЛЕНИЕ: Используем локальные переменные, которые гарантированно корректны
+            this.runDisplaySequence(wordToShow, startPhaseIndex);
         } else {
             // Если слов нет, показываем сообщение
             this.showNoWordsMessage();
