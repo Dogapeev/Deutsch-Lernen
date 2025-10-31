@@ -3,7 +3,6 @@
 import { TTS_API_BASE_URL } from '../utils/constants.js';
 
 export class AudioEngine {
-    // ИЗМЕНЕНО: Принимаем stateManager в конструкторе
     constructor({ stateManager }) {
         this.stateManager = stateManager; // Сохраняем ссылку на stateManager
 
@@ -47,7 +46,8 @@ export class AudioEngine {
                 resolve();
             };
 
-            // ИЗМЕНЕНО: Восстанавливаем логику возврата к тихому треку
+            // --- ИЗМЕНЕНО ---
+            // Восстанавливаем логику возврата к тихому треку для поддержки сессии
             const cleanupAndRestoreSilentTrack = () => {
                 this.mediaPlayer.removeEventListener('ended', onFinish);
                 this.mediaPlayer.removeEventListener('error', onFinish);
@@ -86,7 +86,7 @@ export class AudioEngine {
                 if (error.name !== 'AbortError') {
                     console.error('Ошибка в AudioEngine.speakById:', error);
                 }
-                onFinish();
+                onFinish(); // В любом случае завершаем промис, чтобы не блокировать последовательность
             }
         });
     }
@@ -112,8 +112,6 @@ export class AudioEngine {
         this.mediaPlayer.pause();
     }
 
-    // ... остальной код AudioEngine.js остается без изменений ...
-    // --- ДАЛЕЕ ИДЕТ ОСТАЛЬНАЯ ЧАСТЬ ФАЙЛА AudioEngine.js БЕЗ ИЗМЕНЕНИЙ ---
     initAudioContext() {
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -129,10 +127,8 @@ export class AudioEngine {
             return;
         }
         console.log('✅ Инициализация MediaSession');
-        // Обработчики действий будут передаваться из основного класса
     }
 
-    // --- Генерация тихого аудио ---
     async generateSilentAudioSrc() {
         if (this.silentAudioSrc) return this.silentAudioSrc;
         if (!this.audioContext) return null;
@@ -180,7 +176,6 @@ export class AudioEngine {
         return new Blob([buffer], { type: "audio/wav" });
     }
 
-    // --- Media Session Metadata и Progress ---
     updateMediaSessionMetadata(word, duration = 2) {
         if (!('mediaSession' in navigator) || !word) return;
         const artworkUrl = this.generateGermanFlagArtwork();
