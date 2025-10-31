@@ -58,12 +58,6 @@ export class LessonEngine {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-
-        // --- Здесь уже все правильно: немедленное обновление ---
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
-        }
-
         this.stateManager.setState({ isAutoPlaying: false });
         this.audioEngine.pauseSilentAudio();
         this.audioEngine.stopSmoothProgress();
@@ -279,9 +273,8 @@ export class LessonEngine {
                 this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
                 this._runDisplaySequence(nextWord); // Рекурсивный вызов для следующего слова
             } else {
-                // Если автоплей выключен, сбрасываем фазу и ставим медиасессию на паузу
+                // Если автоплей выключен, просто сбрасываем фазу
                 this.stateManager.setState({ currentPhaseIndex: 0 });
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
             }
 
         } catch (error) {
