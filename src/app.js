@@ -91,12 +91,6 @@ class VocabularyApp {
 
     handleStateUpdate() {
         const state = this.stateManager.getState();
-        // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ЦЕНТРАЛИЗОВАННОЕ УПРАВЛЕНИЕ MEDIASESSION ---
-        // Каждый раз, когда состояние обновляется, мы синхронизируем системный плеер.
-        // Это гарантирует, что часы и телефон всегда показывают одно и то же.
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = state.isAutoPlaying ? 'playing' : 'paused';
-        }
         // Каждый раз, когда меняется состояние, обновляем весь UI
         const activeWordsCount = this.getActiveWords().length;
         const canNavigate = this.lessonEngine.playbackSequence.length > 1;

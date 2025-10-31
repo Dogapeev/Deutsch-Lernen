@@ -23,7 +23,7 @@ export class LessonEngine {
         const state = this.stateManager.getState();
         if (state.isAutoPlaying) return;
 
-        // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Немедленно сообщаем системе о начале воспроизведения
+        // НЕОБХОДИМО: Немедленно сообщаем системе о начале воспроизведения
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'playing';
         }
@@ -52,12 +52,16 @@ export class LessonEngine {
         }
     }
 
-    // src/core/LessonEngine.js
-
     stop() {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
+
+        // --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Добавляем немедленное обновление здесь ---
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
+
         this.stateManager.setState({ isAutoPlaying: false });
         this.audioEngine.pauseSilentAudio();
         this.audioEngine.stopSmoothProgress();
