@@ -23,6 +23,11 @@ export class LessonEngine {
         const state = this.stateManager.getState();
         if (state.isAutoPlaying) return;
 
+        // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Немедленно сообщаем системе о начале воспроизведения
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+        }
+
         let wordToShow = state.currentWord;
         let startPhaseIndex = state.currentPhaseIndex || 0;
 
@@ -40,6 +45,10 @@ export class LessonEngine {
             this._runDisplaySequence(wordToShow, startPhaseIndex);
         } else {
             this.ui.showNoWordsMessage();
+            // ВАЖНО: Если играть нечего, откатываем состояние обратно на "паузу"
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
         }
     }
 
@@ -52,11 +61,6 @@ export class LessonEngine {
         this.stateManager.setState({ isAutoPlaying: false });
         this.audioEngine.pauseSilentAudio();
         this.audioEngine.stopSmoothProgress();
-
-        // КРИТИЧНО: Явно устанавливаем playbackState для синхронизации с часами/телефоном
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
-        }
     }
 
     toggle() {
