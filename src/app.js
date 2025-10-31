@@ -29,7 +29,8 @@ class VocabularyApp {
 
         // --- ИНИЦИАЛИЗАЦИЯ ОСНОВНЫХ МОДУЛЕЙ ---
         this.stateManager = new StateManager();
-        this.audioEngine = new AudioEngine();
+        // ИЗМЕНЕНО: Передаем stateManager в AudioEngine
+        this.audioEngine = new AudioEngine({ stateManager: this.stateManager });
 
         // Обработчики для UIController (пульт управления для UI)
         const handlers = {
@@ -73,6 +74,8 @@ class VocabularyApp {
         this.stateManager.subscribe(() => this.handleStateUpdate());
     }
 
+    // ... остальной код app.js остается без изменений ...
+    // --- ДАЛЕЕ ИДЕТ ОСТАЛЬНАЯ ЧАСТЬ ФАЙЛА app.js БЕЗ ИЗМЕНЕНИЙ ---
     init() {
         this.stateManager.init();
         this.uiController.init();

@@ -3,16 +3,18 @@
 import { TTS_API_BASE_URL } from '../utils/constants.js';
 
 export class AudioEngine {
-    constructor() {
+    // ИЗМЕНЕНО: Принимаем stateManager в конструкторе
+    constructor({ stateManager }) {
+        this.stateManager = stateManager; // Сохраняем ссылку на stateManager
+
         this.mediaPlayer = document.createElement('audio');
         this.mediaPlayer.id = 'unifiedMediaPlayer';
         document.body.appendChild(this.mediaPlayer);
 
         this.silentAudioSrc = null;
         this.audioContext = null;
-        this.sequenceController = null; // Будет устанавливаться извне
+        this.sequenceController = null;
 
-        // Анимация прогресс-бара для Media Session
         this.progressAnimation = {
             rafId: null,
             startTime: null,
@@ -24,12 +26,10 @@ export class AudioEngine {
         this.initMediaSession();
     }
 
-    // --- Установка внешних зависимостей ---
     setSequenceController(controller) {
         this.sequenceController = controller;
     }
 
-    // --- Основной метод озвучки ---
     speakById(wordId, part, vocabName) {
         return new Promise(async (resolve, reject) => {
             if (!wordId || (this.sequenceController && this.sequenceController.signal.aborted)) {
@@ -47,10 +47,17 @@ export class AudioEngine {
                 resolve();
             };
 
+            // ИЗМЕНЕНО: Восстанавливаем логику возврата к тихому треку
             const cleanupAndRestoreSilentTrack = () => {
                 this.mediaPlayer.removeEventListener('ended', onFinish);
                 this.mediaPlayer.removeEventListener('error', onFinish);
                 this.sequenceController?.signal.removeEventListener('abort', onAbort);
+
+                // Вот ключевой фикс: если автопроигрывание активно, немедленно
+                // возвращаем тихий трек, чтобы аудиосессия не прервалась.
+                if (this.stateManager.getState().isAutoPlaying) {
+                    this.playSilentAudio();
+                }
             };
 
             try {
@@ -84,17 +91,17 @@ export class AudioEngine {
         });
     }
 
-    // --- Управление фоновым звуком ---
     async playSilentAudio() {
         if (!this.mediaPlayer) return;
         try {
             const silentSrc = await this.generateSilentAudioSrc();
-            if (this.mediaPlayer.src !== silentSrc) {
+            // Проверяем, не играет ли уже тихий трек, чтобы избежать лишних действий
+            if (this.mediaPlayer.src !== silentSrc || this.mediaPlayer.paused) {
                 this.mediaPlayer.src = silentSrc;
+                this.mediaPlayer.loop = true;
+                this.mediaPlayer.volume = 0.01;
+                await this.mediaPlayer.play();
             }
-            this.mediaPlayer.loop = true;
-            this.mediaPlayer.volume = 0.01;
-            await this.mediaPlayer.play();
         } catch (e) {
             console.warn('⚠️ Ошибка запуска тихого трека:', e);
         }
@@ -105,8 +112,8 @@ export class AudioEngine {
         this.mediaPlayer.pause();
     }
 
-
-    // --- Инициализация систем ---
+    // ... остальной код AudioEngine.js остается без изменений ...
+    // --- ДАЛЕЕ ИДЕТ ОСТАЛЬНАЯ ЧАСТЬ ФАЙЛА AudioEngine.js БЕЗ ИЗМЕНЕНИЙ ---
     initAudioContext() {
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
