@@ -1,317 +1,244 @@
-// src/core/LessonEngine.js
 "use strict";
 
-import { DELAYS } from '../utils/constants.js';
-import { delay } from '../utils/helpers.js';
+import { TTS_API_BASE_URL } from '../utils/constants.js';
 
-export class LessonEngine {
-    constructor({ stateManager, audioEngine, ui }) {
-        // --- ЗАВИСИМОСТИ ---
-        this.stateManager = stateManager;
-        this.audioEngine = audioEngine;
-        this.ui = ui; // Объект с методами для рендера UI (renderInitialCard, showNoWordsMessage и т.д.)
+export class AudioEngine {
+    constructor({ stateManager }) {
+        this.stateManager = stateManager; // Сохраняем ссылку на stateManager
 
-        // --- ВНУТРЕННЕЕ СОСТОЯНИЕ ДВИЖКА ---
-        this.playbackSequence = [];      // Текущая последовательность слов для проигрывания
-        this.currentSequenceIndex = -1;  // Индекс текущего слова в playbackSequence
-        this.sequenceController = null;  // Контроллер для прерывания асинхронных операций
+        this.mediaPlayer = document.createElement('audio');
+        this.mediaPlayer.id = 'unifiedMediaPlayer';
+        document.body.appendChild(this.mediaPlayer);
+
+        this.silentAudioSrc = null;
+        this.audioContext = null;
+        this.sequenceController = null;
+
+        this.progressAnimation = {
+            rafId: null,
+            startTime: null,
+            duration: 0,
+            isRunning: false
+        };
+
+        this.initAudioContext();
+        this.initMediaSession();
     }
 
-    // --- ПУБЛИЧНЫЕ МЕТОДЫ УПРАВЛЕНИЯ ---
+    setSequenceController(controller) {
+        this.sequenceController = controller;
+    }
 
-    start() {
-        const state = this.stateManager.getState();
-        if (state.isAutoPlaying) return;
-
-        let wordToShow = state.currentWord;
-        let startPhaseIndex = state.currentPhaseIndex || 0;
-
-        if (!wordToShow || startPhaseIndex === 0) {
-            wordToShow = this._getNextWord();
-            startPhaseIndex = 0;
-            if (wordToShow) {
-                this.stateManager.setState({ currentWord: wordToShow, currentPhase: 'initial', currentPhaseIndex: 0 });
+    speakById(wordId, part, vocabName) {
+        return new Promise(async (resolve, reject) => {
+            if (!wordId || (this.sequenceController && this.sequenceController.signal.aborted)) {
+                return resolve();
             }
-        }
 
-        if (wordToShow) {
-            this.stateManager.setState({ isAutoPlaying: true });
-            this.audioEngine.playSilentAudio();
-            this._runDisplaySequence(wordToShow, startPhaseIndex);
-        } else {
-            this.ui.showNoWordsMessage();
-        }
-    }
-
-    stop() {
-        if (this.sequenceController) {
-            this.sequenceController.abort();
-        }
-        this.stateManager.setState({ isAutoPlaying: false });
-        this.audioEngine.pauseSilentAudio();
-        this.audioEngine.stopSmoothProgress();
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
-        }
-    }
-
-    toggle() {
-        const isAutoPlaying = this.stateManager.getState().isAutoPlaying;
-        if (isAutoPlaying) {
-            this.stop();
-        } else {
-            this.start();
-        }
-    }
-
-    // --- ИЗМЕНЕННЫЙ МЕТОД NEXT (ЭТАЛОННОЕ ПОВЕДЕНИЕ) ---
-    next() {
-        if (this.playbackSequence.length <= 1) return;
-
-        // 1. Запоминаем, был ли включен режим автопроигрывания.
-        const wasAutoPlaying = this.stateManager.getState().isAutoPlaying;
-
-        // 2. Прерываем ТОЛЬКО текущую последовательность слова (звук, анимацию),
-        // НЕ меняя глобальное состояние isAutoPlaying.
-        this._interruptSequence();
-
-        // 3. Получаем следующее слово.
-        const nextWord = this._getNextWord();
-        if (!nextWord) {
-            this.ui.showNoWordsMessage();
-            return;
-        }
-
-        // 4. Обновляем состояние на новое слово.
-        this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-
-        // 5. Запускаем показ нового слова.
-        // _runDisplaySequence в конце своего выполнения проверит актуальное
-        // состояние isAutoPlaying и решит, продолжать ли дальше.
-        this._runDisplaySequence(nextWord);
-
-        // 6. Если изначально было автопроигрывание, мы должны убедиться,
-        // что оно ОСТАНЕТСЯ включенным. Если оно было выключено, ничего не делаем.
-        // Это восстанавливает состояние.
-        if (wasAutoPlaying) {
-            // Мы не вызываем start(), чтобы избежать двойного запуска.
-            // Мы просто гарантируем, что флаг isAutoPlaying установлен в true.
-            if (!this.stateManager.getState().isAutoPlaying) {
-                this.stateManager.setState({ isAutoPlaying: true });
-                this.audioEngine.playSilentAudio();
-            }
-        } else {
-            // Если была пауза, мы должны убедиться, что приложение
-            // остается на паузе после одного проигрывания.
-            if (this.stateManager.getState().isAutoPlaying) {
-                this.stateManager.setState({ isAutoPlaying: false });
-            }
-        }
-    }
-
-    // --- ИЗМЕНЕННЫЙ МЕТОД PREVIOUS (ЭТАЛОННОЕ ПОВЕДЕНИЕ) ---
-    previous() {
-        if (this.playbackSequence.length <= 1) return;
-
-        // Логика полностью аналогична методу next()
-        const wasAutoPlaying = this.stateManager.getState().isAutoPlaying;
-        this._interruptSequence();
-
-        this.currentSequenceIndex--;
-        if (this.currentSequenceIndex < 0) {
-            this.currentSequenceIndex = this.playbackSequence.length - 1;
-        }
-
-        const word = this.playbackSequence[this.currentSequenceIndex];
-        this.stateManager.setState({ currentWord: word, currentPhase: 'initial', currentPhaseIndex: 0 });
-
-        this._runDisplaySequence(word);
-
-        if (wasAutoPlaying) {
-            if (!this.stateManager.getState().isAutoPlaying) {
-                this.stateManager.setState({ isAutoPlaying: true });
-                this.audioEngine.playSilentAudio();
-            }
-        } else {
-            if (this.stateManager.getState().isAutoPlaying) {
-                this.stateManager.setState({ isAutoPlaying: false });
-            }
-        }
-    }
-
-
-    /**
-     * Генерирует новую последовательность слов на основе текущих фильтров в состоянии.
-     * @param {Array} allWords - Полный список всех слов.
-     */
-    generatePlaybackSequence(allWords) {
-        const state = this.stateManager.getState();
-        const { selectedLevels, selectedTheme, sequenceMode } = state;
-
-        if (!allWords || allWords.length === 0) {
-            this.playbackSequence = [];
-            return;
-        }
-
-        const activeWords = allWords.filter(w =>
-            w?.level && selectedLevels.includes(w.level) &&
-            (selectedTheme === 'all' || w.theme === selectedTheme)
-        );
-
-        this.playbackSequence = [...activeWords];
-
-        if (sequenceMode === 'random' && this.playbackSequence.length > 1) {
-            this._shuffleArray(this.playbackSequence);
-        }
-
-        this.currentSequenceIndex = -1;
-    }
-
-
-    // --- ПРИВАТНЫЕ МЕТОДЫ (ЛОГИКА УРОКА) ---
-
-    async _runDisplaySequence(word, startFromIndex = 0) {
-        if (!word) {
-            this.ui.showNoWordsMessage();
-            this.stop();
-            return;
-        }
-
-        if (this.sequenceController) {
-            this.sequenceController.abort();
-        }
-        this.sequenceController = new AbortController();
-        const { signal } = this.sequenceController;
-        this.audioEngine.setSequenceController(this.sequenceController);
-
-        try {
-            const checkAborted = () => {
-                if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            const onAbort = () => {
+                this.mediaPlayer.pause();
+                cleanupAndRestoreSilentTrack();
+                reject(new DOMException('Aborted', 'AbortError'));
             };
 
-            const state = this.stateManager.getState();
-            const phases = [];
+            const onFinish = () => {
+                cleanupAndRestoreSilentTrack();
+                resolve();
+            };
 
-            phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this.ui.fadeInNewCard(word, checkAborted), isAnimation: true });
+            const cleanupAndRestoreSilentTrack = () => {
+                this.mediaPlayer.removeEventListener('ended', onFinish);
+                this.mediaPlayer.removeEventListener('error', onFinish);
+                this.sequenceController?.signal.removeEventListener('abort', onAbort);
 
-            for (let i = 0; i < state.repeatMode; i++) {
-                const delayDuration = (i === 0) ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
-                phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i === 0) });
-            }
-
-            if (state.showMorphemes) {
-                phases.push({ duration: DELAYS.BEFORE_MORPHEMES, task: () => this.ui.revealMorphemesPhase(word, checkAborted) });
-            }
-
-            if (state.showSentences && word.sentence) {
-                const sentenceDuration = state.sentenceSoundEnabled ? 3500 : 0;
-                phases.push({ duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
-            }
-
-            const translationDuration = state.translationSoundEnabled ? 1800 : 0;
-            phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
-
-            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
-            let elapsedMs = 0;
-            if (startFromIndex > 0) {
-                for (let i = 0; i < startFromIndex; i++) {
-                    elapsedMs += phases[i]?.duration || 0;
+                // Ключевой фикс: если автопроигрывание активно, немедленно
+                // возвращаем тихий трек, чтобы аудиосессия не прервалась.
+                if (this.stateManager.getState().isAutoPlaying) {
+                    this.playSilentAudio();
                 }
-                this.ui.updateCardViewToPhase(word, startFromIndex, phases);
+            };
+
+            try {
+                const apiUrl = `${TTS_API_BASE_URL}/synthesize_by_id?id=${wordId}&part=${part}&vocab=${vocabName}`;
+                const response = await fetch(apiUrl, { signal: this.sequenceController?.signal });
+                if (!response.ok) throw new Error(`TTS server error: ${response.statusText}`);
+                const data = await response.json();
+                if (!data.url) throw new Error('Invalid response from TTS server');
+
+                if (this.sequenceController?.signal.aborted) {
+                    return reject(new DOMException('Aborted', 'AbortError'));
+                }
+
+                this.mediaPlayer.pause();
+                this.mediaPlayer.loop = false;
+                this.mediaPlayer.volume = 1.0;
+                this.mediaPlayer.src = `${TTS_API_BASE_URL}${data.url}`;
+
+                this.mediaPlayer.addEventListener('ended', onFinish, { once: true });
+                this.mediaPlayer.addEventListener('error', onFinish, { once: true });
+                this.sequenceController?.signal.addEventListener('abort', onAbort, { once: true });
+
+                await this.mediaPlayer.play();
+
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Ошибка в AudioEngine.speakById:', error);
+                }
+                onFinish();
             }
+        });
+    }
 
-            this.audioEngine.updateMediaSessionMetadata(word, totalDuration / 1000);
-            this.audioEngine.startSmoothProgress(totalDuration, elapsedMs);
-
-            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-
-            for (let i = startFromIndex; i < phases.length; i++) {
-                const phase = phases[i];
-                if (phase.isAnimation && startFromIndex > 0) continue;
-
-                this.stateManager.setState({ currentPhaseIndex: i });
-                checkAborted();
-                await phase.task();
+    async playSilentAudio() {
+        if (!this.mediaPlayer) return;
+        try {
+            const silentSrc = await this.generateSilentAudioSrc();
+            if (this.mediaPlayer.src !== silentSrc || this.mediaPlayer.paused) {
+                this.mediaPlayer.src = silentSrc;
+                this.mediaPlayer.loop = true;
+                this.mediaPlayer.volume = 0.01;
+                await this.mediaPlayer.play();
             }
-
-            checkAborted();
-            this.audioEngine.completeSmoothProgress();
-            this.stateManager.setState({ currentPhaseIndex: 0 });
-
-            if (this.stateManager.getState().isAutoPlaying) {
-                await this.ui.prepareNextWord(checkAborted);
-                const nextWord = this._getNextWord();
-                this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-                this._runDisplaySequence(nextWord);
-            } else {
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-            }
-
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                console.log('▶️ Последовательность урока корректно прервана.');
-            } else {
-                console.error('Ошибка в последовательности урока:', error);
-                this.stop();
-            }
+        } catch (e) {
+            console.warn('⚠️ Ошибка запуска тихого трека:', e);
         }
     }
 
-    async _playGermanPhase(word, checkAborted, isFirstRepeat) {
-        const waitTime = isFirstRepeat ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
-        await delay(waitTime);
-        checkAborted();
-        const vocabName = this.stateManager.getState().currentVocabulary;
-        await this.audioEngine.speakById(word.id, 'german', vocabName);
-        checkAborted();
+    pauseSilentAudio() {
+        if (!this.mediaPlayer) return;
+        this.mediaPlayer.pause();
     }
 
-    async _playSentencePhase(word, checkAborted) {
-        await this.ui.revealSentencePhase(word, checkAborted); // UI часть
-        if (this.stateManager.getState().sentenceSoundEnabled) {
-            const vocabName = this.stateManager.getState().currentVocabulary;
-            await this.audioEngine.speakById(word.id, 'sentence', vocabName);
-            checkAborted();
+    initAudioContext() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('✅ Audio Context инициализирован');
+        } catch (e) {
+            console.warn('⚠️ Audio Context не поддерживается:', e);
         }
     }
 
-    async _revealTranslationPhase(word, checkAborted) {
-        await this.ui.revealTranslationPhase(word, checkAborted); // UI часть
-        if (this.stateManager.getState().translationSoundEnabled) {
-            const vocabName = this.stateManager.getState().currentVocabulary;
-            await this.audioEngine.speakById(word.id, 'russian', vocabName);
-            checkAborted();
+    initMediaSession() {
+        if (!('mediaSession' in navigator)) {
+            console.log('⚠️ MediaSession API не поддерживается');
+            return;
         }
-        if (this.stateManager.getState().isAutoPlaying) {
-            const { studiedToday } = this.stateManager.getState();
-            this.stateManager.setState({ studiedToday: studiedToday + 1 });
-        }
+        console.log('✅ Инициализация MediaSession');
     }
 
-    // Этот метод теперь только прерывает текущую операцию, не меняя глобальное состояние
-    _interruptSequence() {
-        if (this.sequenceController) {
-            this.sequenceController.abort();
-        }
-        this.audioEngine.stopSmoothProgress();
-    }
+    async generateSilentAudioSrc() {
+        if (this.silentAudioSrc) return this.silentAudioSrc;
+        if (!this.audioContext) return null;
 
-    _getNextWord() {
-        if (this.playbackSequence.length === 0) {
-            this.currentSequenceIndex = -1;
+        try {
+            const duration = 2;
+            const sampleRate = this.audioContext.sampleRate;
+            const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < buffer.length; i++) { data[i] = 0; }
+
+            const audioBlob = await this.bufferToWave(buffer, buffer.length);
+            this.silentAudioSrc = URL.createObjectURL(audioBlob);
+            return this.silentAudioSrc;
+        } catch (e) {
+            console.error('❌ Ошибка генерации тихого аудио:', e);
             return null;
         }
-        this.currentSequenceIndex++;
-        if (this.currentSequenceIndex >= this.playbackSequence.length) {
-            this.currentSequenceIndex = 0;
-        }
-        return this.playbackSequence[this.currentSequenceIndex];
     }
 
-    _shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+    bufferToWave(abuffer, len) {
+        const numOfChan = abuffer.numberOfChannels;
+        const length = len * numOfChan * 2 + 44;
+        const buffer = new ArrayBuffer(length);
+        const view = new DataView(buffer);
+        let pos = 0;
+        const setUint16 = (data) => { view.setUint16(pos, data, true); pos += 2; };
+        const setUint32 = (data) => { view.setUint32(pos, data, true); pos += 4; };
+        setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+        setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+        setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
+        setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164);
+        setUint32(length - pos - 4);
+        const channels = [];
+        for (let i = 0; i < abuffer.numberOfChannels; i++) { channels.push(abuffer.getChannelData(i)); }
+        let offset = 0;
+        while (pos < length) {
+            for (let i = 0; i < numOfChan; i++) {
+                const sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                view.setInt16(pos, (sample < 0 ? sample * 32768 : sample * 32767), true);
+                pos += 2;
+            }
+            offset++;
+        }
+        return new Blob([buffer], { type: "audio/wav" });
+    }
+
+    updateMediaSessionMetadata(word, duration = 2) {
+        if (!('mediaSession' in navigator) || !word) return;
+        const artworkUrl = this.generateGermanFlagArtwork();
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: word.german || '',
+            artist: word.russian || '',
+            album: `${word.level || ''} - Deutsch Lernen`,
+            artwork: [{ src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }]
+        });
+    }
+
+    generateGermanFlagArtwork() {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="#000000"/><text x="256" y="310" font-family="Helvetica, Arial, sans-serif" font-size="280" font-weight="regular" fill="#707070" text-anchor="middle">DE</text></svg>`;
+        return 'data:image/svg+xml,' + encodeURIComponent(svg);
+    }
+
+    startSmoothProgress(durationMs, elapsedMs = 0) {
+        this.stopSmoothProgress();
+        this.progressAnimation.startTime = performance.now() - elapsedMs;
+        this.progressAnimation.duration = durationMs;
+        this.progressAnimation.isRunning = true;
+
+        const animate = (currentTime) => {
+            if (!this.progressAnimation.isRunning) return;
+            const elapsed = currentTime - this.progressAnimation.startTime;
+            const progress = Math.min(elapsed / this.progressAnimation.duration, 0.99);
+
+            if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+                try {
+                    const durationSec = this.progressAnimation.duration / 1000;
+                    navigator.mediaSession.setPositionState({
+                        duration: durationSec,
+                        playbackRate: 1,
+                        position: progress * durationSec
+                    });
+                } catch (e) { /* Игнорируем */ }
+            }
+
+            if (progress < 0.99) {
+                this.progressAnimation.rafId = requestAnimationFrame(animate);
+            }
+        };
+        this.progressAnimation.rafId = requestAnimationFrame(animate);
+    }
+
+    stopSmoothProgress() {
+        if (this.progressAnimation.rafId) {
+            cancelAnimationFrame(this.progressAnimation.rafId);
+            this.progressAnimation.rafId = null;
+        }
+        this.progressAnimation.isRunning = false;
+    }
+
+    completeSmoothProgress() {
+        this.stopSmoothProgress();
+        if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+            try {
+                const durationSec = this.progressAnimation.duration / 1000;
+                if (durationSec > 0) {
+                    navigator.mediaSession.setPositionState({
+                        duration: durationSec,
+                        playbackRate: 1,
+                        position: durationSec
+                    });
+                }
+            } catch (e) { /* Игнорируем */ }
         }
     }
 }
