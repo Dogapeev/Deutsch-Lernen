@@ -49,7 +49,7 @@ export class LessonEngine {
         }
         this.stateManager.setState({ isAutoPlaying: false });
         this.audioEngine.pauseSilentAudio();
-        this.audioEngine.stopSmoothProgress();
+        this.audioEngine.stopSmoothProgress(); // ДОБАВЛЕНО: Убедимся, что прогресс-бар остановлен
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
@@ -161,28 +161,56 @@ export class LessonEngine {
             };
 
             const state = this.stateManager.getState();
+            // ИЗМЕНЕНО: Возвращаем логику с длительностями, как в эталонном файле
             const phases = [];
 
-            phases.push({ task: () => this.ui.fadeInNewCard(word, checkAborted), isAnimation: true });
+            // Фаза появления новой карточки
+            phases.push({ duration: DELAYS.CARD_FADE_IN, task: () => this.ui.fadeInNewCard(word, checkAborted), isAnimation: true });
 
+            // Фазы повторения немецкого слова
             for (let i = 0; i < state.repeatMode; i++) {
-                phases.push({ task: () => this._playGermanPhase(word, checkAborted, i === 0) });
+                const delayDuration = (i === 0) ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
+                // Предполагаемая длительность звука ~1800ms
+                phases.push({ duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i === 0) });
             }
-            if (state.showMorphemes) {
-                phases.push({ task: () => this.ui.revealMorphemesPhase(word, checkAborted) });
-            }
-            if (state.showSentences && word.sentence) {
-                phases.push({ task: () => this._playSentencePhase(word, checkAborted) });
-            }
-            phases.push({ task: () => this._revealTranslationPhase(word, checkAborted) });
 
+            // Фаза морфем
+            if (state.showMorphemes) {
+                phases.push({ duration: DELAYS.BEFORE_MORPHEMES, task: () => this.ui.revealMorphemesPhase(word, checkAborted) });
+            }
+
+            // Фаза предложения
+            if (state.showSentences && word.sentence) {
+                // Предполагаемая длительность озвучки предложения ~3500ms
+                const sentenceDuration = state.sentenceSoundEnabled ? 3500 : 0;
+                phases.push({ duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
+            }
+
+            // Фаза перевода
+            // Предполагаемая длительность озвучки перевода ~1800ms
+            const translationDuration = state.translationSoundEnabled ? 1800 : 0;
+            phases.push({ duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
+
+
+            // ДОБАВЛЕНО: Расчет общей длительности и прошедшего времени
+            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            let elapsedMs = 0;
             if (startFromIndex > 0) {
+                for (let i = 0; i < startFromIndex; i++) {
+                    elapsedMs += phases[i]?.duration || 0;
+                }
                 this.ui.updateCardViewToPhase(word, startFromIndex, phases);
             }
+
+            // ДОБАВЛЕНО: Обновление Media Session
+            this.audioEngine.updateMediaSessionMetadata(word, totalDuration / 1000);
+            this.audioEngine.startSmoothProgress(totalDuration, elapsedMs);
+
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
 
             for (let i = startFromIndex; i < phases.length; i++) {
                 const phase = phases[i];
+                // Пропускаем анимацию появления, если мы возобновляем, а не начинаем с нуля
                 if (phase.isAnimation && startFromIndex > 0) continue;
 
                 this.stateManager.setState({ currentPhaseIndex: i });
@@ -191,7 +219,7 @@ export class LessonEngine {
             }
 
             checkAborted();
-            this.audioEngine.completeSmoothProgress();
+            this.audioEngine.completeSmoothProgress(); // ДОБАВЛЕНО: Завершаем прогресс-бар
             this.stateManager.setState({ currentPhaseIndex: 0 });
 
             if (this.stateManager.getState().isAutoPlaying) {
