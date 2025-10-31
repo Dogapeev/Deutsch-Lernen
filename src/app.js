@@ -305,10 +305,18 @@ class VocabularyApp {
 
     setupMediaSessionHandlers() {
         if (!('mediaSession' in navigator)) return;
+
+        // Основные элементы управления
         navigator.mediaSession.setActionHandler('play', () => this.lessonEngine.start());
         navigator.mediaSession.setActionHandler('pause', () => this.lessonEngine.stop());
+
+        // Управление треками (для стандартных плееров)
         navigator.mediaSession.setActionHandler('nexttrack', () => this.lessonEngine.next());
         navigator.mediaSession.setActionHandler('previoustrack', () => this.lessonEngine.previous());
+
+        // --- ДОБАВЛЕНО: Управление перемоткой (для часов и других устройств) ---
+        navigator.mediaSession.setActionHandler('seekforward', () => this.lessonEngine.next());
+        navigator.mediaSession.setActionHandler('seekbackward', () => this.lessonEngine.previous());
     }
 
     async fetchVocabularyData(vocabName) {
