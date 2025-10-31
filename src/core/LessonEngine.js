@@ -23,6 +23,11 @@ export class LessonEngine {
         const state = this.stateManager.getState();
         if (state.isAutoPlaying) return;
 
+        // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Немедленно сообщаем системе о начале воспроизведения
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+        }
+
         let wordToShow = state.currentWord;
         let startPhaseIndex = state.currentPhaseIndex || 0;
 
@@ -40,19 +45,28 @@ export class LessonEngine {
             this._runDisplaySequence(wordToShow, startPhaseIndex);
         } else {
             this.ui.showNoWordsMessage();
+            // ВАЖНО: Если играть нечего, откатываем состояние обратно на "паузу"
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
         }
     }
+
+    // src/core/LessonEngine.js
 
     stop() {
         if (this.sequenceController) {
             this.sequenceController.abort();
         }
-        this.stateManager.setState({ isAutoPlaying: false });
-        this.audioEngine.pauseSilentAudio();
-        this.audioEngine.stopSmoothProgress();
+
+        // --- Здесь уже все правильно: немедленное обновление ---
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
+
+        this.stateManager.setState({ isAutoPlaying: false });
+        this.audioEngine.pauseSilentAudio();
+        this.audioEngine.stopSmoothProgress();
     }
 
     toggle() {
@@ -246,10 +260,6 @@ export class LessonEngine {
 
             this.audioEngine.updateMediaSessionMetadata(word, totalDuration / 1000);
             this.audioEngine.startSmoothProgress(totalDuration, elapsedMs);
-
-            if (this.stateManager.getState().isAutoPlaying) {
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-            }
 
             // Главный цикл выполнения фаз
             for (let i = startFromIndex; i < phases.length; i++) {
