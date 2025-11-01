@@ -1,6 +1,9 @@
 // src/ui/UIController.js
 "use strict";
 
+import { DELAYS } from '../utils/constants.js';
+import { delay } from '../utils/helpers.js';
+
 export class UIController {
     constructor({ stateManager, handlers }) {
         this.stateManager = stateManager;
@@ -37,7 +40,7 @@ export class UIController {
     _bindEvents() {
         document.getElementById('settingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(true));
         document.getElementById('closeSettingsButton')?.addEventListener('click', () => this.toggleSettingsPanel(false));
-        this.elements.settingsOverlay.addEventListener('click', () => this.toggleSettingsPanel(false));
+        this.elements.settingsOverlay?.addEventListener('click', () => this.toggleSettingsPanel(false));
 
         document.querySelectorAll('[id^=toggleButton]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.handlers.onTogglePlay(); }));
         document.querySelectorAll('[id^=prevButton]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.handlers.onPreviousWord(); }));
@@ -62,7 +65,7 @@ export class UIController {
         document.querySelectorAll('[id^=vocabularySelector]').forEach(sel => sel.addEventListener('change', e => this.handlers.onVocabularyChange(e.target.value)));
 
         window.addEventListener('scroll', () => this.handleScroll());
-        this.elements.mainContent.addEventListener('click', () => this.handlers.onTogglePlay());
+        this.elements.mainContent?.addEventListener('click', () => this.handlers.onTogglePlay());
     }
 
     // --- Методы отображения карточки ---
@@ -96,12 +99,15 @@ export class UIController {
         const card = document.getElementById('wordCard');
         if (!card || !phases || phases.length === 0) return;
 
-        let morphemesRevealed = false, sentenceRevealed = false;
+        // Определяем, какие фазы уже должны быть видимы
+        let morphemesRevealed = false;
+        let sentenceRevealed = false;
 
+        // Проверяем по имени фазы, а не по содержимому функции
         for (let i = 0; i < phaseIndex; i++) {
-            const taskName = phases[i].task.toString();
-            if (taskName.includes('revealMorphemesPhase')) morphemesRevealed = true;
-            if (taskName.includes('revealSentencePhase')) sentenceRevealed = true;
+            const phaseName = phases[i]?.name;
+            if (phaseName === 'revealMorphemes') morphemesRevealed = true;
+            if (phaseName === 'playSentence') sentenceRevealed = true; // Имя фазы из LessonEngine
         }
 
         if (morphemesRevealed) {
@@ -374,5 +380,91 @@ export class UIController {
         const mainWordHtml = parsed.mainWord;
         const articleHtml = parsed.article ? `<span class="article ${parsed.genderClass}">${parsed.article}</span>` : '';
         return `<div class="word ${parsed.genderClass} ${articleClass}">${articleHtml}<span class="main-word">${mainWordHtml}</span></div>`;
+    }
+
+    // =======================================================================
+    // НОВЫЕ МЕТОДЫ, ПЕРЕНЕСЕННЫЕ ИЗ APP.JS
+    // =======================================================================
+
+    /**
+     * Управляет анимацией появления новой карточки.
+     * @param {object} word - Объект слова для рендера.
+     * @param {function} checkAborted - Функция для проверки прерывания.
+     */
+    async fadeInNewCard(word, checkAborted) {
+        const oldCard = document.getElementById('wordCard');
+        if (oldCard) {
+            oldCard.classList.add('word-crossfade', 'word-fade-out');
+            await delay(DELAYS.CARD_FADE_IN);
+            checkAborted();
+        }
+        this.renderInitialCard(word);
+    }
+
+    /**
+     * Управляет анимацией и отображением морфем.
+     * @param {object} word - Объект слова.
+     * @param {function} checkAborted - Функция для проверки прерывания.
+     */
+    async revealMorphemesPhase(word, checkAborted) {
+        await delay(DELAYS.BEFORE_MORPHEMES);
+        checkAborted();
+        document.getElementById('wordCard')?.classList.add('phase-morphemes');
+        this.displayMorphemesAndTranslations(word);
+    }
+
+    /**
+     * Управляет анимацией и отображением предложения.
+     * @param {object} word - Объект слова.
+     * @param {function} checkAborted - Функция для проверки прерывания.
+     */
+    async revealSentencePhase(word, checkAborted) {
+        await delay(DELAYS.BEFORE_SENTENCE);
+        checkAborted();
+        document.getElementById('wordCard')?.classList.add('phase-sentence');
+        this.displaySentence(word);
+    }
+
+    /**
+     * Управляет анимацией и отображением перевода.
+     * @param {object} word - Объект слова.
+     * @param {function} checkAborted - Функция для проверки прерывания.
+     */
+    async revealTranslationPhase(word, checkAborted) {
+        await delay(DELAYS.BEFORE_TRANSLATION);
+        checkAborted();
+        document.getElementById('wordCard')?.classList.add('phase-translation');
+        this.displayFinalTranslation(word);
+    }
+
+    /**
+     * Управляет анимацией исчезновения карточки перед появлением следующей.
+     * @param {function} checkAborted - Функция для проверки прерывания.
+     */
+    async prepareNextWord(checkAborted) {
+        await delay(DELAYS.BEFORE_NEXT_WORD);
+        checkAborted();
+        const card = document.getElementById('wordCard');
+        if (card) {
+            card.classList.add('word-crossfade', 'word-fade-out');
+            await delay(DELAYS.CARD_FADE_OUT);
+            checkAborted();
+        }
+    }
+
+    /**
+     * Перемещает контейнер аутентификации между мобильным и десктопным хедерами.
+     */
+    repositionAuthContainer() {
+        const isMobile = window.innerWidth <= 768;
+        const authContainer = document.querySelector('.auth-container');
+        if (!authContainer) return;
+        const mobileHeader = document.querySelector('.header-mobile');
+        const desktopHeader = document.querySelector('.header');
+        if (isMobile) {
+            if (authContainer.parentElement !== mobileHeader) mobileHeader.appendChild(authContainer);
+        } else {
+            if (authContainer.parentElement !== desktopHeader) desktopHeader.appendChild(authContainer);
+        }
     }
 }
