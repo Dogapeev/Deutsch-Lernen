@@ -151,26 +151,18 @@ export class LessonEngine {
      * Генерирует новую последовательность слов на основе текущих фильтров в состоянии.
      * @param {Array} allWords - Полный список всех слов.
      */
-    generatePlaybackSequence(allWords) {
-        const state = this.stateManager.getState();
-        const { selectedLevels, selectedTheme, sequenceMode } = state;
+    generatePlaybackSequence(activeWords) {
+        const { sequenceMode } = this.stateManager.getState();
 
-        if (!allWords || allWords.length === 0) {
-            this.playbackSequence = [];
-            return;
-        }
-
-        const activeWords = allWords.filter(w =>
-            w?.level && selectedLevels.includes(w.level) &&
-            (selectedTheme === 'all' || w.theme === selectedTheme)
-        );
-
-        this.playbackSequence = [...activeWords];
+        // Просто присваиваем готовый список. 
+        // Если придет null или undefined, создаем пустой массив.
+        this.playbackSequence = [...(activeWords || [])];
 
         if (sequenceMode === 'random' && this.playbackSequence.length > 1) {
             this._shuffleArray(this.playbackSequence);
         }
 
+        // Сбрасываем индекс, т.к. последовательность полностью обновилась
         this.currentSequenceIndex = -1;
     }
 

@@ -1,18 +1,21 @@
-// app.js - Версия 6.0.0 (рефакторинг с UIController)
+// app.js - Версия 6.1.0 (с VocabularyService)
 "use strict";
 
 // --- ИМПОРТЫ МОДУЛЕЙ ---
-import { APP_VERSION, TTS_API_BASE_URL, DELAYS, FIREBASE_CONFIG } from './utils/constants.js';
+import { APP_VERSION } from './utils/constants.js';
 import { delay } from './utils/helpers.js';
 import { AudioEngine } from './core/AudioEngine.js';
 import { StateManager } from './core/StateManager.js';
 import { LessonEngine } from './core/LessonEngine.js';
 import { UIController } from './ui/UIController.js';
+// ДОБАВЛЕНО: Импортируем новый сервис
+import { VocabularyService } from './services/VocabularyService.js';
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+import { FIREBASE_CONFIG } from './utils/constants.js';
 
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
@@ -22,15 +25,16 @@ class VocabularyApp {
 
     constructor() {
         this.appVersion = APP_VERSION;
-        this.allWords = [];
-        this.vocabulariesCache = {};
+        this.allWords = []; // Весь набор слов текущего словаря
         this.themeMap = {};
         this.headerCollapseTimeout = null;
 
         // --- ИНИЦИАЛИЗАЦИЯ ОСНОВНЫХ МОДУЛЕЙ ---
         this.stateManager = new StateManager();
-        // ИЗМЕНЕНО: Передаем stateManager в AudioEngine
         this.audioEngine = new AudioEngine({ stateManager: this.stateManager });
+
+        // ДОБАВЛЕНО: Создаем экземпляр сервиса
+        this.vocabularyService = new VocabularyService({ stateManager: this.stateManager });
 
         // Обработчики для UIController (пульт управления для UI)
         const handlers = {
@@ -74,8 +78,6 @@ class VocabularyApp {
         this.stateManager.subscribe(() => this.handleStateUpdate());
     }
 
-    // ... остальной код app.js остается без изменений ...
-    // --- ДАЛЕЕ ИДЕТ ОСТАЛЬНАЯ ЧАСТЬ ФАЙЛА app.js БЕЗ ИЗМЕНЕНИЙ ---
     init() {
         this.stateManager.init();
         this.uiController.init();
@@ -89,12 +91,11 @@ class VocabularyApp {
         onAuthStateChanged(auth, user => this.handleAuthStateChanged(user));
     }
 
+    // ИЗМЕНЕНО: Обновляем UI, передавая ему отфильтрованное количество слов
     handleStateUpdate() {
-        const state = this.stateManager.getState();
-        // Каждый раз, когда меняется состояние, обновляем весь UI
-        const activeWordsCount = this.getActiveWords().length;
+        const activeWords = this.vocabularyService.filterWords(this.allWords);
         const canNavigate = this.lessonEngine.playbackSequence.length > 1;
-        this.uiController.updateUI(activeWordsCount, canNavigate);
+        this.uiController.updateUI(activeWords.length, canNavigate);
     }
 
     // --- УПРАВЛЕНИЕ АВТОРИЗАЦИЕЙ (будет перенесено в AuthController) ---
@@ -177,8 +178,6 @@ class VocabularyApp {
         this.handleFilterChange();
     }
 
-
-
     setTheme(theme) {
         this.stateManager.setState({ selectedTheme: theme });
         this.handleFilterChange();
@@ -196,14 +195,21 @@ class VocabularyApp {
 
     // --- УПРАВЛЕНИЕ СЛОВАРЯМИ И ФИЛЬТРАМИ ---
 
+    // ИЗМЕНЕНО: Логика фильтрации теперь использует сервис
     handleFilterChange(isInitialLoad = false) {
         this.lessonEngine.stop();
-        this.lessonEngine.generatePlaybackSequence(this.allWords);
+
+        // 1. Получаем отфильтрованные слова от сервиса
+        const activeWords = this.vocabularyService.filterWords(this.allWords);
+
+        // 2. Передаем готовый список в движок урока
+        this.lessonEngine.generatePlaybackSequence(activeWords);
 
         const { playbackSequence } = this.lessonEngine;
 
         if (playbackSequence.length > 0) {
             const firstWord = playbackSequence[0];
+            // Устанавливаем первое слово в state, lessonEngine начнет с него
             this.stateManager.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
             if (isInitialLoad) {
                 this.uiController.renderInitialCard(firstWord);
@@ -215,41 +221,40 @@ class VocabularyApp {
         this.handleStateUpdate();
     }
 
+    // ИЗМЕНЕНО: Метод полностью переписан для использования VocabularyService
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
         this.lessonEngine.stop();
         this.uiController.showLoadingMessage();
 
-        if (this.stateManager.getState().availableVocabularies.length === 0) {
-            try {
-                const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
-                if (!response.ok) throw new Error('Сервер не отвечает.');
-                const vocabs = await response.json();
-                if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей.');
-                this.stateManager.setState({ availableVocabularies: vocabs });
-            } catch (error) {
-                console.error(error); this.handleLoadingError(error.message); return;
-            }
-        }
-        let finalVocabName = vocabNameToLoad;
-        if (!this.stateManager.getState().availableVocabularies.some(v => v.name === finalVocabName)) {
-            finalVocabName = this.stateManager.getState().availableVocabularies[0]?.name;
-            if (!finalVocabName) { this.handleLoadingError("Не найдено ни одного словаря."); return; }
-        }
         try {
-            await this.fetchVocabularyData(finalVocabName);
-            const vocabularyData = this.vocabulariesCache[finalVocabName];
-            if (!vocabularyData) throw new Error("Кэш не найден.");
+            // 1. Получаем список словарей через сервис
+            const vocabs = await this.vocabularyService.getList();
+            this.stateManager.setState({ availableVocabularies: vocabs });
+
+            // 2. Определяем, какой словарь загружать
+            let finalVocabName = vocabNameToLoad;
+            if (!vocabs.some(v => v.name === finalVocabName)) {
+                finalVocabName = vocabs[0]?.name;
+                if (!finalVocabName) { throw new Error("Не найдено ни одного словаря."); }
+            }
+
+            // 3. Получаем данные словаря через сервис (он сам позаботится о кэше)
+            const vocabularyData = await this.vocabularyService.getVocabulary(finalVocabName);
+
+            // 4. Сохраняем данные локально в app.js для дальнейшей работы
             this.allWords = vocabularyData.words;
             this.themeMap = vocabularyData.meta.themes || {};
+
+            // 5. Обновляем состояние и UI
+            this.stateManager.setState({ currentVocabulary: finalVocabName });
+            this.updateDynamicFilters();
+            this.uiController.renderVocabularySelector();
+            this.handleFilterChange(isInitialLoad);
+
         } catch (error) {
-            console.error(`Ошибка загрузки словаря "${finalVocabName}":`, error);
-            this.handleLoadingError(`Не удалось загрузить словарь: ${finalVocabName}.`);
-            return;
+            console.error(error);
+            this.handleLoadingError(error.message);
         }
-        this.stateManager.setState({ currentVocabulary: finalVocabName });
-        this.updateDynamicFilters();
-        this.uiController.renderVocabularySelector();
-        this.handleFilterChange(isInitialLoad);
     }
 
     // --- Анимации и UI-процессы, управляемые LessonEngine ---
@@ -298,40 +303,14 @@ class VocabularyApp {
 
     // --- Внутренние методы и утилиты ---
 
-    getActiveWords() {
-        const state = this.stateManager.getState();
-        if (!this.allWords || this.allWords.length === 0) return [];
-        return this.allWords.filter(w => w?.level && state.selectedLevels.includes(w.level) && (state.selectedTheme === 'all' || w.theme === state.selectedTheme));
-    }
-
     setupMediaSessionHandlers() {
         if (!('mediaSession' in navigator)) return;
-
-        // Основные элементы управления
         navigator.mediaSession.setActionHandler('play', () => this.lessonEngine.start());
         navigator.mediaSession.setActionHandler('pause', () => this.lessonEngine.stop());
-
-        // Управление треками (для стандартных плееров)
         navigator.mediaSession.setActionHandler('nexttrack', () => this.lessonEngine.next());
         navigator.mediaSession.setActionHandler('previoustrack', () => this.lessonEngine.previous());
-
-        // --- ДОБАВЛЕНО: Управление перемоткой (для часов и других устройств) ---
         navigator.mediaSession.setActionHandler('seekforward', () => this.lessonEngine.next());
         navigator.mediaSession.setActionHandler('seekbackward', () => this.lessonEngine.previous());
-    }
-
-    async fetchVocabularyData(vocabName) {
-        if (this.vocabulariesCache[vocabName]) return;
-        this.uiController.showLoadingMessage(`Загружаю: ${vocabName}...`);
-        const response = await fetch(`${TTS_API_BASE_URL}/api/vocabulary/${vocabName}`);
-        if (!response.ok) throw new Error(`Ошибка сервера ${response.status}`);
-        const data = await response.json();
-        const words = Array.isArray(data) ? data : data.words;
-        if (!words) throw new Error(`Неверный формат словаря "${vocabName}"`);
-        this.vocabulariesCache[vocabName] = {
-            words: words.map((w, i) => ({ ...w, id: w.id || `${vocabName}_word_${Date.now()}_${i}` })),
-            meta: data.meta || { themes: {} }
-        };
     }
 
     handleLoadingError(errorMessage) {
@@ -369,7 +348,6 @@ class VocabularyApp {
 
     // ВРЕМЕННЫЕ МЕТОДЫ АВТОРИЗАЦИИ
     updateAuthUI(user) {
-        // Эти DOM-элементы будут управляться из AuthController
         const openAuthBtn = document.getElementById('openAuthBtn');
         const userProfile = document.getElementById('userProfile');
         const userDisplayName = document.getElementById('userDisplayName');
