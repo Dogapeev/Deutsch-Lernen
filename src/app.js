@@ -1,4 +1,4 @@
-// app.js - Версия 6.1.0 (с VocabularyService)
+// app.js - Версия 6.2.0 (с AuthController)
 "use strict";
 
 // --- ИМПОРТЫ МОДУЛЕЙ ---
@@ -8,12 +8,14 @@ import { AudioEngine } from './core/AudioEngine.js';
 import { StateManager } from './core/StateManager.js';
 import { LessonEngine } from './core/LessonEngine.js';
 import { UIController } from './ui/UIController.js';
-// ДОБАВЛЕНО: Импортируем новый сервис
 import { VocabularyService } from './services/VocabularyService.js';
+// ДОБАВЛЕНО: Импортируем новый AuthController
+import { AuthController } from './ui/AuthController.js';
+
 
 // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 import { FIREBASE_CONFIG } from './utils/constants.js';
 
@@ -25,18 +27,15 @@ class VocabularyApp {
 
     constructor() {
         this.appVersion = APP_VERSION;
-        this.allWords = []; // Весь набор слов текущего словаря
+        this.allWords = [];
         this.themeMap = {};
         this.headerCollapseTimeout = null;
 
         // --- ИНИЦИАЛИЗАЦИЯ ОСНОВНЫХ МОДУЛЕЙ ---
         this.stateManager = new StateManager();
         this.audioEngine = new AudioEngine({ stateManager: this.stateManager });
-
-        // ДОБАВЛЕНО: Создаем экземпляр сервиса
         this.vocabularyService = new VocabularyService({ stateManager: this.stateManager });
 
-        // Обработчики для UIController (пульт управления для UI)
         const handlers = {
             onTogglePlay: () => this.lessonEngine.toggle(),
             onNextWord: () => this.lessonEngine.next(),
@@ -52,6 +51,12 @@ class VocabularyApp {
         this.uiController = new UIController({
             stateManager: this.stateManager,
             handlers: handlers
+        });
+
+        // ИЗМЕНЕНО: Создаем AuthController и передаем ему зависимости
+        this.authController = new AuthController({
+            auth: auth,
+            showNotification: (msg, type) => this.uiController.showNotification(msg, type)
         });
 
         // "Мост" между LessonEngine и UIController
@@ -81,66 +86,38 @@ class VocabularyApp {
     init() {
         this.stateManager.init();
         this.uiController.init();
+        this.authController.init(); // Инициализируем контроллер аутентификации
 
-        // ВРЕМЕННО: Логика авторизации остаётся здесь до создания AuthController
-        this.bindAuthEvents();
         this.repositionAuthContainer();
         window.addEventListener('resize', () => this.repositionAuthContainer());
 
         this.setupMediaSessionHandlers();
+        // Слушатель Firebase остается здесь, т.к. он управляет состоянием всего приложения
         onAuthStateChanged(auth, user => this.handleAuthStateChanged(user));
     }
 
-    // ИЗМЕНЕНО: Обновляем UI, передавая ему отфильтрованное количество слов
     handleStateUpdate() {
         const activeWords = this.vocabularyService.filterWords(this.allWords);
         const canNavigate = this.lessonEngine.playbackSequence.length > 1;
         this.uiController.updateUI(activeWords.length, canNavigate);
     }
 
-    // --- УПРАВЛЕНИЕ АВТОРИЗАЦИЕЙ (будет перенесено в AuthController) ---
-    bindAuthEvents() {
-        const authElements = {
-            openAuthBtn: document.getElementById('openAuthBtn'),
-            signOutBtn: document.getElementById('signOutBtn'),
-            modal: document.getElementById('authModal'),
-            overlay: document.getElementById('authOverlay'),
-            closeModalBtn: document.getElementById('closeAuthBtn'),
-            googleSignInBtn: document.getElementById('googleSignInBtn'),
-            googleSignUpBtn: document.getElementById('googleSignUpBtn'),
-            tabs: document.querySelectorAll('.auth-tab'),
-            signinForm: document.getElementById('signinForm'),
-            signupForm: document.getElementById('signupForm'),
-            resetPasswordForm: document.getElementById('resetPasswordForm'),
-            forgotPasswordBtn: document.getElementById('forgotPasswordBtn'),
-            backToSigninBtn: document.getElementById('backToSigninBtn'),
-        };
-
-        authElements.openAuthBtn.addEventListener('click', () => this.toggleAuthModal(true));
-        authElements.closeModalBtn.addEventListener('click', () => this.toggleAuthModal(false));
-        authElements.overlay.addEventListener('click', () => this.toggleAuthModal(false));
-        authElements.signOutBtn.addEventListener('click', () => signOut(auth));
-        authElements.googleSignInBtn.addEventListener('click', () => this.signInWithGoogle());
-        authElements.googleSignUpBtn.addEventListener('click', () => this.signInWithGoogle());
-        authElements.tabs.forEach(tab => tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab)));
-        authElements.forgotPasswordBtn.addEventListener('click', () => this.switchAuthTab('resetPassword'));
-        authElements.backToSigninBtn.addEventListener('click', () => this.switchAuthTab('signin'));
-        authElements.signupForm.addEventListener('submit', e => this.handleSignUpWithEmail(e));
-        authElements.signinForm.addEventListener('submit', e => this.handleSignInWithEmail(e));
-        authElements.resetPasswordForm.addEventListener('submit', e => this.handlePasswordReset(e));
-    }
-
+    // ИЗМЕНЕНО: Этот метод теперь делегирует обновление UI AuthController'у
     handleAuthStateChanged(user) {
         clearTimeout(this.headerCollapseTimeout);
+        // 1. Делегируем обновление UI хедера AuthController'у
+        this.authController.updateAuthUI(user);
+
         if (user) {
+            // 2. Обновляем состояние приложения
             this.stateManager.setState({ currentUser: user });
-            this.updateAuthUI(user);
             console.log("✅ Пользователь вошел:", user.displayName);
+
+            // 3. Запускаем основную логику приложения
             this.loadAndSwitchVocabulary(this.stateManager.getState().currentVocabulary, true);
             this.headerCollapseTimeout = setTimeout(() => this.uiController.collapseMobileHeader(), 3000);
         } else {
             this.stateManager.setState({ currentUser: null });
-            this.updateAuthUI(null);
             this.allWords = [];
             this.uiController.showLoginMessage();
             this.handleStateUpdate(); // Обновить UI для неавторизованного состояния
@@ -195,21 +172,16 @@ class VocabularyApp {
 
     // --- УПРАВЛЕНИЕ СЛОВАРЯМИ И ФИЛЬТРАМИ ---
 
-    // ИЗМЕНЕНО: Логика фильтрации теперь использует сервис
     handleFilterChange(isInitialLoad = false) {
         this.lessonEngine.stop();
 
-        // 1. Получаем отфильтрованные слова от сервиса
         const activeWords = this.vocabularyService.filterWords(this.allWords);
-
-        // 2. Передаем готовый список в движок урока
         this.lessonEngine.generatePlaybackSequence(activeWords);
 
         const { playbackSequence } = this.lessonEngine;
 
         if (playbackSequence.length > 0) {
             const firstWord = playbackSequence[0];
-            // Устанавливаем первое слово в state, lessonEngine начнет с него
             this.stateManager.setState({ currentWord: firstWord, currentPhase: 'initial', currentPhaseIndex: 0 });
             if (isInitialLoad) {
                 this.uiController.renderInitialCard(firstWord);
@@ -221,31 +193,25 @@ class VocabularyApp {
         this.handleStateUpdate();
     }
 
-    // ИЗМЕНЕНО: Метод полностью переписан для использования VocabularyService
     async loadAndSwitchVocabulary(vocabNameToLoad, isInitialLoad = false) {
         this.lessonEngine.stop();
         this.uiController.showLoadingMessage();
 
         try {
-            // 1. Получаем список словарей через сервис
             const vocabs = await this.vocabularyService.getList();
             this.stateManager.setState({ availableVocabularies: vocabs });
 
-            // 2. Определяем, какой словарь загружать
             let finalVocabName = vocabNameToLoad;
             if (!vocabs.some(v => v.name === finalVocabName)) {
                 finalVocabName = vocabs[0]?.name;
                 if (!finalVocabName) { throw new Error("Не найдено ни одного словаря."); }
             }
 
-            // 3. Получаем данные словаря через сервис (он сам позаботится о кэше)
             const vocabularyData = await this.vocabularyService.getVocabulary(finalVocabName);
 
-            // 4. Сохраняем данные локально в app.js для дальнейшей работы
             this.allWords = vocabularyData.words;
             this.themeMap = vocabularyData.meta.themes || {};
 
-            // 5. Обновляем состояние и UI
             this.stateManager.setState({ currentVocabulary: finalVocabName });
             this.updateDynamicFilters();
             this.uiController.renderVocabularySelector();
@@ -346,130 +312,7 @@ class VocabularyApp {
         this.uiController.renderThemeButtons(this.themeMap);
     }
 
-    // ВРЕМЕННЫЕ МЕТОДЫ АВТОРИЗАЦИИ
-    updateAuthUI(user) {
-        const openAuthBtn = document.getElementById('openAuthBtn');
-        const userProfile = document.getElementById('userProfile');
-        const userDisplayName = document.getElementById('userDisplayName');
-        const userEmail = document.getElementById('userEmail');
-        const userAvatar = document.getElementById('userAvatar');
-        const userInitials = document.getElementById('userInitials');
-
-        if (user) {
-            openAuthBtn.style.display = 'none';
-            userProfile.style.display = 'flex';
-            userDisplayName.textContent = user.displayName || 'Пользователь';
-            userEmail.textContent = user.email;
-
-            if (user.photoURL) {
-                userAvatar.src = user.photoURL;
-                userAvatar.style.display = 'block';
-                userInitials.style.display = 'none';
-            } else {
-                userAvatar.style.display = 'none';
-                userInitials.style.display = 'flex';
-                userInitials.textContent = (user.displayName || 'U').charAt(0);
-            }
-        } else {
-            openAuthBtn.style.display = 'flex';
-            userProfile.style.display = 'none';
-        }
-    }
-
-    toggleAuthModal(show) {
-        const modal = document.getElementById('authModal');
-        const overlay = document.getElementById('authOverlay');
-        if (show) {
-            modal.classList.add('visible');
-            overlay.classList.add('visible');
-            this.switchAuthTab('signin');
-        } else {
-            modal.classList.remove('visible');
-            overlay.classList.remove('visible');
-        }
-    }
-
-    async signInWithGoogle() {
-        const provider = new GoogleAuthProvider();
-        try {
-            await signInWithPopup(auth, provider);
-            this.toggleAuthModal(false);
-        } catch (error) {
-            console.error("Ошибка входа через Google:", error);
-            this.uiController.showNotification(`Ошибка: ${error.message}`, 'error');
-        }
-    }
-
-    async handleSignUpWithEmail(e) {
-        e.preventDefault();
-        const name = e.target.signupName.value;
-        const email = e.target.signupEmail.value;
-        const password = e.target.signupPassword.value;
-        const passwordConfirm = e.target.signupPasswordConfirm.value;
-
-        if (password !== passwordConfirm) {
-            this.uiController.showNotification('Пароли не совпадают!', 'error');
-            return;
-        }
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(userCredential.user, { displayName: name });
-            this.toggleAuthModal(false);
-            this.uiController.showNotification(`Добро пожаловать, ${name}!`, 'success');
-        } catch (error) {
-            console.error("Ошибка регистрации:", error);
-            this.uiController.showNotification(this.getFirebaseAuthErrorMessage(error), 'error');
-        }
-    }
-
-    async handleSignInWithEmail(e) {
-        e.preventDefault();
-        const email = e.target.signinEmail.value;
-        const password = e.target.signinPassword.value;
-
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            this.toggleAuthModal(false);
-        } catch (error) {
-            console.error("Ошибка входа:", error);
-            this.uiController.showNotification(this.getFirebaseAuthErrorMessage(error), 'error');
-        }
-    }
-
-    async handlePasswordReset(e) {
-        e.preventDefault();
-        const email = e.target.resetEmail.value;
-        try {
-            await sendPasswordResetEmail(auth, email);
-            this.uiController.showNotification('Письмо для сброса пароля отправлено на ваш email.', 'success');
-            this.switchAuthTab('signin');
-        } catch (error) {
-            console.error("Ошибка сброса пароля:", error);
-            this.uiController.showNotification(this.getFirebaseAuthErrorMessage(error), 'error');
-        }
-    }
-
-    switchAuthTab(tabId) {
-        document.querySelectorAll('.auth-tab-content').forEach(content => {
-            content.classList.toggle('active', content.id === `${tabId}Tab`);
-        });
-        document.querySelectorAll('.auth-tab').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.tab === tabId);
-        });
-    }
-
-    getFirebaseAuthErrorMessage(error) {
-        switch (error.code) {
-            case 'auth/email-already-in-use': return 'Этот email уже зарегистрирован.';
-            case 'auth/invalid-email': return 'Неверный формат email.';
-            case 'auth/weak-password': return 'Пароль слишком слабый (минимум 6 символов).';
-            case 'auth/user-not-found':
-            case 'auth/wrong-password': return 'Неверный email или пароль.';
-            default: return 'Произошла ошибка. Попробуйте снова.';
-        }
-    }
-
+    // Этот метод остается, так как он управляет DOM-элементами за пределами AuthController
     repositionAuthContainer() {
         const isMobile = window.innerWidth <= 768;
         const authContainer = document.querySelector('.auth-container');
