@@ -395,7 +395,7 @@ export class UIController {
         const oldCard = document.getElementById('wordCard');
         if (oldCard) {
             oldCard.classList.add('word-crossfade', 'word-fade-out');
-            await delay(DELAYS.CARD_FADE_IN);
+            await delay(DELAYS.CARD_FADE_OUT);
             checkAborted();
         }
         this.renderInitialCard(word);
