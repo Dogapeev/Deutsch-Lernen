@@ -91,6 +91,13 @@ class VocabularyApp {
 
     handleStateUpdate() {
         const state = this.stateManager.getState();
+        // --- ДОБАВЛЕНО: ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
+        // Это единственное место, где мы будем управлять состоянием плеера для ОС.
+        // Теперь состояние на часах всегда будет синхронизировано с состоянием приложения.
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = state.isAutoPlaying ? 'playing' : 'paused';
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         // Каждый раз, когда меняется состояние, обновляем весь UI
         const activeWordsCount = this.getActiveWords().length;
         const canNavigate = this.lessonEngine.playbackSequence.length > 1;
