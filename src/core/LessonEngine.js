@@ -6,13 +6,15 @@ import { delay } from '../utils/helpers.js';
 
 export class LessonEngine {
     constructor({ stateManager, audioEngine, ui }) {
+        // --- ЗАВИСИМОСТИ ---
         this.stateManager = stateManager;
         this.audioEngine = audioEngine;
-        this.ui = ui;
+        this.ui = ui; // Объект с методами для рендера UI (renderInitialCard, showNoWordsMessage и т.д.)
 
-        this.playbackSequence = [];
-        this.currentSequenceIndex = -1;
-        this.sequenceController = null;
+        // --- ВНУТРЕННЕЕ СОСТОЯНИЕ ДВИЖКА ---
+        this.playbackSequence = [];      // Текущая последовательность слов для проигрывания
+        this.currentSequenceIndex = -1;  // Индекс текущего слова в playbackSequence
+        this.sequenceController = null;  // Контроллер для прерывания асинхронных операций
     }
 
     // --- ПУБЛИЧНЫЕ МЕТОДЫ УПРАВЛЕНИЯ ---
@@ -49,12 +51,6 @@ export class LessonEngine {
         this.stateManager.setState({ isAutoPlaying: false });
         this.audioEngine.pauseSilentAudio();
         this.audioEngine.stopSmoothProgress();
-
-        // --- ВОССТАНОВЛЕНО ИЗ 5.4.6 ---
-        // Явная команда "пауза" при остановке потока.
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
-        }
     }
 
     toggle() {
@@ -66,61 +62,81 @@ export class LessonEngine {
         }
     }
 
-    // --- СЛОЖНАЯ, НО ПРАВИЛЬНАЯ ЛОГИКА ИЗ 5.4.6 ---
-    // Вы были правы, эта логика необходима.
+    // --- ИЗМЕНЕННЫЙ МЕТОД NEXT (ЭТАЛОННОЕ ПОВЕДЕНИЕ) ---
     next() {
         if (this.playbackSequence.length <= 1) return;
 
+        // 1. Запоминаем, был ли включен режим автопроигрывания.
         const wasAutoPlaying = this.stateManager.getState().isAutoPlaying;
+
+        // 2. Прерываем ТОЛЬКО текущую последовательность слова (звук, анимацию),
+        // НЕ меняя глобальное состояние isAutoPlaying.
         this._interruptSequence();
 
-        // Временное изменение состояния нужно, чтобы прерванная
-        // последовательность не попыталась запуститься снова.
-        if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: false });
-        }
-
+        // 3. Получаем следующее слово.
         const nextWord = this._getNextWord();
         if (!nextWord) {
             this.ui.showNoWordsMessage();
-            if (wasAutoPlaying) this.stop();
+            // Если слов больше нет, нужно убедиться, что плеер остановлен
+            if (wasAutoPlaying) {
+                this.stop();
+            }
             return;
         }
 
+        // 4. Обновляем состояние на новое слово.
         this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
+
+        // 5. Запускаем показ нового слова.
+        // Если была пауза, слово просто покажется и остановится.
+        // Если был плей, _runDisplaySequence в конце своего выполнения
+        // проверит актуальное состояние isAutoPlaying и продолжит цикл.
         this._runDisplaySequence(nextWord);
 
-        // Восстанавливаем состояние, чтобы новая последовательность знала,
-        // что она должна продолжаться автоматически.
+        // 6. Если изначально было автопроигрывание, мы должны убедиться,
+        // что оно ОСТАНЕТСЯ включенным.
         if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: true });
+            // Мы не вызываем start(), чтобы избежать двойного запуска.
+            // Мы просто гарантируем, что флаг isAutoPlaying установлен в true.
+            if (!this.stateManager.getState().isAutoPlaying) {
+                this.stateManager.setState({ isAutoPlaying: true });
+                this.audioEngine.playSilentAudio();
+            }
         }
     }
 
+    // --- ИЗМЕНЕННЫЙ МЕТОД PREVIOUS (ЭТАЛОННОЕ ПОВЕДЕНИЕ) ---
     previous() {
         if (this.playbackSequence.length <= 1) return;
 
+        // Логика полностью аналогична методу next()
         const wasAutoPlaying = this.stateManager.getState().isAutoPlaying;
         this._interruptSequence();
 
-        if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: false });
-        }
-
         this.currentSequenceIndex--;
         if (this.currentSequenceIndex < 0) {
+            // Если дошли до начала, переходим в конец
             this.currentSequenceIndex = this.playbackSequence.length - 1;
         }
 
         const word = this.playbackSequence[this.currentSequenceIndex];
         this.stateManager.setState({ currentWord: word, currentPhase: 'initial', currentPhaseIndex: 0 });
+
         this._runDisplaySequence(word);
 
         if (wasAutoPlaying) {
-            this.stateManager.setState({ isAutoPlaying: true });
+            if (!this.stateManager.getState().isAutoPlaying) {
+                this.stateManager.setState({ isAutoPlaying: true });
+                this.audioEngine.playSilentAudio();
+            }
         }
     }
 
+
+    /**
+     * Генерирует новую последовательность слов на основе текущих фильтров в состоянии.
+     * @param {Array} allWords - Полный список всех слов.
+     */
     generatePlaybackSequence(allWords) {
         const state = this.stateManager.getState();
         const { selectedLevels, selectedTheme, sequenceMode } = state;
@@ -145,6 +161,8 @@ export class LessonEngine {
     }
 
 
+    // --- ПРИВАТНЫЕ МЕТОДЫ (ЛОГИКА УРОКА) ---
+
     async _runDisplaySequence(word, startFromIndex = 0) {
         if (!word) {
             this.ui.showNoWordsMessage();
@@ -164,45 +182,70 @@ export class LessonEngine {
                 if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
             };
 
-            // --- ВОССТАНОВЛЕНО ИЗ 5.4.6 ---
-            // В начале КАЖДОГО блока слова мы подтверждаем, что поток играет.
-            // Это удерживает состояние 'playing' на часах при переключении слов.
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
-
             const state = this.stateManager.getState();
             const phases = [];
 
-            // ... (построение фаз остается без изменений) ...
+            // Фаза 1: Появление карточки (анимация)
             if (startFromIndex === 0) {
-                phases.push({ name: 'fadeIn', duration: DELAYS.CARD_FADE_IN, task: () => this.ui.fadeInNewCard(word, checkAborted) });
+                phases.push({
+                    name: 'fadeIn',
+                    duration: DELAYS.CARD_FADE_IN,
+                    task: () => this.ui.fadeInNewCard(word, checkAborted)
+                });
             }
+
+            // Фаза 2: Повторы немецкого слова (аудио)
             for (let i = 0; i < state.repeatMode; i++) {
                 const delayDuration = (i === 0) ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
-                phases.push({ name: `playGerman_${i}`, duration: delayDuration + 1800, task: () => this._playGermanPhase(word, checkAborted, i === 0) });
+                phases.push({
+                    name: `playGerman_${i}`,
+                    duration: delayDuration + 1800, // Примерная длина аудио
+                    task: () => this._playGermanPhase(word, checkAborted, i === 0)
+                });
             }
-            if (state.showMorphemes) {
-                phases.push({ name: 'revealMorphemes', duration: DELAYS.BEFORE_MORPHEMES, task: () => this.ui.revealMorphemesPhase(word, checkAborted) });
-            }
-            if (state.showSentences && word.sentence) {
-                const sentenceDuration = state.sentenceSoundEnabled ? 3500 : 0;
-                phases.push({ name: 'playSentence', duration: DELAYS.BEFORE_SENTENCE + sentenceDuration, task: () => this._playSentencePhase(word, checkAborted) });
-            }
-            const translationDuration = state.translationSoundEnabled ? 1800 : 0;
-            phases.push({ name: 'revealTranslation', duration: DELAYS.BEFORE_TRANSLATION + translationDuration, task: () => this._revealTranslationPhase(word, checkAborted) });
 
-            // ... (расчет времени и прогресс-бар остаются без изменений) ...
+            // Фаза 3: Показ морфем (UI)
+            if (state.showMorphemes) {
+                phases.push({
+                    name: 'revealMorphemes',
+                    duration: DELAYS.BEFORE_MORPHEMES,
+                    task: () => this.ui.revealMorphemesPhase(word, checkAborted)
+                });
+            }
+
+            // Фаза 4: Показ и озвучка предложения (UI + аудио)
+            if (state.showSentences && word.sentence) {
+                const sentenceDuration = state.sentenceSoundEnabled ? 3500 : 0; // Примерная длина аудио
+                phases.push({
+                    name: 'playSentence',
+                    duration: DELAYS.BEFORE_SENTENCE + sentenceDuration,
+                    task: () => this._playSentencePhase(word, checkAborted)
+                });
+            }
+
+            // Фаза 5: Показ и озвучка перевода (UI + аудио)
+            const translationDuration = state.translationSoundEnabled ? 1800 : 0; // Примерная длина аудио
+            phases.push({
+                name: 'revealTranslation',
+                duration: DELAYS.BEFORE_TRANSLATION + translationDuration,
+                task: () => this._revealTranslationPhase(word, checkAborted)
+            });
+
+            // Расчет общего времени и прошедшего времени для прогресс-бара
             const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
             let elapsedMs = 0;
             if (startFromIndex > 0) {
-                for (let i = 0; i < startFromIndex; i++) { elapsedMs += phases[i]?.duration || 0; }
+                for (let i = 0; i < startFromIndex; i++) {
+                    elapsedMs += phases[i]?.duration || 0;
+                }
+                // Если возобновляем, сразу отрисовываем UI до нужной фазы
                 this.ui.updateCardViewToPhase(word, startFromIndex, phases);
             }
+
             this.audioEngine.updateMediaSessionMetadata(word, totalDuration / 1000);
             this.audioEngine.startSmoothProgress(totalDuration, elapsedMs);
 
-            // ... (цикл выполнения фаз остается без изменений) ...
+            // Главный цикл выполнения фаз
             for (let i = startFromIndex; i < phases.length; i++) {
                 const phase = phases[i];
                 this.stateManager.setState({ currentPhaseIndex: i });
@@ -213,24 +256,20 @@ export class LessonEngine {
             checkAborted();
             this.audioEngine.completeSmoothProgress();
 
+            // Если автоплей включен, готовимся к следующему слову
             if (this.stateManager.getState().isAutoPlaying) {
                 await this.ui.prepareNextWord(checkAborted);
                 const nextWord = this._getNextWord();
                 this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-                this._runDisplaySequence(nextWord);
+                this._runDisplaySequence(nextWord); // Рекурсивный вызов для следующего слова
             } else {
-                // --- ВОССТАНОВЛЕНО ИЗ 5.4.6 ---
-                // Если поток был на паузе и блок слова закончился,
-                // мы явно сообщаем системе, что теперь мы на паузе.
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'paused';
-                }
+                // Если автоплей выключен, просто сбрасываем фазу
                 this.stateManager.setState({ currentPhaseIndex: 0 });
             }
 
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('▶️ Последовательность урока корректно прервана. Позиция сохранена.');
+                console.log('▶️ Последовательность урока корректно прервана.');
             } else {
                 console.error('Ошибка в последовательности урока:', error);
                 this.stop();
@@ -238,11 +277,62 @@ export class LessonEngine {
         }
     }
 
-    // ... (остальные приватные методы без изменений)
-    async _playGermanPhase(word, checkAborted, isFirstRepeat) { const waitTime = isFirstRepeat ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS; await delay(waitTime); checkAborted(); const vocabName = this.stateManager.getState().currentVocabulary; await this.audioEngine.speakById(word.id, 'german', vocabName); checkAborted(); }
-    async _playSentencePhase(word, checkAborted) { await this.ui.revealSentencePhase(word, checkAborted); if (this.stateManager.getState().sentenceSoundEnabled) { const vocabName = this.stateManager.getState().currentVocabulary; await this.audioEngine.speakById(word.id, 'sentence', vocabName); checkAborted(); } }
-    async _revealTranslationPhase(word, checkAborted) { await this.ui.revealTranslationPhase(word, checkAborted); if (this.stateManager.getState().translationSoundEnabled) { const vocabName = this.stateManager.getState().currentVocabulary; await this.audioEngine.speakById(word.id, 'russian', vocabName); checkAborted(); } if (this.stateManager.getState().isAutoPlaying) { const { studiedToday } = this.stateManager.getState(); this.stateManager.setState({ studiedToday: studiedToday + 1 }); } }
-    _interruptSequence() { if (this.sequenceController) { this.sequenceController.abort(); } this.audioEngine.stopSmoothProgress(); }
-    _getNextWord() { if (this.playbackSequence.length === 0) { this.currentSequenceIndex = -1; return null; } this.currentSequenceIndex++; if (this.currentSequenceIndex >= this.playbackSequence.length) { this.currentSequenceIndex = 0; } return this.playbackSequence[this.currentSequenceIndex]; }
-    _shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[array[i], array[j]] = [array[j], array[i]]; } }
+    async _playGermanPhase(word, checkAborted, isFirstRepeat) {
+        const waitTime = isFirstRepeat ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
+        await delay(waitTime);
+        checkAborted();
+        const vocabName = this.stateManager.getState().currentVocabulary;
+        await this.audioEngine.speakById(word.id, 'german', vocabName);
+        checkAborted();
+    }
+
+    async _playSentencePhase(word, checkAborted) {
+        await this.ui.revealSentencePhase(word, checkAborted); // UI часть
+        if (this.stateManager.getState().sentenceSoundEnabled) {
+            const vocabName = this.stateManager.getState().currentVocabulary;
+            await this.audioEngine.speakById(word.id, 'sentence', vocabName);
+            checkAborted();
+        }
+    }
+
+    async _revealTranslationPhase(word, checkAborted) {
+        await this.ui.revealTranslationPhase(word, checkAborted); // UI часть
+        if (this.stateManager.getState().translationSoundEnabled) {
+            const vocabName = this.stateManager.getState().currentVocabulary;
+            await this.audioEngine.speakById(word.id, 'russian', vocabName);
+            checkAborted();
+        }
+        if (this.stateManager.getState().isAutoPlaying) {
+            const { studiedToday } = this.stateManager.getState();
+            // Увеличиваем счетчик только один раз за слово, в последней фазе
+            this.stateManager.setState({ studiedToday: studiedToday + 1 });
+        }
+    }
+
+    // Этот метод теперь только прерывает текущую операцию, не меняя глобальное состояние
+    _interruptSequence() {
+        if (this.sequenceController) {
+            this.sequenceController.abort();
+        }
+        this.audioEngine.stopSmoothProgress();
+    }
+
+    _getNextWord() {
+        if (this.playbackSequence.length === 0) {
+            this.currentSequenceIndex = -1;
+            return null;
+        }
+        this.currentSequenceIndex++;
+        if (this.currentSequenceIndex >= this.playbackSequence.length) {
+            this.currentSequenceIndex = 0; // Цикл по кругу
+        }
+        return this.playbackSequence[this.currentSequenceIndex];
+    }
+
+    _shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
 }

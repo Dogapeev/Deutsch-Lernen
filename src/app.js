@@ -91,7 +91,7 @@ class VocabularyApp {
 
     handleStateUpdate() {
         const state = this.stateManager.getState();
-
+        // Каждый раз, когда меняется состояние, обновляем весь UI
         const activeWordsCount = this.getActiveWords().length;
         const canNavigate = this.lessonEngine.playbackSequence.length > 1;
         this.uiController.updateUI(activeWordsCount, canNavigate);
