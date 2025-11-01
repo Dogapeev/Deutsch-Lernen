@@ -31,6 +31,11 @@ export class AudioEngine {
 
     speakById(wordId, part, vocabName) {
         return new Promise(async (resolve, reject) => {
+
+            if (!this.mediaPlayer) {
+                return reject(new Error('MediaPlayer not initialized'));
+            }
+
             if (!wordId || (this.sequenceController && this.sequenceController.signal.aborted)) {
                 return resolve();
             }

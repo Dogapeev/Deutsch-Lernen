@@ -19,6 +19,13 @@ export const DELAYS = {
     CARD_FADE_IN: 300
 };
 
+// Приблизительная длительность аудиофайлов для прогресс-бара
+export const AUDIO_DURATIONS = {
+    GERMAN_WORD: 1800,
+    SENTENCE: 3500,
+    TRANSLATION: 1800
+};
+
 // Конфигурация Firebase
 export const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBWkVK2-gnHLDk2XBxenqsSm4Dp8Ey9kcY",

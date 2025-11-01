@@ -69,6 +69,8 @@ export class VocabularyService {
         const { selectedLevels, selectedTheme } = state;
         if (!allWords || allWords.length === 0) return [];
 
+        if (selectedLevels.length === 0) return [];
+
         return allWords.filter(w =>
             w?.level &&
             selectedLevels.includes(w.level) &&

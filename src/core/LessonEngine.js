@@ -1,7 +1,7 @@
 // src/core/LessonEngine.js
 "use strict";
 
-import { DELAYS } from '../utils/constants.js';
+import { DELAYS, AUDIO_DURATIONS } from '../utils/constants.js';
 import { delay } from '../utils/helpers.js';
 
 export class LessonEngine {
@@ -191,37 +191,27 @@ export class LessonEngine {
             const state = this.stateManager.getState();
             const phases = [];
 
-            // Фаза 1: Появление карточки (анимация)
             if (startFromIndex === 0) {
-                phases.push({
-                    name: 'fadeIn',
-                    duration: DELAYS.CARD_FADE_IN,
-                    task: () => this.ui.fadeInNewCard(word, checkAborted)
-                });
+                phases.push({ name: 'fadeIn', duration: DELAYS.CARD_FADE_IN, task: () => this.ui.fadeInNewCard(word, checkAborted) });
             }
 
-            // Фаза 2: Повторы немецкого слова (аудио)
             for (let i = 0; i < state.repeatMode; i++) {
                 const delayDuration = (i === 0) ? DELAYS.INITIAL_WORD : DELAYS.BETWEEN_REPEATS;
                 phases.push({
                     name: `playGerman_${i}`,
-                    duration: delayDuration + 1800, // Примерная длина аудио
+                    // ✅ ИЗМЕНЕНО: Используем константу
+                    duration: delayDuration + AUDIO_DURATIONS.GERMAN_WORD,
                     task: () => this._playGermanPhase(word, checkAborted, i === 0)
                 });
             }
 
-            // Фаза 3: Показ морфем (UI)
             if (state.showMorphemes) {
-                phases.push({
-                    name: 'revealMorphemes',
-                    duration: DELAYS.BEFORE_MORPHEMES,
-                    task: () => this.ui.revealMorphemesPhase(word, checkAborted)
-                });
+                phases.push({ name: 'revealMorphemes', duration: DELAYS.BEFORE_MORPHEMES, task: () => this.ui.revealMorphemesPhase(word, checkAborted) });
             }
 
-            // Фаза 4: Показ и озвучка предложения (UI + аудио)
             if (state.showSentences && word.sentence) {
-                const sentenceDuration = state.sentenceSoundEnabled ? 3500 : 0; // Примерная длина аудио
+                // ✅ ИЗМЕНЕНО: Используем константу
+                const sentenceDuration = state.sentenceSoundEnabled ? AUDIO_DURATIONS.SENTENCE : 0;
                 phases.push({
                     name: 'playSentence',
                     duration: DELAYS.BEFORE_SENTENCE + sentenceDuration,
@@ -229,29 +219,26 @@ export class LessonEngine {
                 });
             }
 
-            // Фаза 5: Показ и озвучка перевода (UI + аудио)
-            const translationDuration = state.translationSoundEnabled ? 1800 : 0; // Примерная длина аудио
+            // ✅ ИЗМЕНЕНО: Используем константу
+            const translationDuration = state.translationSoundEnabled ? AUDIO_DURATIONS.TRANSLATION : 0;
             phases.push({
                 name: 'revealTranslation',
                 duration: DELAYS.BEFORE_TRANSLATION + translationDuration,
                 task: () => this._revealTranslationPhase(word, checkAborted)
             });
 
-            // Расчет общего времени и прошедшего времени для прогресс-бара
             const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
             let elapsedMs = 0;
             if (startFromIndex > 0) {
                 for (let i = 0; i < startFromIndex; i++) {
                     elapsedMs += phases[i]?.duration || 0;
                 }
-                // Если возобновляем, сразу отрисовываем UI до нужной фазы
                 this.ui.updateCardViewToPhase(word, startFromIndex, phases);
             }
 
             this.audioEngine.updateMediaSessionMetadata(word, totalDuration / 1000);
             this.audioEngine.startSmoothProgress(totalDuration, elapsedMs);
 
-            // Главный цикл выполнения фаз
             for (let i = startFromIndex; i < phases.length; i++) {
                 const phase = phases[i];
                 this.stateManager.setState({ currentPhaseIndex: i });
@@ -262,14 +249,12 @@ export class LessonEngine {
             checkAborted();
             this.audioEngine.completeSmoothProgress();
 
-            // Если автоплей включен, готовимся к следующему слову
             if (this.stateManager.getState().isAutoPlaying) {
                 await this.ui.prepareNextWord(checkAborted);
                 const nextWord = this._getNextWord();
                 this.stateManager.setState({ currentWord: nextWord, currentPhase: 'initial', currentPhaseIndex: 0 });
-                this._runDisplaySequence(nextWord); // Рекурсивный вызов для следующего слова
+                this._runDisplaySequence(nextWord);
             } else {
-                // Если автоплей выключен, просто сбрасываем фазу
                 this.stateManager.setState({ currentPhaseIndex: 0 });
             }
 
