@@ -1,7 +1,8 @@
 // src/services/VocabularyService.js
 "use strict";
 
-import { TTS_API_BASE_URL } from '../utils/constants.js';
+// ИЗМЕНЕНО: Импортируем готовый apiClient, а не константу
+import { apiClient } from './ApiClient.js';
 
 /**
  * Управляет загрузкой, кэшированием и фильтрацией словарных данных.
@@ -11,6 +12,8 @@ export class VocabularyService {
         this.stateManager = stateManager;
         this.vocabulariesCache = {};
         this.vocabularyListCache = null;
+        // ИЗМЕНЕНО: Сервис теперь использует ApiClient
+        this.api = apiClient;
     }
 
     /**
@@ -22,10 +25,9 @@ export class VocabularyService {
             return this.vocabularyListCache;
         }
 
-        const response = await fetch(`${TTS_API_BASE_URL}/api/vocabularies/list`);
-        if (!response.ok) throw new Error('Не удалось получить список словарей.');
+        // ИЗМЕНЕНО: Используем apiClient вместо fetch
+        const vocabs = await this.api.get('/api/vocabularies/list');
 
-        const vocabs = await response.json();
         if (!vocabs || vocabs.length === 0) throw new Error('На сервере нет словарей.');
 
         this.vocabularyListCache = vocabs;
@@ -42,10 +44,9 @@ export class VocabularyService {
             return this.vocabulariesCache[name];
         }
 
-        const response = await fetch(`${TTS_API_BASE_URL}/api/vocabulary/${name}`);
-        if (!response.ok) throw new Error(`Ошибка сервера при загрузке словаря "${name}": ${response.status}`);
+        // ИЗМЕНЕНО: Используем apiClient вместо fetch
+        const data = await this.api.get(`/api/vocabulary/${name}`);
 
-        const data = await response.json();
         const words = Array.isArray(data) ? data : data.words;
         if (!words) throw new Error(`Неверный формат словаря "${name}"`);
 
