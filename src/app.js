@@ -1,4 +1,4 @@
-// app.js - Версия 6.3.0 (Финальная архитектура)
+// app.js - Версия 6.3.1 (Финальная архитектура + исправления)
 "use strict";
 
 // --- ИМПОРТЫ МОДУЛЕЙ ---
@@ -56,15 +56,14 @@ class VocabularyApp {
             showNotification: (msg, type) => this.uiController.showNotification(msg, type)
         });
 
-        // ИЗМЕНЕНО: "Мост" стал намного проще. Он просто перенаправляет вызовы в uiController.
+        // ✅ ИСПРАВЛЕНО: "Мост" теперь вычисляет allWords.length динамически
         const uiBridge = {
             fadeInNewCard: (...args) => this.uiController.fadeInNewCard(...args),
             revealMorphemesPhase: (...args) => this.uiController.revealMorphemesPhase(...args),
             revealSentencePhase: (...args) => this.uiController.revealSentencePhase(...args),
             revealTranslationPhase: (...args) => this.uiController.revealTranslationPhase(...args),
             prepareNextWord: (...args) => this.uiController.prepareNextWord(...args),
-            // Эти методы уже были здесь, но теперь они часть единой концепции
-            showNoWordsMessage: (...args) => this.uiController.showNoWordsMessage(...args, this.allWords.length > 0),
+            showNoWordsMessage: (msg) => this.uiController.showNoWordsMessage(msg, this.allWords.length > 0),
             updateCardViewToPhase: (...args) => this.uiController.updateCardViewToPhase(...args)
         };
 
@@ -82,7 +81,6 @@ class VocabularyApp {
         this.uiController.init();
         this.authController.init();
 
-        // ИЗМЕНЕНО: Делегируем repositionAuthContainer в uiController
         this.uiController.repositionAuthContainer();
         window.addEventListener('resize', () => this.uiController.repositionAuthContainer());
 
@@ -115,8 +113,6 @@ class VocabularyApp {
         }
     }
 
-    // --- МЕТОДЫ-КОНТРОЛЛЕРЫ (КООРДИНАЦИЯ) ---
-
     toggleSetting(key) {
         if (this.stateManager.getState().isAutoPlaying) this.lessonEngine.stop();
 
@@ -126,7 +122,6 @@ class VocabularyApp {
         }
         this.stateManager.setState(newState);
 
-        // После изменения настройки, нужно перерисовать текущую карточку
         const word = this.stateManager.getState().currentWord;
         if (word && document.getElementById('wordCard')) {
             this.uiController.renderInitialCard(word);
@@ -158,8 +153,6 @@ class VocabularyApp {
         this.stateManager.setState({ sequenceMode: mode });
         this.handleFilterChange();
     }
-
-    // --- УПРАВЛЕНИЕ ДАННЫМИ (КООРДИНАЦИЯ) ---
 
     handleFilterChange(isInitialLoad = false) {
         this.lessonEngine.stop();
@@ -203,8 +196,6 @@ class VocabularyApp {
             this.handleLoadingError(error.message);
         }
     }
-
-    // --- ВНУТРЕННИЕ МЕТОДЫ (КООРДИНАЦИЯ) ---
 
     setupMediaSessionHandlers() {
         if (!('mediaSession' in navigator)) return;
@@ -251,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         const app = new VocabularyApp();
         app.init();
-        window.app = app; // для отладки
+        window.app = app;
         console.log('✅ Приложение инициализировано. Версия:', app.appVersion);
     } catch (error) {
         console.error('❌ Критическая ошибка:', error);
